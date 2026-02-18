@@ -14,30 +14,49 @@ En el MVP el uso es **anónimo**: no hay login ni cuentas de usuario.
 |---|---|
 | Backend | Node.js (ES Modules o CJS), `dotenv`, `nodemon` |
 | Frontend | Vanilla JS + fetch (ES Modules), sin framework (ADR-003) |
-| Persistencia MVP | Local Storage del navegador (gestionado desde el backend vía adaptador) |
-| Persistencia futura | Intercambiable: Google Drive, base de datos, etc. (ADR-001) |
+| Distribución | PWA (manifest.json + Service Worker) — instalable en Android e iOS sin tiendas (ADR-005) |
+| Persistencia MVP | `localStorage` del navegador, gestionado desde el **frontend** mediante `localStorageAdapter` (ADR-005) |
+| Persistencia post-MVP (usuario autenticado) | Google Drive API desde el cliente, mismo contrato de adaptador (ADR-005) |
+| Persistencia desarrollo/tests | `JsonFileAdapter` (fichero JSON en disco) — solo entorno local y tests de integración (ADR-001 supersedido) |
 | OCR (post-MVP) | Por decidir |
-| Auth (post-MVP) | Google OAuth |
+| Auth (post-MVP) | Google OAuth 2.0 con PKCE |
 
 ---
 
 ## Arquitectura
 
-Tres capas estrictamente separadas:
+Arquitectura en capas con persistencia en el cliente (ADR-005):
 
 ```
-Frontend (UI)
-     │  HTTP
-     ▼
-Backend (API REST)
-     │  Adaptador
-     ▼
-Capa de Persistencia (Local Storage → intercambiable)
+PWA (Frontend — Vanilla JS + Service Worker)
+  ├─ Usuario anónimo   → localStorageAdapter  (bp_measurements)
+  └─ Usuario Google    → googleDriveAdapter    [post-MVP]
+       │
+       │ HTTP (solo para OCR y proxy OAuth en post-MVP)
+       ▼
+  Backend (Node.js/Express)
+    ├─ Servir ficheros estáticos del frontend
+    ├─ Proxy OAuth [post-MVP]
+    └─ Endpoint OCR [post-MVP]
+```
+
+**Estructura de la capa de persistencia (cliente):**
+
+```
+apps/frontend/src/
+  domain/
+    measurement.js          ← validaciones de negocio
+  services/
+    measurementService.js   ← lógica de aplicación (recibe adaptador por inyección)
+  infra/
+    localStorageAdapter.js  ← implementa getAll() / save()  [MVP]
+    googleDriveAdapter.js   ← implementa getAll() / save()  [post-MVP]
 ```
 
 **Reglas críticas:**
-- El **frontend nunca accede directamente** a la capa de persistencia.
-- La capa de persistencia es un **adaptador intercambiable** (inyección de dependencias).
+- La capa de persistencia es un **adaptador intercambiable** inyectado en el servicio: en sesión anónima se usa `localStorageAdapter`; en sesión autenticada, `googleDriveAdapter`.
+- El **backend no gestiona ni almacena datos de mediciones**; su rol en el MVP es únicamente servir los ficheros estáticos.
+- En iOS (Safari/WebKit), el `localStorage` de una PWA puede borrarse tras 7 días de inactividad (política ITP). La UI debe mostrar un aviso informativo en Safari/iOS.
 - Las decisiones de arquitectura se documentan como ADRs en `docs/architecture/decisions.md`.
 
 ---
@@ -136,8 +155,10 @@ Errores de validación → `400 Bad Request` con mensaje descriptivo.
 **Incluido:**
 - Registro de medición manual
 - Registro de medición por foto (OCR extrae valores, usuario puede editarlos antes de guardar)
-- Persistencia en Local Storage
+- Persistencia en `localStorage` del navegador (gestionada desde el frontend mediante `localStorageAdapter`)
 - Listado de mediciones
+- PWA instalable: `manifest.json` + Service Worker básico (cache del shell, uso offline)
+- Aviso informativo en Safari/iOS sobre la limitación de 7 días de `localStorage`
 - Arquitectura frontend/backend desacoplada
 - Tests básicos (cobertura mínima 70%)
 
