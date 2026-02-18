@@ -6,6 +6,7 @@
 import 'dotenv/config';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { exec } from 'node:child_process';
 import { JsonFileAdapter } from './infra/jsonFileAdapter.js';
 import { createApp } from './api/app.js';
 
@@ -22,6 +23,20 @@ const adapter = new JsonFileAdapter(DATA_FILE);
 const app = createApp(adapter);
 
 app.listen(PORT, () => {
-  console.log(`[Tensia] Servidor escuchando en http://localhost:${PORT}`);
+  const url = `http://localhost:${PORT}`;
+  console.log(`[Tensia] Servidor escuchando en ${url}`);
   console.log(`[Tensia] Usando archivo de datos: ${DATA_FILE}`);
+
+  if (process.env.OPEN_BROWSER === 'true') {
+    // Apertura del navegador multiplataforma (Linux: xdg-open, macOS: open, Windows: start)
+    const cmd =
+      process.platform === 'win32'
+        ? `start ${url}`
+        : process.platform === 'darwin'
+          ? `open ${url}`
+          : `xdg-open ${url}`;
+    exec(cmd, (err) => {
+      if (err) console.log(`[Tensia] Abre manualmente en el navegador: ${url}`);
+    });
+  }
 });
