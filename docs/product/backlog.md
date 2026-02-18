@@ -1,13 +1,106 @@
-# Backlog Técnico MVP
+# Backlog — Tensia
 
-1. Crear estructura base del proyecto
-2. Implementar modelo de datos
-3. Implementar POST /measurements
-4. Implementar GET /measurements
-5. Implementar persistencia Local Storage
-6. Implementar UI registro manual
-7. Implementar listado de mediciones
-8. Implementar subida de imagen
-9. Integrar OCR
-10. Tests unitarios
-11. Test E2E básico
+_Última revisión: 2026-02-18_
+
+---
+
+## Sprint MVP — Estado actual
+
+### ✅ Completados
+
+**BK-01 — Estructura base del proyecto**
+Descripción: Monorepo con apps/backend, apps/frontend y docs.
+Prioridad: Alta
+Estado: Hecho
+
+**BK-02 — Modelo de datos y dominio**
+Descripción: Entidad `Measurement` con validaciones (sistólica, diastólica, pulso, UUID, source).
+Prioridad: Alta
+Estado: Hecho
+
+**BK-03 — API REST: POST /measurements**
+Descripción: Endpoint de creación con validación y respuesta 201 / 400.
+Prioridad: Alta
+Estado: Hecho
+
+**BK-04 — API REST: GET /measurements**
+Descripción: Endpoint de listado ordenado por fecha descendente.
+Prioridad: Alta
+Estado: Hecho
+
+**BK-05 — Persistencia en fichero JSON (adaptador)**
+Descripción: Adaptador `jsonFileAdapter.js` intercambiable por inyección de dependencias.
+Prioridad: Alta
+Estado: Hecho
+Nota: la especificación original indicaba Local Storage; se optó por fichero JSON en disco (decisión técnica del equipo).
+
+**BK-06 — UI: formulario de registro manual**
+Descripción: Formulario con validaciones inline, fecha auto-rellenada, campo pulso opcional.
+Prioridad: Alta
+Estado: Hecho
+
+**BK-07 — UI: listado de mediciones**
+Descripción: Historial ordenado descendente, mensaje "Sin mediciones todavía" en estado vacío.
+Prioridad: Alta
+Estado: Hecho
+
+**BK-08 — Tests unitarios e integración (backend)**
+Descripción: Cobertura de domain, services, infra y API con Jest + supertest.
+Prioridad: Alta
+Estado: Hecho — cobertura global 96.39 % (objetivo: 70 %)
+
+**BK-09 — Tests unitarios frontend**
+Descripción: Cobertura de `api.js` y `validators.js` con Jest + jsdom.
+Prioridad: Alta
+Estado: Hecho
+
+**BK-10 — Tests E2E flujos críticos (Playwright)**
+Descripción: TC-09 registro manual, TC-10 estado vacío, TC-11 error backend.
+Prioridad: Alta
+Estado: Hecho
+
+---
+
+## Pendientes del MVP
+
+**BK-11 — Tests de componente frontend: validaciones de formulario**
+Descripción: Automatizar TC-07 (campos vacíos) y TC-08 (sistólica ≤ diastólica) como tests de componente sin levantar el backend.
+Prioridad: Media
+Estado: Pendiente
+Referencia: test-cases.md#TC-07, #TC-08
+
+**BK-12 — Corrección BUG-01: ordenación no determinista mismo timestamp**
+Descripción: Dos mediciones creadas en el mismo minuto pueden aparecer en orden incorrecto. Solución propuesta: incluir segundos en `rellenarFechaActual()` (frontend) o añadir clave de orden secundaria en el servicio backend.
+Prioridad: Baja (raro en uso real)
+Estado: Pendiente
+Referencia: test-cases.md#BUG-01
+
+---
+
+## Post-MVP (no iniciar sin confirmación)
+
+**BK-13 — Registro por foto (OCR)**
+Descripción: El usuario sube una foto del tensiómetro; la app extrae los valores y los muestra editables antes de guardar.
+Prioridad: Alta (cuando se abra el siguiente sprint)
+Estado: Pendiente
+Referencia: US-02, CA-02
+
+**BK-14 — Gráficas de evolución temporal**
+Descripción: Visualizar tendencia de sistólica/diastólica a lo largo del tiempo.
+Prioridad: Media
+Estado: Pendiente
+
+**BK-15 — Autenticación con Google OAuth**
+Descripción: Login opcional para persistencia multi-dispositivo vía Google Drive.
+Prioridad: Media
+Estado: Pendiente
+
+**BK-16 — Persistencia en Google Drive**
+Descripción: Adaptador de persistencia alternativo al fichero JSON local.
+Prioridad: Media
+Estado: Pendiente
+
+**BK-17 — Recordatorios / notificaciones**
+Descripción: Alertar al usuario para tomar la tensión periódicamente.
+Prioridad: Baja
+Estado: Pendiente
