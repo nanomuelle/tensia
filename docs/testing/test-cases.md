@@ -73,7 +73,7 @@ Cuando: el usuario pulsa "Guardar" sin rellenar ningún campo
 Entonces: se muestran mensajes de error inline en sistólica, diastólica y fecha; no se llama al backend
 Tipo: Componente frontend
 Prioridad: Alta
-Estado: ❌ Sin test automatizado — pendiente
+Estado: ✅ Cubierto — `apps/frontend/tests/formulario.test.js` (5 tests, jsdom)
 
 ---
 
@@ -83,7 +83,7 @@ Cuando: el usuario introduce `systolic: 70, diastolic: 80` y pulsa "Guardar"
 Entonces: aparece error inline en sistólica; no se llama al backend
 Tipo: Componente frontend
 Prioridad: Alta
-Estado: ❌ Sin test automatizado — pendiente
+Estado: ✅ Cubierto — `apps/frontend/tests/formulario.test.js` (4 tests, jsdom)
 
 ---
 
