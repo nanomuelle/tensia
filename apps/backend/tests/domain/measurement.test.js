@@ -3,15 +3,16 @@
  */
 
 import { describe, test, expect } from '@jest/globals';
-import { validateMeasurement } from '../../src/domain/measurement.js';
+import { validateMeasurement, MEASUREMENT_LIMITS } from '../../src/domain/measurement.js';
+
+// Datos base válidos reutilizables (nivel de módulo para ser accesibles en todos los describe)
+const datosValidos = {
+  systolic: 120,
+  diastolic: 80,
+  measuredAt: '2026-02-18T10:00:00.000Z',
+};
 
 describe('validateMeasurement', () => {
-  // Datos base válidos reutilizables
-  const datosValidos = {
-    systolic: 120,
-    diastolic: 80,
-    measuredAt: '2026-02-18T10:00:00.000Z',
-  };
 
   // --- Casos válidos ---
 
@@ -124,5 +125,98 @@ describe('validateMeasurement', () => {
     expect(() =>
       validateMeasurement({ ...datosValidos, measuredAt: '2026-02-18T10:00:00Z' }),
     ).not.toThrow();
+  });
+});
+
+// =========================================================
+// TC-12 — Rangos clínicamente plausibles (OMS / NHS)
+// sistólica [50, 300] mmHg · diastólica [30, 200] mmHg · pulso [20, 300] bpm
+// =========================================================
+
+describe('TC-12 — rangos clínicos: sistólica [50-300 mmHg]', () => {
+  const { min: sysMin, max: sysMax } = MEASUREMENT_LIMITS.systolic;
+
+  test(`acepta sistólica en el límite inferior (${sysMin})`, () => {
+    expect(() =>
+      validateMeasurement({ ...datosValidos, systolic: sysMin, diastolic: 30 }),
+    ).not.toThrow();
+  });
+
+  test(`acepta sistólica en el límite superior (${sysMax})`, () => {
+    expect(() =>
+      validateMeasurement({ ...datosValidos, systolic: sysMax, diastolic: 80 }),
+    ).not.toThrow();
+  });
+
+  test(`rechaza sistólica por debajo del mínimo (${sysMin - 1})`, () => {
+    expect(() =>
+      validateMeasurement({ ...datosValidos, systolic: sysMin - 1, diastolic: 30 }),
+    ).toThrow(`${sysMin}`);
+  });
+
+  test(`rechaza sistólica por encima del máximo (${sysMax + 1})`, () => {
+    expect(() =>
+      validateMeasurement({ ...datosValidos, systolic: sysMax + 1, diastolic: 80 }),
+    ).toThrow(`${sysMax}`);
+  });
+});
+
+describe('TC-12 — rangos clínicos: diastólica [30-200 mmHg]', () => {
+  const { min: diaMin, max: diaMax } = MEASUREMENT_LIMITS.diastolic;
+
+  test(`acepta diastólica en el límite inferior (${diaMin})`, () => {
+    expect(() =>
+      validateMeasurement({ ...datosValidos, systolic: 60, diastolic: diaMin }),
+    ).not.toThrow();
+  });
+
+  test(`acepta diastólica en el límite superior (${diaMax})`, () => {
+    expect(() =>
+      validateMeasurement({ ...datosValidos, systolic: 250, diastolic: diaMax }),
+    ).not.toThrow();
+  });
+
+  test(`rechaza diastólica por debajo del mínimo (${diaMin - 1})`, () => {
+    expect(() =>
+      validateMeasurement({ ...datosValidos, systolic: 60, diastolic: diaMin - 1 }),
+    ).toThrow(`${diaMin}`);
+  });
+
+  test(`rechaza diastólica por encima del máximo (${diaMax + 1})`, () => {
+    expect(() =>
+      validateMeasurement({ ...datosValidos, systolic: 250, diastolic: diaMax + 1 }),
+    ).toThrow(`${diaMax}`);
+  });
+});
+
+describe('TC-12 — rangos clínicos: pulso [20-300 bpm]', () => {
+  const { min: pulMin, max: pulMax } = MEASUREMENT_LIMITS.pulse;
+
+  test(`acepta pulso en el límite inferior (${pulMin})`, () => {
+    expect(() =>
+      validateMeasurement({ ...datosValidos, pulse: pulMin }),
+    ).not.toThrow();
+  });
+
+  test(`acepta pulso en el límite superior (${pulMax})`, () => {
+    expect(() =>
+      validateMeasurement({ ...datosValidos, pulse: pulMax }),
+    ).not.toThrow();
+  });
+
+  test(`rechaza pulso por debajo del mínimo (${pulMin - 1})`, () => {
+    expect(() =>
+      validateMeasurement({ ...datosValidos, pulse: pulMin - 1 }),
+    ).toThrow(`${pulMin}`);
+  });
+
+  test(`rechaza pulso por encima del máximo (${pulMax + 1})`, () => {
+    expect(() =>
+      validateMeasurement({ ...datosValidos, pulse: pulMax + 1 }),
+    ).toThrow(`${pulMax}`);
+  });
+
+  test('no valida pulso cuando no se proporciona (campo opcional)', () => {
+    expect(() => validateMeasurement({ ...datosValidos })).not.toThrow();
   });
 });

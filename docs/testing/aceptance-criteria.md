@@ -13,6 +13,7 @@ Cada criterio es verificable de forma objetiva. Un criterio no está "aceptado" 
 | CA-04 | Listado de mediciones | ✅ | E2E ✅ (TC-10) |
 | CA-05 | Sin errores críticos en flujo principal | ✅ | E2E ✅ (TC-11) |
 | CA-06 | Validaciones del formulario manual | ✅ | Componente ✅ (TC-07, TC-08) |
+| CA-07 | Rangos clínicos en validaciones     | ✅ | ✅ (TC-12)                    |
 
 ---
 
@@ -86,3 +87,27 @@ Cada criterio es verificable de forma objetiva. Un criterio no está "aceptado" 
 4. Al corregir un campo con error y empezar a escribir → el error desaparece inmediatamente.
 
 **Estado:** ✅ Implementado — ✅ Test de componente automatizado (TC-07, TC-08 en `formulario.test.js`)
+
+---
+
+## CA-07 — Rangos clínicamente plausibles (OMS / NHS)
+
+Los umbrales se basan en las guías de la **OMS** (*Hypertension Fact Sheet*, sept. 2025) y el **NHS** (*Blood pressure test*, nov. 2025).
+
+**Verificable cuando:**
+1. Al enviar `systolic` < 50 mmHg → error inline "La sistólica debe estar entre 50 y 300 mmHg."; no se llama al backend.
+2. Al enviar `systolic` > 300 mmHg → mismo error.
+3. Al enviar `diastolic` < 30 mmHg → error inline "La diastólica debe estar entre 30 y 200 mmHg."; no se llama al backend.
+4. Al enviar `diastolic` > 200 mmHg → mismo error.
+5. Al enviar `pulse` < 20 bpm → error inline "El pulso debe estar entre 20 y 300 bpm."; no se llama al backend.
+6. Al enviar `pulse` > 300 bpm → mismo error.
+7. El backend devuelve `400 Bad Request` con mensaje descriptivo ante cualquiera de los casos anteriores, incluso si el frontend los deja pasar.
+
+**Rangos de referencia:**
+| Campo      | Mín. | Máx. | Unidad |
+|------------|------|------|--------|
+| sistólica  | 50   | 300  | mmHg   |
+| diastólica | 30   | 200  | mmHg   |
+| pulso      | 20   | 300  | bpm    |
+
+**Estado:** ✅ Implementado (backend y frontend) — ✅ Unitario automatizado (TC-12, `measurement.test.js` + `validators.test.js`)

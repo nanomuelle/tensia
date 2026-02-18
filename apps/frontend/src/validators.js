@@ -5,7 +5,18 @@
  *
  * La validación de negocio definitiva siempre la aplica el backend (400).
  * Este módulo solo evita peticiones innecesarias con datos manifiestamente inválidos.
+ *
+ * Rangos clínicamente plausibles basados en:
+ *   - OMS (WHO) — Hypertension Fact Sheet (sept. 2025)
+ *   - NHS — Blood pressure test (nov. 2025)
  */
+
+/** Límites fisiológicamente posibles para automedición doméstica. */
+export const MEASUREMENT_LIMITS = {
+  systolic:  { min: 50,  max: 300 }, // mmHg
+  diastolic: { min: 30,  max: 200 }, // mmHg
+  pulse:     { min: 20,  max: 300 }, // bpm
+};
 
 /**
  * Valida los valores del formulario de registro manual.
@@ -24,6 +35,11 @@ export function validarCamposMedicion({ systolic, diastolic, pulse, measuredAt }
     errores.systolic = 'La sistólica es obligatoria.';
   } else if (!Number.isInteger(Number(sys)) || Number(sys) <= 0) {
     errores.systolic = 'Introduce un número entero positivo.';
+  } else {
+    const { min, max } = MEASUREMENT_LIMITS.systolic;
+    if (Number(sys) < min || Number(sys) > max) {
+      errores.systolic = `La sistólica debe estar entre ${min} y ${max} mmHg.`;
+    }
   }
 
   // --- Diastólica ---
@@ -32,6 +48,11 @@ export function validarCamposMedicion({ systolic, diastolic, pulse, measuredAt }
     errores.diastolic = 'La diastólica es obligatoria.';
   } else if (!Number.isInteger(Number(dia)) || Number(dia) <= 0) {
     errores.diastolic = 'Introduce un número entero positivo.';
+  } else {
+    const { min, max } = MEASUREMENT_LIMITS.diastolic;
+    if (Number(dia) < min || Number(dia) > max) {
+      errores.diastolic = `La diastólica debe estar entre ${min} y ${max} mmHg.`;
+    }
   }
 
   // --- Sistólica > Diastólica (solo si ambas son individualmente válidas) ---
@@ -41,8 +62,15 @@ export function validarCamposMedicion({ systolic, diastolic, pulse, measuredAt }
 
   // --- Pulso (opcional) ---
   const pul = pulse.trim();
-  if (pul && (!Number.isInteger(Number(pul)) || Number(pul) <= 0)) {
-    errores.pulse = 'Introduce un número entero positivo.';
+  if (pul) {
+    if (!Number.isInteger(Number(pul)) || Number(pul) <= 0) {
+      errores.pulse = 'Introduce un número entero positivo.';
+    } else {
+      const { min, max } = MEASUREMENT_LIMITS.pulse;
+      if (Number(pul) < min || Number(pul) > max) {
+        errores.pulse = `El pulso debe estar entre ${min} y ${max} bpm.`;
+      }
+    }
   }
 
   // --- Fecha ---

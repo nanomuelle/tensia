@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect } from '@jest/globals';
-import { validarCamposMedicion, prepararDatosMedicion } from '../src/validators.js';
+import { validarCamposMedicion, prepararDatosMedicion, MEASUREMENT_LIMITS } from '../src/validators.js';
 
 // Valores base válidos reutilizables
 const camposValidos = {
@@ -140,6 +140,94 @@ describe('validarCamposMedicion — errores múltiples simultáneos', () => {
     // El error de sistólica es por valor inválido, no por la relación
     expect(errores.systolic).toBeDefined();
     expect(errores.diastolic).toBeDefined();
+  });
+});
+
+// =========================================================
+// TC-12 — Rangos clínicamente plausibles (OMS / NHS)
+// sistólica [50, 300] mmHg · diastólica [30, 200] mmHg · pulso [20, 300] bpm
+// =========================================================
+
+describe('TC-12 — rangos clínicos: sistólica [50-300 mmHg]', () => {
+  const { min: sysMin, max: sysMax } = MEASUREMENT_LIMITS.systolic;
+
+  test(`sin error con sistólica en el límite inferior (${sysMin})`, () => {
+    const errores = validarCamposMedicion({ ...camposValidos, systolic: String(sysMin), diastolic: '30' });
+    expect(errores.systolic).toBeUndefined();
+  });
+
+  test(`sin error con sistólica en el límite superior (${sysMax})`, () => {
+    const errores = validarCamposMedicion({ ...camposValidos, systolic: String(sysMax), diastolic: '80' });
+    expect(errores.systolic).toBeUndefined();
+  });
+
+  test(`error si sistólica está por debajo del mínimo (${sysMin - 1})`, () => {
+    const errores = validarCamposMedicion({ ...camposValidos, systolic: String(sysMin - 1), diastolic: '30' });
+    expect(errores.systolic).toBeDefined();
+    expect(errores.systolic).toMatch(String(sysMin));
+  });
+
+  test(`error si sistólica está por encima del máximo (${sysMax + 1})`, () => {
+    const errores = validarCamposMedicion({ ...camposValidos, systolic: String(sysMax + 1), diastolic: '80' });
+    expect(errores.systolic).toBeDefined();
+    expect(errores.systolic).toMatch(String(sysMax));
+  });
+});
+
+describe('TC-12 — rangos clínicos: diastólica [30-200 mmHg]', () => {
+  const { min: diaMin, max: diaMax } = MEASUREMENT_LIMITS.diastolic;
+
+  test(`sin error con diastólica en el límite inferior (${diaMin})`, () => {
+    const errores = validarCamposMedicion({ ...camposValidos, systolic: '60', diastolic: String(diaMin) });
+    expect(errores.diastolic).toBeUndefined();
+  });
+
+  test(`sin error con diastólica en el límite superior (${diaMax})`, () => {
+    const errores = validarCamposMedicion({ ...camposValidos, systolic: '250', diastolic: String(diaMax) });
+    expect(errores.diastolic).toBeUndefined();
+  });
+
+  test(`error si diastólica está por debajo del mínimo (${diaMin - 1})`, () => {
+    const errores = validarCamposMedicion({ ...camposValidos, systolic: '60', diastolic: String(diaMin - 1) });
+    expect(errores.diastolic).toBeDefined();
+    expect(errores.diastolic).toMatch(String(diaMin));
+  });
+
+  test(`error si diastólica está por encima del máximo (${diaMax + 1})`, () => {
+    const errores = validarCamposMedicion({ ...camposValidos, systolic: '250', diastolic: String(diaMax + 1) });
+    expect(errores.diastolic).toBeDefined();
+    expect(errores.diastolic).toMatch(String(diaMax));
+  });
+});
+
+describe('TC-12 — rangos clínicos: pulso [20-300 bpm]', () => {
+  const { min: pulMin, max: pulMax } = MEASUREMENT_LIMITS.pulse;
+
+  test(`sin error con pulso en el límite inferior (${pulMin})`, () => {
+    const errores = validarCamposMedicion({ ...camposValidos, pulse: String(pulMin) });
+    expect(errores.pulse).toBeUndefined();
+  });
+
+  test(`sin error con pulso en el límite superior (${pulMax})`, () => {
+    const errores = validarCamposMedicion({ ...camposValidos, pulse: String(pulMax) });
+    expect(errores.pulse).toBeUndefined();
+  });
+
+  test(`error si pulso está por debajo del mínimo (${pulMin - 1})`, () => {
+    const errores = validarCamposMedicion({ ...camposValidos, pulse: String(pulMin - 1) });
+    expect(errores.pulse).toBeDefined();
+    expect(errores.pulse).toMatch(String(pulMin));
+  });
+
+  test(`error si pulso está por encima del máximo (${pulMax + 1})`, () => {
+    const errores = validarCamposMedicion({ ...camposValidos, pulse: String(pulMax + 1) });
+    expect(errores.pulse).toBeDefined();
+    expect(errores.pulse).toMatch(String(pulMax));
+  });
+
+  test('sin error si pulso está vacío (campo opcional, no se valida rango)', () => {
+    const errores = validarCamposMedicion({ ...camposValidos, pulse: '' });
+    expect(errores.pulse).toBeUndefined();
   });
 });
 

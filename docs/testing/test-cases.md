@@ -148,3 +148,21 @@ Entonces: se muestra el banner de error con el botón "Reintentar"
 Tipo: E2E
 Prioridad: Media
 Estado: ✅ Cubierto — `apps/frontend/tests/e2e/flows/error-backend.spec.js` (5 tests, Playwright)
+
+---
+
+**[TC-12] — Rangos clínicamente plausibles (OMS / NHS)**
+Dado: el servidor / validador del formulario está activo
+Cuando: se envían valores fuera de los rangos clínicos para sistólica, diastólica o pulso
+Entonces:
+Fichero	Tests nuevos
+measurement.test.js	13 (4 sistólica · 4 diastólica · 5 pulso)
+validators.test.js
+  - `systolic` < 50 o > 300 → error con mención al límite correspondiente
+  - `diastolic` < 30 o > 200 → error con mención al límite correspondiente
+  - `pulse` < 20 o > 300 → error con mención al límite correspondiente
+  - Los valores en los límites exactos (50, 300, 30, 200, 20, 300) son aceptados sin error
+Tipo: Unitario (backend dominio + frontend validadores)
+Prioridad: Alta
+Estado: ✅ Cubierto — `apps/backend/tests/domain/measurement.test.js` (13 tests) · `apps/frontend/tests/validators.test.js` (13 tests)
+Fuente: OMS — *Hypertension Fact Sheet* (sept. 2025) · NHS — *Blood pressure test* (nov. 2025)
