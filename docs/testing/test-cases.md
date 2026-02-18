@@ -113,4 +113,4 @@ Cuando: la app intenta cargar el historial
 Entonces: se muestra el banner de error con el botón "Reintentar"
 Tipo: E2E
 Prioridad: Media
-Estado: 🔧 Estructura lista — `apps/frontend/tests/e2e/flows/error-backend.spec.js` (spec por implementar, ADR-004)
+Estado: ✅ Cubierto — `apps/frontend/tests/e2e/flows/error-backend.spec.js` (5 tests, Playwright)
