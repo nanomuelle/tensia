@@ -1,0 +1,8 @@
+node_modules
+.env
+dist
+coverage
+data/measurements.json
+data/measurements.e2e.json
+playwright-report/
+test-results/
