@@ -103,7 +103,7 @@ Cuando: el usuario abre la app
 Entonces: se muestra el mensaje "Sin mediciones todavía" y el botón "Nueva medición"
 Tipo: E2E
 Prioridad: Media
-Estado: 🔧 Estructura lista — `apps/frontend/tests/e2e/flows/estado-vacio.spec.js` (spec por implementar, ADR-004)
+Estado: ✅ Cubierto — `apps/frontend/tests/e2e/flows/estado-vacio.spec.js` (3 tests, Playwright)
 
 ---
 
