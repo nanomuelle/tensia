@@ -13,9 +13,18 @@
  *   Esto hace que fetch() rechace la promesa y el frontend llame a mostrarError().
  */
 import { test, expect } from '@playwright/test';
+import { rm } from 'node:fs/promises';
+import path from 'node:path';
 import { SELECTORS } from '../helpers/pageObjects.js';
 
+const DATA_E2E = path.resolve(process.cwd(), 'data/measurements.e2e.json');
+
 test.describe('TC-11 — Banner de error si el backend no responde', () => {
+  test.beforeEach(async () => {
+    // Limpiar datos para garantizar que, cuando el backend responde realmente,
+    // lo hace con el almacén vacío (necesario en el test de reintento exitoso).
+    await rm(DATA_E2E, { force: true });
+  });
   test('muestra #estado-error cuando GET /measurements falla por red', async ({ page }) => {
     // Intercepta la llamada al API y aborta la conexión (simula backend caído)
     await page.route('**/measurements', (route) => route.abort('failed'));

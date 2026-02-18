@@ -93,7 +93,37 @@ Cuando: el usuario abre el formulario, introduce valores válidos y pulsa "Guard
 Entonces: el formulario se cierra, la medición aparece al inicio del historial, sin recargar la página
 Tipo: E2E
 Prioridad: Alta
-Estado: 🔧 Estructura lista — `apps/frontend/tests/e2e/flows/registro-manual.spec.js` (spec por implementar, ADR-004)
+Estado: ✅ Cubierto — `apps/frontend/tests/e2e/flows/registro-manual.spec.js` (6 tests, Playwright)
+Nota: el test de ordenación usa fechas explícitas para sortear BUG-01
+
+---
+
+## Bugs detectados
+
+---
+
+**[BUG-01] — Ordenación no determinista cuando dos mediciones tienen el mismo timestamp**
+
+Pasos para reproducir:
+1. Abrir la app con el backend en marcha.
+2. Crear una primera medición (sin modificar la fecha auto-rellenada).
+3. Crear una segunda medición inmediatamente (sin modificar la fecha auto-rellenada).
+4. Observar el orden en el historial.
+
+Resultado actual: la segunda medición puede aparecer antes o después de la primera, de forma no determinista.
+
+Resultado esperado: la medición creada más recientemente aparece siempre en primer lugar.
+
+Causa raíz identificada:
+- `rellenarFechaActual()` en `apps/frontend/src/app.js` trunca la fecha a minutos (`.slice(0, 16)`). Dos mediciones creadas dentro del mismo minuto reciben el mismo `measuredAt`.
+- El sort del backend (`new Date(b.measuredAt) - new Date(a.measuredAt)`) devuelve `0` para timestamps iguales; el orden resultante es no determinista.
+
+Soluciones posibles (a decidir por el equipo):
+- **Frontend** (`app.js`): usar `.slice(0, 19)` para incluir segundos en la fecha auto-rellenada.
+- **Backend** (`measurementService.js`): añadir clave de ordenación secundaria estable (p.ej. `id` o timestamp de inserción).
+
+Severidad: Baja (solo afecta a mediciones creadas en el mismo minuto; raro en uso real)
+Afecta a: `apps/frontend/src/app.js` · `apps/backend/src/services/measurementService.js`
 
 ---
 

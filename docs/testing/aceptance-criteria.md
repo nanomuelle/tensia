@@ -1,6 +1,18 @@
 # Criterios de aceptación — MVP Tensia
 
+_Última revisión: 2026-02-18_
+
 Cada criterio es verificable de forma objetiva. Un criterio no está "aceptado" hasta que existe un test que lo valida o se ha verificado manualmente con pasos documentados.
+
+**Resumen de estado:**
+| CA | Descripción | Implementado | Test automatizado |
+|---|---|---|---|
+| CA-01 | Registro manual desde UI | ✅ | E2E ✅ (TC-09) |
+| CA-02 | Registro por foto (OCR) | ⏸ Post-MVP | ⏸ |
+| CA-03 | Persistencia tras refrescar | ✅ | E2E ✅ (TC-09) |
+| CA-04 | Listado de mediciones | ✅ | E2E ✅ (TC-10) |
+| CA-05 | Sin errores críticos en flujo principal | ✅ | E2E ✅ (TC-11) |
+| CA-06 | Validaciones del formulario manual | ✅ | ❌ Pendiente (BK-11) |
 
 ---
 
