@@ -65,15 +65,17 @@ Prioridad: Media
 Estado: Hecho — `apps/frontend/tests/formulario.test.js` (12 tests: TC-07 × 5, TC-08 × 4, CA-06 × 3)
 Referencia: test-cases.md#TC-07, #TC-08
 
+**BK-12 — Corrección BUG-01: ordenación no determinista mismo timestamp**
+Descripción: Dos mediciones creadas en el mismo minuto pueden aparecer en orden incorrecto. Solución propuesta: incluir segundos en `rellenarFechaActual()` (frontend) o añadir clave de orden secundaria en el servicio backend.
+Prioridad: Baja (raro en uso real)
+Estado: Hecho (fix frontend) — `rellenarFechaActual()` usa `.slice(0, 19)` para incluir segundos en el timestamp, eliminando la causa raíz en el caso de uso normal. El fix backend (orden secundario por `id`) queda pendiente como mejora defensiva.
+Referencia: test-cases.md#BUG-01
+
 ---
 
 ## Pendientes del MVP
 
-**BK-12 — Corrección BUG-01: ordenación no determinista mismo timestamp**
-Descripción: Dos mediciones creadas en el mismo minuto pueden aparecer en orden incorrecto. Solución propuesta: incluir segundos en `rellenarFechaActual()` (frontend) o añadir clave de orden secundaria en el servicio backend.
-Prioridad: Baja (raro en uso real)
-Estado: Pendiente
-Referencia: test-cases.md#BUG-01
+> No hay ítems pendientes en el sprint MVP. El MVP está completo.
 
 ---
 

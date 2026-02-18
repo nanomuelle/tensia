@@ -116,10 +116,12 @@ async function cargarMediciones() {
 
 /** Rellena el campo fecha con la fecha y hora actuales (formato datetime-local). */
 function rellenarFechaActual() {
-  // datetime-local requiere "YYYY-MM-DDTHH:MM" en hora local
+  // datetime-local acepta "YYYY-MM-DDTHH:MM:SS" en hora local.
+  // Se incluyen segundos para evitar timestamps idénticos entre mediciones
+  // creadas dentro del mismo minuto (BUG-01).
   const ahora = new Date();
   const local = new Date(ahora.getTime() - ahora.getTimezoneOffset() * 60000);
-  inputFecha.value = local.toISOString().slice(0, 16);
+  inputFecha.value = local.toISOString().slice(0, 19);
 }
 
 function abrirFormulario() {

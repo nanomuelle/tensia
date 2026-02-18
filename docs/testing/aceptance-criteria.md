@@ -1,6 +1,6 @@
 # Criterios de aceptación — MVP Tensia
 
-_Última revisión: 2026-02-18_
+_Última revisión: 2026-02-18 — Regresión completa ejecutada_
 
 Cada criterio es verificable de forma objetiva. Un criterio no está "aceptado" hasta que existe un test que lo valida o se ha verificado manualmente con pasos documentados.
 
@@ -26,7 +26,7 @@ Cada criterio es verificable de forma objetiva. Un criterio no está "aceptado" 
 5. La medición aparece al inicio del historial en la misma sesión sin recargar.
 6. Al recargar la página la medición sigue visible.
 
-**Estado:** ✅ Implementado — ❌ Sin test E2E automatizado
+**Estado:** ✅ Implementado — ✅ Test E2E automatizado (TC-09, `registro-manual.spec.js`)
 
 ---
 
@@ -49,7 +49,7 @@ Cada criterio es verificable de forma objetiva. Un criterio no está "aceptado" 
 2. El usuario recarga la página (F5 / Ctrl+R).
 3. La medición sigue apareciendo en el historial.
 
-**Estado:** ✅ Implementado (persistencia en JSON en disco) — ❌ Sin test E2E automatizado
+**Estado:** ✅ Implementado (persistencia en JSON en disco) — ✅ Test E2E automatizado (TC-09, `registro-manual.spec.js`)
 
 ---
 
@@ -62,7 +62,7 @@ Cada criterio es verificable de forma objetiva. Un criterio no está "aceptado" 
 4. Se muestran: fecha formateada, sistólica/diastólica en mmHg, pulso si existe.
 5. Si no hay mediciones, se muestra el mensaje "Sin mediciones todavía".
 
-**Estado:** ✅ Implementado — ❌ Sin test de componente automatizado
+**Estado:** ✅ Implementado — ✅ Test E2E automatizado (TC-10, `estado-vacio.spec.js`)
 
 ---
 
@@ -73,7 +73,7 @@ Cada criterio es verificable de forma objetiva. Un criterio no está "aceptado" 
 2. Si el backend no está disponible, la app muestra un mensaje de error y no se rompe.
 3. Si el usuario envía datos inválidos, aparecen mensajes de error y la app no se queda bloqueada.
 
-**Estado:** ✅ Implementado — ❌ Sin test E2E automatizado
+**Estado:** ✅ Implementado — ✅ Test E2E automatizado (TC-11, `error-backend.spec.js`)
 
 ---
 
@@ -85,4 +85,4 @@ Cada criterio es verificable de forma objetiva. Un criterio no está "aceptado" 
 3. Al enviar con pulso decimal (ej. 72.5) → error inline; no se llama al backend.
 4. Al corregir un campo con error y empezar a escribir → el error desaparece inmediatamente.
 
-**Estado:** ✅ Implementado — ❌ Sin test de componente automatizado
+**Estado:** ✅ Implementado — ✅ Test de componente automatizado (TC-07, TC-08 en `formulario.test.js`)

@@ -125,6 +125,10 @@ Soluciones posibles (a decidir por el equipo):
 Severidad: Baja (solo afecta a mediciones creadas en el mismo minuto; raro en uso real)
 Afecta a: `apps/frontend/src/app.js` · `apps/backend/src/services/measurementService.js`
 
+**Estado resolución:**
+- ✅ Fix frontend aplicado: `rellenarFechaActual()` usa `.slice(0, 19)` → el campo fecha incluye segundos, por lo que dos mediciones creadas de forma consecutiva tendrán timestamps distintos en el uso normal.
+- ⏳ Fix backend pendiente (mejora defensiva): añadir clave secundaria de ordenación por `id` en `measurementService.js` para cubrir el caso de timestamps enviados explícitamente iguales. Pendiente de decisión del equipo backend.
+
 ---
 
 **[TC-10] — Estado vacío en primera carga**

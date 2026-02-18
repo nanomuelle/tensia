@@ -8,12 +8,12 @@
 | Integración API | Jest + supertest | `apps/backend/tests/api/` | ✅ Implementado |
 | Unitario frontend | Jest + jsdom | `apps/frontend/tests/` | ✅ Implementado |
 | Componente frontend | Por decidir | `apps/frontend/tests/` | ❌ Pendiente |
-| E2E | Playwright | `apps/frontend/tests/e2e/` | 🔧 Estructura lista, specs por implementar |
+| E2E | Playwright | `apps/frontend/tests/e2e/` | ✅ Implementado (14 tests, 3 flujos) |
 
 ## Cobertura
 
 - **Mínima objetivo:** 70 % líneas (Jest, backend + frontend/src)
-- **Estado actual:** 96.39 % global (89 tests)
+- **Estado actual:** 94.82 % statements / 96 % branches (101 tests Jest + 14 tests E2E)
 - Los tests E2E (Playwright) **no** computan en la cobertura Jest
 
 ## Estrategia E2E (ADR-004)
