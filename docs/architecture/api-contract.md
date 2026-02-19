@@ -1,69 +1,71 @@
 # API Contract
 
-_Última revisión: 2026-02-19 — Actualizado para reflejar ADR-005_
+_Última revisión: 2026-02-19 — Reescrito para reflejar ADR-005_
 
-> ⚠️ **Contexto de uso:** Con ADR-005, estos endpoints **no se usan en producción MVP**.
-> Los datos viven en `localStorage` del cliente; no hay llamadas HTTP para datos en el flujo de usuario anónimo.
-> Estos endpoints se mantienen **únicamente** para entornos de desarrollo y tests de integración (`jsonFileAdapter` + supertest).
+## Contexto
 
-## GET /measurements
+Con **ADR-005**, el backend MVP no gestiona datos de mediciones. Su único rol es servir los ficheros estáticos del frontend. **No existen endpoints HTTP de datos en producción.**
 
-Devuelve todas las mediciones ordenadas por `measuredAt` descendente.
-
-Response `200 OK`:
-```json
-[
-  {
-    "id": "uuid-v4",
-    "systolic": 120,
-    "diastolic": 80,
-    "pulse": 72,
-    "measuredAt": "2026-02-18T10:00:00.000Z",
-    "source": "manual"
-  }
-]
-```
+Los datos viven exclusivamente en el cliente (`localStorage`). El contrato de acceso a datos es la **interfaz del adaptador de persistencia**, no una API REST.
 
 ---
 
-## POST /measurements
+## Contrato del adaptador de persistencia (cliente)
 
-Crea una nueva medición. Los datos son validados en la capa de dominio antes de persistirse.
+Todo adaptador de persistencia del frontend debe implementar esta interfaz:
 
-Request body:
-```json
-{
-  "systolic": 120,
-  "diastolic": 80,
-  "pulse": 72,
-  "measuredAt": "2026-02-18T10:00:00.000Z"
-}
+```js
+adapter.getAll()                           → Promise<Measurement[]>
+adapter.save(measurements: Measurement[]) → Promise<void>
 ```
 
-Response `201 Created`:
-```json
-{
-  "id": "uuid-v4",
-  "systolic": 120,
-  "diastolic": 80,
-  "pulse": 72,
-  "measuredAt": "2026-02-18T10:00:00.000Z",
-  "source": "manual"
-}
-```
+### Implementaciones
 
-Response `400 Bad Request` — cuando los datos no superan la validación:
-```json
-{ "error": "Mensaje descriptivo del error de validación." }
-```
+| Adaptador | Entorno | Ubicación |
+|---|---|---|
+| `localStorageAdapter` | Producción MVP (usuario anónimo) | `apps/frontend/src/infra/localStorageAdapter.js` |
+| `googleDriveAdapter` | Post-MVP (usuario autenticado) | `apps/frontend/src/infra/googleDriveAdapter.js` |
+| `JsonFileAdapter` | Desarrollo y tests de integración | `apps/backend/src/infra/jsonFileAdapter.js` |
 
-### Reglas de validación del POST
+El `measurementService` del frontend recibe el adaptador por inyección de dependencias y nunca lo instancia directamente.
 
-| Campo        | Obligatorio | Tipo             | Rango válido          | Regla adicional                    |
-|--------------|:-----------:|------------------|-----------------------|------------------------------------|
-| `systolic`   | ✅          | entero positivo  | 50 – 300 mmHg         | Debe ser > `diastolic`             |
-| `diastolic`  | ✅          | entero positivo  | 30 – 200 mmHg         | Debe ser < `systolic`              |
-| `pulse`      | ❌          | entero positivo  | 20 – 300 bpm          | Solo validado si está presente     |
-| `measuredAt` | ✅          | string ISO 8601  | —                     | Fecha/hora válida                  |
+---
+
+## Endpoints HTTP del backend (MVP)
+
+El backend expone únicamente recursos estáticos:
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/*` | Sirve los ficheros estáticos del frontend (`apps/frontend/public/`, `apps/frontend/src/`) |
+
+No hay endpoints REST de datos activos en producción.
+
+---
+
+## Endpoints HTTP post-MVP (planificados)
+
+Se añadirán cuando se implemente autenticación y OCR (ver `decisions.md` ADR-005):
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/auth/token` | Proxy OAuth 2.0 — intercambia código por token custodiando el `client_secret` |
+| `POST` | `/ocr` | Extrae valores de tensión de una imagen de tensiómetro |
+
+El contrato detallado de estos endpoints se documentará en este fichero cuando se planifiquen.
+
+---
+
+## Reglas de validación de mediciones (dominio del cliente)
+
+La validación reside en `apps/frontend/src/domain/measurement.js` y `apps/frontend/src/validators.js`.
+
+| Campo | Obligatorio | Tipo | Rango válido | Regla adicional |
+|---|:---:|---|---|---|
+| `systolic` | ✅ | entero positivo | 50 – 300 mmHg | Debe ser > `diastolic` |
+| `diastolic` | ✅ | entero positivo | 30 – 200 mmHg | Debe ser < `systolic` |
+| `pulse` | ❌ | entero positivo | 20 – 300 bpm | Solo validado si está presente |
+| `measuredAt` | ✅ | string ISO 8601 | — | Fecha/hora válida |
+| `source` | ✅ (auto) | enum | `manual` \| `photo` | Asignado por el servicio, no por el usuario |
 
 Los rangos se basan en las guías de la OMS y el NHS (ver `data-model.md`).
