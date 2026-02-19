@@ -1,11 +1,15 @@
 /**
  * Lógica de la interfaz — pantalla principal de Tensia.
- * Orquesta el DOM, gestiona los estados de la UI y delega todas las
- * llamadas al backend al módulo api.js.
+ * Orquesta el DOM, gestiona los estados de la UI y delega la persistencia
+ * al servicio local (ADR-005): en sesión anónima usa localStorageAdapter.
  */
 
-import { getMediciones, crearMedicion } from './api.js';
+import * as adapter from './infra/localStorageAdapter.js';
+import { createMeasurementService } from './services/measurementService.js';
 import { validarCamposMedicion, prepararDatosMedicion } from './validators.js';
+
+// Servicio con adaptador inyectado (anónimo → localStorage)
+const service = createMeasurementService(adapter);
 
 // --- Formato de fecha localizado ---
 const formatearFecha = new Intl.DateTimeFormat('es', {
@@ -99,7 +103,7 @@ function mostrarLista(mediciones) {
 async function cargarMediciones() {
   mostrarCargando();
   try {
-    const mediciones = await getMediciones();
+    const mediciones = await service.listAll();
     if (mediciones.length === 0) {
       mostrarVacio();
     } else {
@@ -213,11 +217,11 @@ async function enviarFormulario(evento) {
   btnGuardar.textContent = 'Guardando…';
 
   try {
-    await crearMedicion(datos);
+    await service.create(datos);
     cerrarFormulario();
     await cargarMediciones();
   } catch (error) {
-    // Error de validación del backend (400) u otro error de red
+    // Error de validación de dominio u otro error
     errorFormulario.textContent = error.message;
     errorFormulario.hidden = false;
   } finally {

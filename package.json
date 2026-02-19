@@ -43,7 +43,10 @@
       "apps/backend/src/**/*.js",
       "!apps/backend/src/index.js",
       "apps/frontend/src/validators.js",
-      "apps/frontend/src/api.js"
+      "apps/frontend/src/api.js",
+      "apps/frontend/src/infra/localStorageAdapter.js",
+      "apps/frontend/src/domain/measurement.js",
+      "apps/frontend/src/services/measurementService.js"
     ],
     "coverageThreshold": {
       "global": {

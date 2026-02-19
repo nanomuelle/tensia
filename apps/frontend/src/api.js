@@ -1,7 +1,15 @@
 /**
- * Módulo de acceso al backend de Tensia.
- * Centraliza todas las llamadas HTTP para que el resto de la UI no conozca URLs ni fetch directamente.
- * El frontend nunca accede a Local Storage ni a ninguna capa de persistencia; solo habla con este módulo.
+ * Módulo de acceso HTTP al backend de Tensia.
+ *
+ * ⚠️  USO SOLO EN DESARROLLO Y TESTS (ADR-005)
+ * Con ADR-005, en producción MVP los datos viven en localStorage del cliente.
+ * Este módulo ya no se usa en los flujos de la UI de producción.
+ * Se mantiene para:
+ *   - Tests de integración con el backend (api.test.js)
+ *   - Entornos de desarrollo donde se quiere inspeccionar la API REST directamente
+ *   - Compatibilidad con posibles herramientas de depuración
+ *
+ * Post-MVP (usuario autenticado): será sustituido por googleDriveAdapter.
  */
 
 const BASE_URL = 'http://localhost:3000';

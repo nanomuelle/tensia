@@ -141,12 +141,15 @@ Estado: ✅ Cubierto — `apps/frontend/tests/e2e/flows/estado-vacio.spec.js` (3
 
 ---
 
-**[TC-11] — Banner de error si el backend no responde**
-Dado: el backend está caído
-Cuando: la app intenta cargar el historial
-Entonces: se muestra el banner de error con el botón "Reintentar"
+**[TC-11] — Banner de error si el almacenamiento local falla**
+Dado: `localStorage.getItem` lanza una excepción (almacenamiento bloqueado o no disponible)
+Cuando: la app intenta cargar el historial al arrancar
+Entonces: se muestra el banner `#estado-error` con el botón "Reintentar";
+  el botón "Reintentar" repite la lectura (muestra estado vacío si ya funciona, error si sigue fallando)
 Tipo: E2E
 Prioridad: Media
+Nota: Actualizado en ADR-005 — la arquitectura MVP usa `localStorageAdapter`; ya no hay llamada HTTP a `/measurements`.
+  La simulación de fallo se realiza con `page.addInitScript()` sobreescribiendo `Storage.prototype.getItem`.
 Estado: ✅ Cubierto — `apps/frontend/tests/e2e/flows/error-backend.spec.js` (5 tests, Playwright)
 
 ---

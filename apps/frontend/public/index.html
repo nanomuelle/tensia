@@ -4,9 +4,35 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tensia</title>
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- Meta tags para instalación en iOS (Safari no usa el manifest para esto) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Tensia" />
+    <meta name="theme-color" content="#2563eb" />
+
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <!-- Aviso informativo Safari/iOS: localStorage puede borrarse tras 7 días de inactividad (ITP) -->
+    <!-- Se muestra solo en iOS/Safari mediante JS inline; se oculta por defecto con hidden -->
+    <div
+      id="aviso-ios"
+      class="aviso-ios"
+      role="alert"
+      aria-live="polite"
+      hidden
+    >
+      <span>⚠️ En Safari/iOS los datos pueden borrarse si no usas la app durante 7 días.</span>
+      <button
+        id="btn-cerrar-aviso-ios"
+        class="aviso-ios__cerrar"
+        aria-label="Cerrar aviso"
+      >✕</button>
+    </div>
     <!-- Header fijo -->
     <header class="header">
       <span class="header__logo" aria-hidden="true">🩺</span>
@@ -119,7 +145,7 @@
             <span id="error-fecha" class="campo__error" role="alert" hidden></span>
           </div>
 
-          <!-- Error global del formulario (respuesta del backend) -->
+          <!-- Error global del formulario (validación de dominio o error inesperado) -->
           <div id="error-formulario" class="formulario__error" role="alert" hidden></div>
 
           <!-- Acciones -->
@@ -179,6 +205,27 @@
       </section>
     </main>
 
-    <script type="module" src="../src/app.js"></script>
+    <script type="module" src="/src/app.js"></script>
+
+    <!-- Registro del Service Worker y lógica del aviso iOS -->
+    <script>
+      // Registro del SW (solo si el navegador lo soporta)
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch((err) => {
+          console.warn('[Tensia] No se pudo registrar el Service Worker:', err);
+        });
+      }
+
+      // Aviso informativo en Safari/iOS (política ITP: datos borrados tras 7 días de inactividad)
+      const esIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
+      const esSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      if (esIOS || esSafari) {
+        const aviso = document.getElementById('aviso-ios');
+        if (aviso) aviso.hidden = false;
+      }
+      document.getElementById('btn-cerrar-aviso-ios')?.addEventListener('click', () => {
+        document.getElementById('aviso-ios').hidden = true;
+      });
+    </script>
   </body>
 </html>

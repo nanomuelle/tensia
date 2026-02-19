@@ -24,22 +24,24 @@ const FRONTEND_ROOT = path.resolve(__dirname, '..', '..', '..', '..', 'apps', 'f
 export function createApp(adapter) {
   const app = express();
 
-  // --- Servicio de ficheros estáticos del frontend (solo en modo E2E/desarrollo) ---
-  // Activado con SERVE_STATIC=true para que Playwright pueda cargar el frontend
-  // desde el mismo origen que la API, sin configuración CORS adicional.
-  // Se necesitan dos rutas:
+  // --- Servicio de ficheros estáticos del frontend ---
+  // Con ADR-005, el backend sirve siempre los ficheros estáticos del frontend.
+  // Su rol en producción MVP es exclusivamente este.
+  // Se necesitan dos montajes:
   //   1. apps/frontend/public/ → sirve index.html, styles.css en http://localhost:3000/
-  //   2. apps/frontend/        → sirve src/app.js, src/api.js, src/validators.js
-  //      (el HTML los referencia como ../src/app.js → el navegador resuelve /src/app.js)
-  if (process.env.SERVE_STATIC === 'true') {
-    app.use(express.static(path.join(FRONTEND_ROOT, 'public')));
-    app.use(express.static(FRONTEND_ROOT));
-  }
+  //   2. apps/frontend/        → sirve src/app.js, src/infra/*, src/domain/*, src/services/*
+  //      (el HTML los referencia como /src/app.js → el navegador resuelve /src/app.js)
+  // La variable SERVE_STATIC=true se mantiene para compatibilidad con Playwright (ADR-004),
+  // pero en producción ya no es necesaria porque siempre está activo.
+  app.use(express.static(path.join(FRONTEND_ROOT, 'public')));
+  app.use(express.static(FRONTEND_ROOT));
 
   // --- Middlewares globales ---
   app.use(express.json());
 
-  // CORS básico: permite peticiones desde cualquier origen (suficiente para MVP local)
+  // CORS: solo relevante para entornos de desarrollo y tests de integración donde el frontend
+  // se sirve desde un origen distinto al backend (ej. Live Server en VS Code, api.test.js).
+  // En producción MVP el frontend lo sirve el propio Express, por lo que no hay petición cross-origin.
   app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
