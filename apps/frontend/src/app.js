@@ -110,9 +110,9 @@ function mostrarLista(mediciones) {
  * Muestra sistólica y diastólica en un gráfico de líneas.
  */
 function renderizarGrafica(mediciones) {
-  // Ocultar gráfica si no hay datos suficientes
-  if (mediciones.length < 2) {
-    seccionGrafica.hidden = true;
+  // Ocultar gráfica si no hay elementos DOM o datos suficientes
+  if (!seccionGrafica || !canvasChart || mediciones.length < 2) {
+    if (seccionGrafica) seccionGrafica.hidden = true;
     return;
   }
 
@@ -133,14 +133,14 @@ async function cargarMediciones() {
     const mediciones = await service.listAll();
     if (mediciones.length === 0) {
       mostrarVacio();
-      seccionGrafica.hidden = true;
+      if (seccionGrafica) seccionGrafica.hidden = true;
     } else {
       renderizarGrafica(mediciones);
       mostrarLista(mediciones);
     }
   } catch {
     mostrarError();
-    seccionGrafica.hidden = true;
+    if (seccionGrafica) seccionGrafica.hidden = true;
   }
 }
 
