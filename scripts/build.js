@@ -19,9 +19,12 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT    = join(__dirname, '..');
-const DIST    = join(ROOT, 'dist');
+const ROOT      = join(__dirname, '..');
+const DIST      = join(ROOT, 'dist');
 const BASE_PATH = (process.env.BASE_PATH ?? '').replace(/\/$/, ''); // sin slash final
+// BUILD_ID se usa para versionar el nombre de la caché del Service Worker.
+// En GitHub Actions se pasa el SHA corto del commit; en local se usa un timestamp.
+const BUILD_ID  = (process.env.BUILD_ID ?? Date.now().toString()).slice(0, 8);
 
 // --- 1. Limpiar y crear directorio de salida ---
 rmSync(DIST, { recursive: true, force: true });
@@ -75,4 +78,14 @@ if (BASE_PATH) {
   writeFileSync(join(DIST, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf8');
 }
 
-console.log(`✓ Build completado → dist/  (BASE_PATH="${BASE_PATH || '(raíz)'}")`);
+// --- 4. Versionar CACHE_NAME en sw.js con el BUILD_ID ---
+// Permite que el navegador detecte un Service Worker nuevo en cada despliegue
+// y elimine automáticamente la caché antigua (via evento activate).
+let swFinal = readFileSync(join(DIST, 'sw.js'), 'utf8');
+swFinal = swFinal.replace(
+  /const CACHE_NAME = 'tensia-shell-[^']*';/,
+  `const CACHE_NAME = 'tensia-shell-${BUILD_ID}';`,
+);
+writeFileSync(join(DIST, 'sw.js'), swFinal, 'utf8');
+
+console.log(`✓ Build completado → dist/  (BASE_PATH="${BASE_PATH || '(raíz)'}", BUILD_ID="${BUILD_ID}")`);
