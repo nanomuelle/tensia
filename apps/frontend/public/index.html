@@ -9,6 +9,7 @@
     <link rel="manifest" href="manifest.json" />
 
     <!-- Meta tags para instalación en iOS (Safari no usa el manifest para esto) -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Tensia" />
@@ -205,7 +206,7 @@
       </section>
     </main>
 
-    <script type="module" src="/src/app.js"></script>
+    <script type="module" src="src/app.js"></script>
 
     <!-- Registro del Service Worker y lógica del aviso iOS -->
     <script>
