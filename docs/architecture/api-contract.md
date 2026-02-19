@@ -1,5 +1,11 @@
 # API Contract
 
+_Última revisión: 2026-02-19 — Actualizado para reflejar ADR-005_
+
+> ⚠️ **Contexto de uso:** Con ADR-005, estos endpoints **no se usan en producción MVP**.
+> Los datos viven en `localStorage` del cliente; no hay llamadas HTTP para datos en el flujo de usuario anónimo.
+> Estos endpoints se mantienen **únicamente** para entornos de desarrollo y tests de integración (`jsonFileAdapter` + supertest).
+
 ## GET /measurements
 
 Devuelve todas las mediciones ordenadas por `measuredAt` descendente.

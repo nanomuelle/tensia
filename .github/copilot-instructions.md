@@ -67,13 +67,9 @@ apps/frontend/src/
 apps/
   backend/
     src/
-      index.js          ← punto de entrada
-      api/              ← definición de rutas y middlewares HTTP
-      controllers/      ← reciben request, delegan a services
-      domain/           ← entidades, validaciones de negocio
-      infra/            ← adaptadores externos (persistencia, OCR, Drive)
-      routes/           ← registro de rutas
-      services/         ← lógica de aplicación
+      index.js          ← punto de entrada (solo sirve estáticos, ADR-005)
+      api/              ← configuración de Express
+      infra/            ← adaptadores externos (JsonFileAdapter — solo dev/tests)
     tests/
   frontend/
     src/
@@ -123,6 +119,8 @@ docs/
 
 ## Contrato API (MVP)
 
+> ⚠️ **Solo para desarrollo y tests.** Con ADR-005, estos endpoints no se usan en el flujo de usuario anónimo en producción. Los datos viven en `localStorage` del cliente. Se mantienen exclusivamente para tests de integración con `JsonFileAdapter`.
+
 ### `GET /measurements`
 
 Devuelve todas las mediciones ordenadas por `measuredAt` descendente.
@@ -154,15 +152,15 @@ Errores de validación → `400 Bad Request` con mensaje descriptivo.
 
 **Incluido:**
 - Registro de medición manual
-- Registro de medición por foto (OCR extrae valores, usuario puede editarlos antes de guardar)
 - Persistencia en `localStorage` del navegador (gestionada desde el frontend mediante `localStorageAdapter`)
 - Listado de mediciones
 - PWA instalable: `manifest.json` + Service Worker básico (cache del shell, uso offline)
 - Aviso informativo en Safari/iOS sobre la limitación de 7 días de `localStorage`
 - Arquitectura frontend/backend desacoplada
-- Tests básicos (cobertura mínima 70%)
+- Tests básicos (cobertura mínima 70 %)
 
 **Excluido del MVP (no implementar sin confirmación):**
+- Registro por foto (OCR) — **confirmado Post-MVP**
 - Login / autenticación
 - Google Drive
 - Recordatorios o notificaciones

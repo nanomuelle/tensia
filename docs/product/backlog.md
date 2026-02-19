@@ -1,6 +1,6 @@
 # Backlog — Tensia
 
-_Última revisión: 2026-02-18_
+_Última revisión: 2026-02-19 — Actualizado para reflejar ADR-005_
 
 ---
 
@@ -14,25 +14,24 @@ Prioridad: Alta
 Estado: Hecho
 
 **BK-02 — Modelo de datos y dominio**
-Descripción: Entidad `Measurement` con validaciones (sistólica, diastólica, pulso, UUID, source).
+Descripción: Entidad `Measurement` con validaciones (sistólica, diastólica, pulso, UUID, source). Reside en `apps/frontend/src/domain/measurement.js` (ADR-005).
 Prioridad: Alta
 Estado: Hecho
 
-**BK-03 — API REST: POST /measurements**
-Descripción: Endpoint de creación con validación y respuesta 201 / 400.
+**BK-03 — API REST: POST /measurements** ~~Hecho~~ → **Eliminado (ADR-005)**
+Descripción: Endpoint de creación con validación y respuesta 201 / 400. Eliminado al aplicar ADR-005: la persistencia reside en el cliente. El código de este endpoint (controller, service, routes, domain del backend) ha sido borrado.
 Prioridad: Alta
-Estado: Hecho
+Estado: Eliminado con ADR-005 (2026-02-19)
 
-**BK-04 — API REST: GET /measurements**
-Descripción: Endpoint de listado ordenado por fecha descendente.
+**BK-04 — API REST: GET /measurements** ~~Hecho~~ → **Eliminado (ADR-005)**
+Descripción: Endpoint de listado ordenado por fecha descendente. Eliminado al aplicar ADR-005.
 Prioridad: Alta
-Estado: Hecho
+Estado: Eliminado con ADR-005 (2026-02-19)
 
-**BK-05 — Persistencia en fichero JSON (adaptador)**
-Descripción: Adaptador `jsonFileAdapter.js` intercambiable por inyección de dependencias.
+**BK-05 — Persistencia en `localStorage` (ADR-005)**
+Descripción: `localStorageAdapter.js` en `apps/frontend/src/infra/`, con interfaz `getAll()` / `save()`. Servicio `measurementService.js` migrado al frontend. `JsonFileAdapter` se mantiene solo para desarrollo y tests de integración.
 Prioridad: Alta
 Estado: Hecho
-Nota: la especificación original indicaba Local Storage; se optó por fichero JSON en disco (decisión técnica del equipo).
 
 **BK-06 — UI: formulario de registro manual**
 Descripción: Formulario con validaciones inline, fecha auto-rellenada, campo pulso opcional.
@@ -44,18 +43,18 @@ Descripción: Historial ordenado descendente, mensaje "Sin mediciones todavía" 
 Prioridad: Alta
 Estado: Hecho
 
-**BK-08 — Tests unitarios e integración (backend)**
-Descripción: Cobertura de domain, services, infra y API con Jest + supertest.
+**BK-08 — Tests unitarios backend (infra)**
+Descripción: Tests de `jsonFileAdapter.js` con Jest. Los tests de domain, services y API del backend fueron eliminados al aplicar ADR-005 (esa lógica migró al frontend con sus propios tests).
 Prioridad: Alta
-Estado: Hecho — cobertura global 96.39 % (objetivo: 70 %)
+Estado: Hecho
 
 **BK-09 — Tests unitarios frontend**
-Descripción: Cobertura de `api.js` y `validators.js` con Jest + jsdom.
+Descripción: Cobertura de `domain/measurement.js`, `services/measurementService.js`, `infra/localStorageAdapter.js`, `validators.js` y `api.js` con Jest + jsdom. 115 tests, 7 suites, cobertura global > 70 % (objetivo cumplido).
 Prioridad: Alta
 Estado: Hecho
 
 **BK-10 — Tests E2E flujos críticos (Playwright)**
-Descripción: TC-09 registro manual, TC-10 estado vacío, TC-11 error backend.
+Descripción: TC-09 registro manual, TC-10 estado vacío, TC-11 error de almacenamiento local (`localStorage` bloqueado).
 Prioridad: Alta
 Estado: Hecho
 
