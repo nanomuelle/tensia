@@ -6,6 +6,7 @@
   "scripts": {
     "start": "SERVE_STATIC=true OPEN_BROWSER=true node apps/backend/src/index.js",
     "dev": "SERVE_STATIC=true OPEN_BROWSER=true nodemon apps/backend/src/index.js",
+    "build": "node scripts/build.js",
     "test": "node --experimental-vm-modules node_modules/.bin/jest",
     "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
     "test:e2e": "playwright test"
