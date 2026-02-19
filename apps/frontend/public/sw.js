@@ -7,13 +7,14 @@
  * por lo que la app funciona completamente offline una vez instalada.
  */
 
-const CACHE_NAME = 'tensia-shell-v1';
+const CACHE_NAME = 'tensia-shell-v2';
 
 /** Recursos estáticos del shell que se cachean al instalar el SW. */
 const SHELL_URLS = [
   '/',
   '/styles.css',
   '/src/app.js',
+  '/src/chart.js',
   '/src/validators.js',
   '/src/infra/localStorageAdapter.js',
   '/src/domain/measurement.js',

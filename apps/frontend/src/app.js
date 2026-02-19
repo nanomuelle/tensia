@@ -7,6 +7,7 @@
 import * as adapter from './infra/localStorageAdapter.js';
 import { createMeasurementService } from './services/measurementService.js';
 import { validarCamposMedicion, prepararDatosMedicion } from './validators.js';
+import { renderChart } from './chart.js';
 
 // Servicio con adaptador inyectado (anónimo → localStorage)
 const service = createMeasurementService(adapter);
@@ -23,6 +24,10 @@ const estadoError = document.getElementById('estado-error');
 const estadoVacio = document.getElementById('estado-vacio');
 const listaMediciones = document.getElementById('lista-mediciones');
 const btnReintentar = document.getElementById('btn-reintentar');
+
+// --- Referencias al DOM: gráfica ---
+const seccionGrafica = document.getElementById('seccion-grafica');
+const canvasChart = document.getElementById('chart-mediciones');
 
 // --- Referencias al DOM: formulario ---
 const btnNuevaMedicion = document.getElementById('btn-nueva-medicion');
@@ -97,6 +102,28 @@ function mostrarLista(mediciones) {
 }
 
 // =========================================================
+// Gráfica: renderizado con Canvas nativo
+// =========================================================
+
+/** 
+ * Renderiza la gráfica de evolución de tensión arterial.
+ * Muestra sistólica y diastólica en un gráfico de líneas.
+ */
+function renderizarGrafica(mediciones) {
+  // Ocultar gráfica si no hay datos suficientes
+  if (mediciones.length < 2) {
+    seccionGrafica.hidden = true;
+    return;
+  }
+
+  // Mostrar la sección de gráfica
+  seccionGrafica.hidden = false;
+
+  // Renderizar usando el módulo de gráficas
+  renderChart(canvasChart, mediciones);
+}
+
+// =========================================================
 // Historial: carga
 // =========================================================
 
@@ -106,11 +133,14 @@ async function cargarMediciones() {
     const mediciones = await service.listAll();
     if (mediciones.length === 0) {
       mostrarVacio();
+      seccionGrafica.hidden = true;
     } else {
+      renderizarGrafica(mediciones);
       mostrarLista(mediciones);
     }
   } catch {
     mostrarError();
+    seccionGrafica.hidden = true;
   }
 }
 
