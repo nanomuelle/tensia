@@ -1,6 +1,6 @@
 # Backlog — Tensia
 
-_Última revisión: 2026-02-22 — BK-20 completado (modal formulario diseño); BK-21 a BK-23 pendientes_
+_Última revisión: 2026-02-22 — BK-22 completado (modal formulario implementado); BK-21 y BK-23 pendientes_
 
 ---
 
@@ -178,7 +178,7 @@ modal.unlock()   // revierte lock()
 - **`apps/frontend/tests/components/MeasurementForm.test.js`** — verificar que `MeasurementForm` sigue funcionando montado fuera de una modal (sin regresiones).
 
 Prioridad: Alta
-Estado: Pendiente
+Estado: Hecho — `Modal.js` + `Modal.css` en `apps/frontend/src/components/Modal/` y `apps/frontend/public/styles/components/`; `HomeView.js` actualizado para componer Modal + MeasurementForm; 21 tests unitarios en `Modal.test.js`; suite completa 247 tests pasando (sin regresiones).
 Rol: Frontend Dev
 Referencia: US-13, BK-20
 
