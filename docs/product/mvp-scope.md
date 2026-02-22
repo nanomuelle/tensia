@@ -1,6 +1,6 @@
 # MVP Scope
 
-_Última revisión: 2026-02-19 — Actualizado para reflejar ADR-005 y confirmación de OCR como Post-MVP_
+_Última revisión: 2026-02-22 — Gráficas de evolución incorporadas al MVP_
 
 ## Objetivo
 Permitir a un usuario registrar y consultar sus mediciones de tensión arterial en modo **anónimo**, con datos almacenados en el propio dispositivo (`localStorage`), sin login ni servidores de datos.
@@ -12,6 +12,7 @@ Permitir a un usuario registrar y consultar sus mediciones de tensión arterial 
 - PWA instalable: `manifest.json` + Service Worker (cache del shell, uso offline)
 - Aviso informativo en Safari/iOS sobre la limitación de 7 días de `localStorage` (política ITP)
 - Arquitectura frontend/backend desacoplada (ADR-002, ADR-005)
+- Gráfica de evolución temporal de sistólica/diastólica con Canvas API nativo (BK-14, US-04)
 - Tests con cobertura mínima del 70 %
 
 ## Excluido del MVP (no implementar sin confirmación)
@@ -19,5 +20,4 @@ Permitir a un usuario registrar y consultar sus mediciones de tensión arterial 
 - Login / autenticación
 - Google Drive (persistencia multi-dispositivo)
 - Recordatorios o notificaciones
-- Gráficas de evolución temporal
 - Diagnóstico médico o alertas clínicas

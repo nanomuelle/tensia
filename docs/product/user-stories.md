@@ -38,6 +38,26 @@ para que la app extraiga los valores automáticamente y no tenga que introducirl
 
 ---
 
+## US-04 — Gráfica de evolución de tensión arterial
+
+**Estado:** ✅ Implementado (pendiente tests)
+
+Como usuario,
+quiero ver una gráfica con la evolución de mi tensión arterial a lo largo del tiempo,
+para identificar tendencias y detectar si mis valores mejoran o empeoran.
+
+### Criterios de aceptación
+
+- Dado que existen 2 o más mediciones, cuando la app carga el historial, entonces se muestra una gráfica de líneas con la serie de sistólica (rojo) y diastólica (azul).
+- Dado que solo hay 1 medición o ninguna, cuando la app carga, entonces la gráfica no se muestra (no hay suficientes puntos para trazar una línea).
+- Las mediciones se representan en orden cronológico ascendente (izquierda = más antigua).
+- Cada punto de la gráfica corresponde a una medición; el eje Y muestra valores en mmHg.
+- La gráfica incluye una leyenda que identifica sistólica y diastólica.
+- La gráfica es legible en pantallas de alta densidad (retina).
+- Dado que el número de mediciones es elevado, cuando se renderizan las etiquetas del eje X, entonces se muestran como máximo 10 fechas para evitar solapamiento.
+
+---
+
 ## US-03 — Consulta del historial de mediciones
 
 **Estado:** ✅ Implementado y testado

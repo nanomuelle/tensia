@@ -7,6 +7,7 @@
 import * as adapter from './infra/localStorageAdapter.js';
 import { createMeasurementService } from './services/measurementService.js';
 import { validarCamposMedicion, prepararDatosMedicion } from './validators.js';
+import { renderChart } from './chart.js';
 
 // Servicio con adaptador inyectado (anónimo → localStorage)
 const service = createMeasurementService(adapter);
@@ -23,6 +24,16 @@ const estadoError = document.getElementById('estado-error');
 const estadoVacio = document.getElementById('estado-vacio');
 const listaMediciones = document.getElementById('lista-mediciones');
 const btnReintentar = document.getElementById('btn-reintentar');
+
+// --- Referencias al DOM: gráfica ---
+const seccionGrafica   = document.getElementById('seccion-grafica');
+const containerChart   = document.getElementById('chart-mediciones');
+
+// Referencia a las últimas mediciones para que ResizeObserver pueda redibujar
+let ultimasMediciones = [];
+
+// ResizeObserver: se crea al primer renderizado de la gráfica (no en carga del módulo)
+let resizeObserver = null;
 
 // --- Referencias al DOM: formulario ---
 const btnNuevaMedicion = document.getElementById('btn-nueva-medicion');
@@ -97,6 +108,43 @@ function mostrarLista(mediciones) {
 }
 
 // =========================================================
+// Gráfica: renderizado con D3 SVG (ADR-006)
+// =========================================================
+
+/**
+ * Renderiza la gráfica de evolución de tensión arterial.
+ * Muestra sistólica y diastólica en un gráfico de líneas SVG.
+ * Solo se muestra con ≥ 2 mediciones.
+ * El ResizeObserver se inicializa aquí, solo cuando la gráfica es visible.
+ */
+function renderizarGrafica(mediciones) {
+  // Guardar referencia para que ResizeObserver pueda redibujar
+  ultimasMediciones = mediciones;
+
+  // Ocultar gráfica si no hay elementos DOM o datos suficientes
+  if (!seccionGrafica || !containerChart || mediciones.length < 2) {
+    if (seccionGrafica) seccionGrafica.hidden = true;
+    return;
+  }
+
+  // Mostrar la sección de gráfica
+  seccionGrafica.hidden = false;
+
+  // Inicializar ResizeObserver solo cuando la gráfica es visible
+  if (!resizeObserver && typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      if (ultimasMediciones.length >= 2 && containerChart) {
+        renderChart(containerChart, ultimasMediciones);
+      }
+    });
+    resizeObserver.observe(containerChart);
+  }
+
+  // Renderizar usando el módulo de gráficas D3
+  renderChart(containerChart, mediciones);
+}
+
+// =========================================================
 // Historial: carga
 // =========================================================
 
@@ -106,11 +154,14 @@ async function cargarMediciones() {
     const mediciones = await service.listAll();
     if (mediciones.length === 0) {
       mostrarVacio();
+      if (seccionGrafica) seccionGrafica.hidden = true;
     } else {
+      renderizarGrafica(mediciones);
       mostrarLista(mediciones);
     }
   } catch {
     mostrarError();
+    if (seccionGrafica) seccionGrafica.hidden = true;
   }
 }
 

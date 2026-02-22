@@ -338,3 +338,116 @@ Válida como herramienta de desarrollo y testing, pero no cumple los requisitos:
 | 2 | ¿La instalación como PWA es requisito del MVP? | ✅ **Sí.** `manifest.json` y Service Worker básico son parte del alcance del MVP. |
 | 3 | ¿Se acepta la limitación de iOS Safari (borrado tras 7 días)? | ✅ **Sí, se acepta.** Medida de mitigación: mostrar un aviso informativo en la UI cuando el navegador es Safari/iOS, explicando la limitación y recomendando usar la app con regularidad. |
 | 4 | ¿Hay que migrar datos de `JsonFileAdapter` → `localStorage`? | ❌ **No.** No se requiere migración de datos previos. |
+
+
+---
+
+## ADR-006: D3.js modular como librería de gráficas
+
+**Fecha:** 2026-02-22
+**Estado:** Aceptado
+
+### Contexto
+
+La gráfica de evolución temporal (US-04, BK-14) se incorpora al MVP. La implementación actual usa **Canvas API nativo** (`apps/frontend/src/chart.js`, 169 líneas), que no tiene dependencias externas pero escala mal: cualquier mejora (tooltips, zoom, bandas de riesgo, eje secundario para pulso) requiere reescribir lógica de bajo nivel.
+
+Se evaluaron cuatro opciones:
+
+| Opción | Salida | Tamaño estimado (gzip) | Vanilla JS | Escalabilidad |
+|---|---|---|---|---|
+| **Canvas API nativo** *(actual)* | Canvas 2D | 0 KB (extra) | ✅ | ❌ baja |
+| **D3.js modular** | SVG | ~42 KB (imports selectivos) | ✅ | ✅✅ muy alta |
+| **Chart.js v4** | Canvas 2D | ~60 KB | ✅ | ⚠️ media |
+| **Observable Plot** | SVG (sobre D3) | ~50 KB | ✅ | ✅ alta |
+
+Restricciones del entorno:
+- Stack: Vanilla JS, ES Modules nativos, sin bundler (ADR-003).
+- Backend sirve estáticos; no hay paso de compilación.
+- Preferencia explícita del equipo: **D3**.
+- El SVG es preferible al Canvas para interactividad, accesibilidad y animaciones CSS.
+
+### Análisis comparativo
+
+**Canvas API nativo**
+- Sin coste de bundle, pero código imperativo artesanal para cada mejora.
+- No accesible (screenreaders no interpretan canvas sin trabajo adicional).
+- Descartado porque la escalabilidad es prácticamente nula.
+
+**Chart.js v4**
+- API declarativa simple (`new Chart(canvas, config)`).
+- Tooltips y animaciones integrados.
+- Canvas-based: interactividad avanzada (brush, zoom, bandas personalizadas) requiere plugins externos verbosos.
+- Descartado por escalabilidad limitada frente a D3.
+
+**Observable Plot**
+- Construido sobre D3; gramática de gráficas de alto nivel.
+- Menos control fino que D3 puro cuando se necesitan visualizaciones no estándar.
+- Descartado: si ya se elige D3, Plot añade una capa de abstracción innecesaria.
+
+**D3.js modular** ← elegido
+- Import selectivo de submódulos: solo los necesarios para la gráfica de líneas inicial.
+- SVG nativo: tooltips, hover, accesibilidad ARIA y animaciones CSS sin trabajo extra.
+- Máxima escalabilidad para evoluciones previsibles:
+
+| Funcionalidad futura | Módulo D3 necesario |
+|---|---|
+| Tercera serie: pulso | `d3-shape` (ya incluido) |
+| Bandas de riesgo (≥140/90 mmHg) | `d3-shape` rect/area |
+| Tooltip interactivo | `d3-selection` (ya incluido) |
+| Zoom / brush temporal | `d3-brush` + `d3-zoom` |
+| Eje Y secundario para pulso | `d3-scale` + `d3-axis` (ya incluidos) |
+
+### Decisión
+
+Usar **D3.js modular** con imports selectivos vía npm (ES Modules nativos).
+
+Bundle estimado para la gráfica inicial:
+
+```
+d3-scale      ~12 KB gzip
+d3-axis       ~8 KB gzip
+d3-shape      ~10 KB gzip
+d3-selection  ~12 KB gzip
+──────────────────────────
+Total          ~42 KB gzip
+```
+
+El módulo `apps/frontend/src/chart.js` se reescribe usando D3 con salida SVG.
+El contrato público de `renderChart()` no cambia para `app.js` (mismo nombre de función, mismos parámetros), protegiendo los tests existentes.
+
+**Contrato de `renderChart()` (sin cambios para el consumidor):**
+
+```js
+/**
+ * @param {HTMLElement} container      - Contenedor donde montar el SVG (div#chart-mediciones)
+ * @param {Measurement[]} measurements - Array de mediciones (cualquier orden)
+ */
+export function renderChart(container, measurements)
+```
+
+> Nota: el parámetro antes llamado `canvas` (HTMLCanvasElement) se renombra a `container` (HTMLElement genérico), pero `app.js` sigue pasando `document.getElementById('chart-mediciones')` sin cambios. El HTML cambia de `<canvas>` a `<div id="chart-mediciones">`.
+
+### Consecuencias
+
+**Ventajas:**
+- SVG accesible: posibilidad de añadir `aria-label` y `role="img"` con descripciones textuales.
+- Interactividad nativa: los nodos SVG son elementos del DOM y responden a eventos sin código adicional.
+- Import selectivo sin bundler: compatible con el Service Worker actual.
+- Escalabilidad garantizada hacia visualizaciones más complejas sin cambio de herramienta.
+- Sin dependencia de React ni otro framework (ADR-003 se mantiene).
+
+**Desventajas:**
+- Curva de aprendizaje inicial en el patrón `enter/update/exit` de D3.
+- +42 KB gzip sobre el bundle actual (frente a 0 del canvas nativo). Aceptable en contexto de uso personal.
+- El elemento HTML cambia de `<canvas>` a `<div id="chart-mediciones">` (cambio mínimo en `index.html`).
+- Los tests de `chart.js` requerirán soporte SVG en jsdom (el setup `jest-environment-jsdom` ya existe en el proyecto).
+
+### Impacto sobre componentes actuales
+
+| Componente | Estado actual | Con ADR-006 aceptado |
+|---|---|---|
+| `apps/frontend/src/chart.js` | Canvas API nativo, 169 líneas | Reescrito con D3 SVG, mismo contrato externo |
+| `apps/frontend/public/index.html` | `<canvas id="chart-mediciones">` | Cambiar a `<div id="chart-mediciones">` |
+| `apps/frontend/src/app.js` | Importa `renderChart`, pasa canvas | Sin cambios (mismo contrato) |
+| `package.json` | Sin D3 | Añadir `d3-selection`, `d3-scale`, `d3-axis`, `d3-shape` |
+| Tests de `chart.js` | No existen | Nuevo: `apps/frontend/tests/chart.test.js` (BK-14) |
