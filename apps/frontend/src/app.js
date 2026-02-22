@@ -32,6 +32,9 @@ const containerChart   = document.getElementById('chart-mediciones');
 // Referencia a las últimas mediciones para que ResizeObserver pueda redibujar
 let ultimasMediciones = [];
 
+// ResizeObserver: se crea al primer renderizado de la gráfica (no en carga del módulo)
+let resizeObserver = null;
+
 // --- Referencias al DOM: formulario ---
 const btnNuevaMedicion = document.getElementById('btn-nueva-medicion');
 const formularioRegistro = document.getElementById('formulario-registro');
@@ -109,25 +112,10 @@ function mostrarLista(mediciones) {
 // =========================================================
 
 /**
- * ResizeObserver: redibuja la gráfica cuando cambia el tamaño del contenedor.
- * Se inicializa una sola vez; el callback usa `ultimasMediciones` en memoria.
- */
-const resizeObserver = (typeof ResizeObserver !== 'undefined')
-  ? new ResizeObserver(() => {
-      if (ultimasMediciones.length >= 2 && containerChart) {
-        renderChart(containerChart, ultimasMediciones);
-      }
-    })
-  : null;
-
-if (resizeObserver && containerChart) {
-  resizeObserver.observe(containerChart);
-}
-
-/**
  * Renderiza la gráfica de evolución de tensión arterial.
  * Muestra sistólica y diastólica en un gráfico de líneas SVG.
  * Solo se muestra con ≥ 2 mediciones.
+ * El ResizeObserver se inicializa aquí, solo cuando la gráfica es visible.
  */
 function renderizarGrafica(mediciones) {
   // Guardar referencia para que ResizeObserver pueda redibujar
@@ -141,6 +129,16 @@ function renderizarGrafica(mediciones) {
 
   // Mostrar la sección de gráfica
   seccionGrafica.hidden = false;
+
+  // Inicializar ResizeObserver solo cuando la gráfica es visible
+  if (!resizeObserver && typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      if (ultimasMediciones.length >= 2 && containerChart) {
+        renderChart(containerChart, ultimasMediciones);
+      }
+    });
+    resizeObserver.observe(containerChart);
+  }
 
   // Renderizar usando el módulo de gráficas D3
   renderChart(containerChart, mediciones);
