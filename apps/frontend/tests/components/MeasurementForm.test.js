@@ -16,7 +16,7 @@
  */
 
 import { jest, describe, test, expect, beforeAll, beforeEach } from '@jest/globals';
-import { createMeasurementForm } from '../src/components/MeasurementForm/MeasurementForm.js';
+import { createMeasurementForm } from '../../src/components/MeasurementForm/MeasurementForm.js';
 
 // =========================================================
 // Mock del servicio (inyectado por DI en el componente)

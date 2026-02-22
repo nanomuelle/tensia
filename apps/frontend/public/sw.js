@@ -7,8 +7,8 @@
  * por lo que la app funciona completamente offline una vez instalada.
  */
 
-// v4: CSS dividido en parciales por componente (Paso 15)
-const CACHE_NAME = 'tensia-shell-v4';
+// v5: eliminado shim validators.js; la validación vive en shared/validators.js (Paso 16)
+const CACHE_NAME = 'tensia-shell-v5';
 
 /** Recursos estáticos del shell que se cachean al instalar el SW. */
 const SHELL_URLS = [
@@ -16,7 +16,6 @@ const SHELL_URLS = [
   '/styles/main.css',
   '/src/app.js',
   '/src/chart.js',
-  '/src/validators.js',
   '/src/infra/localStorageAdapter.js',
   '/src/domain/measurement.js',
   '/src/services/measurementService.js',
