@@ -1,0 +1,101 @@
+/* =========================================================
+   MeasurementList — Historial de mediciones
+   ========================================================= */
+
+/* --- Título del historial --- */
+.historial__titulo {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--color-texto-secundario);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+
+/* --- Lista --- */
+.lista-mediciones {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+/* --- Tarjeta de medición --- */
+.tarjeta {
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: var(--sombra-tarjeta);
+  padding: 0.875rem 1rem;
+  min-height: 56px; /* área táctil mínima diseño */
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tarjeta__fecha {
+  font-size: 0.875rem;
+  color: var(--color-texto-secundario);
+}
+
+.tarjeta__valores {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tarjeta__tension {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--color-texto-principal);
+  letter-spacing: -0.02em;
+}
+
+.tarjeta__unidad {
+  font-size: 0.875rem;
+  color: var(--color-texto-unidad);
+  font-weight: 400;
+}
+
+.tarjeta__pulso {
+  font-size: 0.9375rem;
+  color: var(--color-texto-secundario);
+  margin-left: auto; /* empuja el pulso a la derecha */
+}
+
+/* --- Estados (cargando / vacío / error) --- */
+.estado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--color-texto-secundario);
+  font-size: 0.9375rem;
+}
+
+.estado--error {
+  background-color: var(--color-error-fondo);
+  border: 1px solid var(--color-error-borde);
+  border-radius: var(--radio-tarjeta);
+  color: var(--color-error-texto);
+}
+
+/* --- Spinner de carga --- */
+.spinner {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2.5px solid var(--color-borde);
+  border-top-color: var(--color-primario);
+  border-radius: 50%;
+  animation: girar 0.75s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}

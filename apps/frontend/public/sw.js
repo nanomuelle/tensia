@@ -7,13 +7,13 @@
  * por lo que la app funciona completamente offline una vez instalada.
  */
 
-// v3: añadidos módulos D3 (CDN jsDelivr) para soporte offline de la gráfica (BK-14)
-const CACHE_NAME = 'tensia-shell-v3';
+// v4: CSS dividido en parciales por componente (Paso 15)
+const CACHE_NAME = 'tensia-shell-v4';
 
 /** Recursos estáticos del shell que se cachean al instalar el SW. */
 const SHELL_URLS = [
   '/',
-  '/styles.css',
+  '/styles/main.css',
   '/src/app.js',
   '/src/chart.js',
   '/src/validators.js',
