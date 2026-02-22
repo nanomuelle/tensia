@@ -75,12 +75,14 @@ const HTML_FIXTURE = `
     </form>
   </section>
 
-  <div id="estado-cargando" hidden></div>
-  <div id="estado-error" hidden>
-    <button id="btn-reintentar">Reintentar</button>
-  </div>
-  <div id="estado-vacio" hidden></div>
-  <ul id="lista-mediciones"></ul>
+  <section id="historial-root">
+    <div id="estado-cargando" hidden></div>
+    <div id="estado-error" hidden>
+      <button id="btn-reintentar">Reintentar</button>
+    </div>
+    <div id="estado-vacio" hidden></div>
+    <ul id="lista-mediciones"></ul>
+  </section>
 `;
 
 // =========================================================

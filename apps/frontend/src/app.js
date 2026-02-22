@@ -8,21 +8,21 @@ import * as adapter from './infra/localStorageAdapter.js';
 import { createMeasurementService } from './services/measurementService.js';
 import { validarCamposMedicion, prepararDatosMedicion } from './shared/validators.js';
 import { renderChart } from './chart.js';
-import { formatearFecha, fechaLocalActual } from './shared/formatters.js';
+import { fechaLocalActual } from './shared/formatters.js';
 import { on, Events } from './shared/eventBus.js';
 import { MIN_MEDICIONES_GRAFICA } from './shared/constants.js';
 import { createIosWarning } from './components/IosWarning/IosWarning.js';
 import { createToast } from './components/Toast/Toast.js';
+import { createMeasurementList } from './components/MeasurementList/MeasurementList.js';
 
 // Servicio con adaptador inyectado (anónimo → localStorage)
 const service = createMeasurementService(adapter);
 
-// --- Referencias al DOM: historial ---
-const estadoCargando = document.getElementById('estado-cargando');
-const estadoError = document.getElementById('estado-error');
-const estadoVacio = document.getElementById('estado-vacio');
-const listaMediciones = document.getElementById('lista-mediciones');
-const btnReintentar = document.getElementById('btn-reintentar');
+// --- Historial (componente) ---
+const historial = createMeasurementList(
+  document.getElementById('historial-root'),
+  { onReintentar: () => cargarMediciones() },
+);
 
 // --- Referencias al DOM: gráfica ---
 const seccionGrafica   = document.getElementById('seccion-grafica');
@@ -45,66 +45,6 @@ const inputDiastolic = document.getElementById('input-diastolic');
 const inputPulse = document.getElementById('input-pulse');
 const inputFecha = document.getElementById('input-fecha');
 const errorFormulario = document.getElementById('error-formulario');
-
-// =========================================================
-// Historial: helpers de estado
-// =========================================================
-
-/** Oculta todos los estados de la lista y la propia lista. */
-function ocultarEstados() {
-  estadoCargando.hidden = true;
-  estadoError.hidden = true;
-  estadoVacio.hidden = true;
-  listaMediciones.hidden = true;
-}
-
-function mostrarCargando() {
-  ocultarEstados();
-  estadoCargando.hidden = false;
-}
-
-function mostrarError() {
-  ocultarEstados();
-  estadoError.hidden = false;
-}
-
-function mostrarVacio() {
-  ocultarEstados();
-  estadoVacio.hidden = false;
-}
-
-/** Renderiza la lista de mediciones en el DOM. */
-function mostrarLista(mediciones) {
-  ocultarEstados();
-  listaMediciones.innerHTML = '';
-
-  mediciones.forEach((m) => {
-    const li = document.createElement('li');
-    li.className = 'tarjeta';
-    li.setAttribute('role', 'listitem');
-
-    const fecha = formatearFecha.format(new Date(m.measuredAt));
-
-    const pulsoHTML = m.pulse
-      ? `<span class="tarjeta__pulso" aria-label="Pulso: ${m.pulse} pulsaciones por minuto">💓 ${m.pulse} ppm</span>`
-      : '';
-
-    li.innerHTML = `
-      <span class="tarjeta__fecha">${fecha}</span>
-      <div class="tarjeta__valores">
-        <span class="tarjeta__tension" aria-label="Tensión: ${m.systolic} sobre ${m.diastolic} milímetros de mercurio">
-          ${m.systolic} / ${m.diastolic}
-        </span>
-        <span class="tarjeta__unidad" aria-hidden="true">mmHg</span>
-        ${pulsoHTML}
-      </div>
-    `;
-
-    listaMediciones.appendChild(li);
-  });
-
-  listaMediciones.hidden = false;
-}
 
 // =========================================================
 // Gráfica: renderizado con D3 SVG (ADR-006)
@@ -152,19 +92,19 @@ function renderizarGrafica(mediciones) {
 // =========================================================
 
 async function cargarMediciones() {
-  mostrarCargando();
+  historial.mostrarCargando();
   try {
     const mediciones = await service.listAll();
     if (mediciones.length === 0) {
-      mostrarVacio();
+      historial.mostrarVacio();
       // Mostrar skeleton de la gráfica incluso con lista vacía
       renderizarGrafica(mediciones);
     } else {
       renderizarGrafica(mediciones);
-      mostrarLista(mediciones);
+      historial.mostrarLista(mediciones);
     }
   } catch {
-    mostrarError();
+    historial.mostrarError();
     // En caso de error, ocultamos la sección de gráfica
     if (seccionGrafica) seccionGrafica.hidden = true;
   }
@@ -284,7 +224,6 @@ async function enviarFormulario(evento) {
 
 btnNuevaMedicion.addEventListener('click', abrirFormulario);
 btnCancelar.addEventListener('click', cerrarFormulario);
-btnReintentar.addEventListener('click', cargarMediciones);
 formMedicion.addEventListener('submit', enviarFormulario);
 
 // Actualización reactiva de lista y gráfica al guardar una medición (US-12).
@@ -307,5 +246,6 @@ on(Events.MEASUREMENT_SAVED, () => cargarMediciones());
 const toast = createToast(document.getElementById('toast-container'));
 toast.mount();
 createIosWarning(document.getElementById('aviso-ios')).mount();
+historial.mount();
 cargarMediciones();
 
