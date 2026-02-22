@@ -10,6 +10,7 @@ import { validarCamposMedicion, prepararDatosMedicion } from './shared/validator
 import { renderChart } from './chart.js';
 import { formatearFecha, fechaLocalActual } from './shared/formatters.js';
 import { on, Events } from './shared/eventBus.js';
+import { MIN_MEDICIONES_GRAFICA } from './shared/constants.js';
 
 // Servicio con adaptador inyectado (anónimo → localStorage)
 const service = createMeasurementService(adapter);
@@ -125,7 +126,7 @@ function renderizarGrafica(mediciones) {
   seccionGrafica.hidden = false;
 
   // Si no hay suficientes mediciones, renderizamos el skeleton y salimos
-  if (mediciones.length < 2) {
+  if (mediciones.length < MIN_MEDICIONES_GRAFICA) {
     renderChart(containerChart, mediciones);
     return;
   }
@@ -133,7 +134,7 @@ function renderizarGrafica(mediciones) {
   // Inicializar ResizeObserver solo cuando la gráfica es visible y tiene datos suficientes
   if (!resizeObserver && typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(() => {
-      if (ultimasMediciones.length >= 2 && containerChart) {
+      if (ultimasMediciones.length >= MIN_MEDICIONES_GRAFICA && containerChart) {
         renderChart(containerChart, ultimasMediciones);
       }
     });
