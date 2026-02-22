@@ -3,6 +3,15 @@
    Mobile-first. Variables CSS para facilitar theming futuro.
    ========================================================= */
 
+/* =========================================================
+   Componentes (parciales) — deben ir ANTES de cualquier regla
+   ========================================================= */
+@import './components/MeasurementForm.css';
+@import './components/MeasurementList.css';
+@import './components/MeasurementChart.css';
+@import './components/Toast.css';
+@import './components/IosWarning.css';
+
 /* --- Variables del sistema de diseño --- */
 :root {
   --color-fondo: #f5f5f5;
@@ -133,11 +142,4 @@ body {
   display: none !important;
 }
 
-/* =========================================================
-   Componentes (parciales)
-   ========================================================= */
-@import './components/MeasurementForm.css';
-@import './components/MeasurementList.css';
-@import './components/MeasurementChart.css';
-@import './components/Toast.css';
-@import './components/IosWarning.css';
+
