@@ -1,45 +1,53 @@
 /**
  * Lógica de la interfaz — pantalla principal de Tensia.
- * Orquesta el DOM, gestiona los estados de la UI y delega la persistencia
+ * Orquesta los componentes, gestiona los estados de la UI y delega la persistencia
  * al servicio local (ADR-005): en sesión anónima usa localStorageAdapter.
+ *
+ * Tras el Paso 10 del plan de refactorización, app.js se limita a:
+ *   - Crear el servicio con el adaptador inyectado.
+ *   - Instanciar y montar los componentes.
+ *   - Gestionar el botón principal "Nueva medición".
+ *   - Arrancar la carga inicial del historial.
  */
 
 import * as adapter from './infra/localStorageAdapter.js';
 import { createMeasurementService } from './services/measurementService.js';
-import { validarCamposMedicion, prepararDatosMedicion } from './shared/validators.js';
-import { fechaLocalActual } from './shared/formatters.js';
-import { on, Events } from './shared/eventBus.js';
 import { createIosWarning } from './components/IosWarning/IosWarning.js';
 import { createToast } from './components/Toast/Toast.js';
 import { createMeasurementList } from './components/MeasurementList/MeasurementList.js';
 import { createMeasurementChart } from './components/MeasurementChart/MeasurementChart.js';
+import { createMeasurementForm } from './components/MeasurementForm/MeasurementForm.js';
 
 // Servicio con adaptador inyectado (anónimo → localStorage)
 const service = createMeasurementService(adapter);
 
-// --- Historial (componente) ---
+// =========================================================
+// Instanciación de componentes
+// =========================================================
+
+const toast = createToast(document.getElementById('toast-container'));
+
 const historial = createMeasurementList(
   document.getElementById('historial-root'),
   { onReintentar: () => cargarMediciones() },
 );
 
-// --- Gráfica (componente) ---
 const grafica = createMeasurementChart(
   document.getElementById('seccion-grafica'),
   document.getElementById('chart-mediciones'),
 );
 
-// --- Referencias al DOM: formulario ---
 const btnNuevaMedicion = document.getElementById('btn-nueva-medicion');
-const formularioRegistro = document.getElementById('formulario-registro');
-const formMedicion = document.getElementById('form-medicion');
-const btnGuardar = document.getElementById('btn-guardar');
-const btnCancelar = document.getElementById('btn-cancelar');
-const inputSystolic = document.getElementById('input-systolic');
-const inputDiastolic = document.getElementById('input-diastolic');
-const inputPulse = document.getElementById('input-pulse');
-const inputFecha = document.getElementById('input-fecha');
-const errorFormulario = document.getElementById('error-formulario');
+
+const formulario = createMeasurementForm(
+  document.getElementById('formulario-registro'),
+  {
+    service,
+    toast,
+    onSuccess:  () => cargarMediciones(),
+    onCerrar:   () => { btnNuevaMedicion.hidden = false; },
+  },
+);
 
 // =========================================================
 // Historial: carga
@@ -66,142 +74,21 @@ async function cargarMediciones() {
 }
 
 // =========================================================
-// Formulario: mostrar / ocultar
+// Evento: botón "Nueva medición"
 // =========================================================
 
-function abrirFormulario() {
-  limpiarFormulario();
-  inputFecha.value = fechaLocalActual();
-  formularioRegistro.hidden = false;
+btnNuevaMedicion.addEventListener('click', () => {
+  formulario.abrir();
   btnNuevaMedicion.hidden = true;
-  inputSystolic.focus();
-}
-
-function cerrarFormulario() {
-  formularioRegistro.hidden = true;
-  btnNuevaMedicion.hidden = false;
-}
-
-// =========================================================
-// Formulario: validación y errores inline
-// =========================================================
-
-/** Muestra o borra el mensaje de error de un campo. */
-function setErrorCampo(inputEl, errorEl, mensaje) {
-  if (mensaje) {
-    inputEl.classList.add('campo__input--invalido');
-    errorEl.textContent = mensaje;
-    errorEl.hidden = false;
-  } else {
-    inputEl.classList.remove('campo__input--invalido');
-    errorEl.textContent = '';
-    errorEl.hidden = true;
-  }
-}
-
-/** Limpia todos los errores del formulario. */
-function limpiarErrores() {
-  setErrorCampo(inputSystolic, document.getElementById('error-systolic'), '');
-  setErrorCampo(inputDiastolic, document.getElementById('error-diastolic'), '');
-  setErrorCampo(inputPulse, document.getElementById('error-pulse'), '');
-  setErrorCampo(inputFecha, document.getElementById('error-fecha'), '');
-  errorFormulario.textContent = '';
-  errorFormulario.hidden = true;
-}
-
-/** Limpia campos y errores del formulario. */
-function limpiarFormulario() {
-  formMedicion.reset();
-  limpiarErrores();
-}
-
-/**
- * Valida el formulario leyendo los valores del DOM,
- * delega la lógica de validación en validators.js (puro)
- * y muestra los errores inline correspondientes.
- * Devuelve los datos listos para el POST, o null si hay errores.
- */
-function validarFormulario() {
-  limpiarErrores();
-
-  const campos = {
-    systolic: inputSystolic.value,
-    diastolic: inputDiastolic.value,
-    pulse: inputPulse.value,
-    measuredAt: inputFecha.value,
-  };
-
-  const errores = validarCamposMedicion(campos);
-
-  if (errores.systolic) setErrorCampo(inputSystolic, document.getElementById('error-systolic'), errores.systolic);
-  if (errores.diastolic) setErrorCampo(inputDiastolic, document.getElementById('error-diastolic'), errores.diastolic);
-  if (errores.pulse) setErrorCampo(inputPulse, document.getElementById('error-pulse'), errores.pulse);
-  if (errores.measuredAt) setErrorCampo(inputFecha, document.getElementById('error-fecha'), errores.measuredAt);
-
-  if (Object.keys(errores).length > 0) return null;
-
-  return prepararDatosMedicion(campos);
-}
-
-// =========================================================
-// Formulario: envío
-// =========================================================
-
-async function enviarFormulario(evento) {
-  evento.preventDefault();
-
-  const datos = validarFormulario();
-  if (!datos) return;
-
-  // Deshabilitar botón mientras se envía
-  btnGuardar.disabled = true;
-  btnGuardar.textContent = 'Guardando…';
-
-  try {
-    await service.create(datos);
-    // La actualización de lista y gráfica se dispara mediante el evento
-    // 'medicion-guardada' despachado por el servicio (US-12).
-    cerrarFormulario();
-    toast.show('Medición guardada', 'success');
-  } catch (error) {
-    // Error de validación de dominio u otro error
-    errorFormulario.textContent = error.message;
-    errorFormulario.hidden = false;
-  } finally {
-    btnGuardar.disabled = false;
-    btnGuardar.textContent = 'Guardar medición';
-  }
-}
-
-// =========================================================
-// Eventos
-// =========================================================
-
-btnNuevaMedicion.addEventListener('click', abrirFormulario);
-btnCancelar.addEventListener('click', cerrarFormulario);
-formMedicion.addEventListener('submit', enviarFormulario);
-
-// Actualización reactiva de lista y gráfica al guardar una medición (US-12).
-// El servicio despacha este evento tras persistir en localStorage, de modo que
-// cualquier parte de la UI puede reaccionar sin acoplarse al formulario.
-on(Events.MEASUREMENT_SAVED, () => cargarMediciones());
-
-// Limpiar error de campo al empezar a escribir
-[inputSystolic, inputDiastolic, inputPulse, inputFecha].forEach((input) => {
-  input.addEventListener('input', () => {
-    const errorId = input.getAttribute('aria-describedby');
-    const errorEl = document.getElementById(errorId);
-    if (errorEl) setErrorCampo(input, errorEl, '');
-  });
 });
 
 // =========================================================
 // Arranque
 // =========================================================
-const toast = createToast(document.getElementById('toast-container'));
 toast.mount();
 createIosWarning(document.getElementById('aviso-ios')).mount();
 historial.mount();
 grafica.mount();
+formulario.mount();
 cargarMediciones();
 

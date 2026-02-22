@@ -1,14 +1,13 @@
 /**
  * [TC-07] [TC-08] — Tests de componente: formulario de registro manual
  *
- * Verifica que el formulario muestra errores inline y NO llama al backend
- * cuando los datos son inválidos o están vacíos.
+ * Verifica que el componente MeasurementForm muestra errores inline y NO llama
+ * al servicio cuando los datos son inválidos o están vacíos.
  *
  * Estrategia:
- * - jsdom proporciona un DOM real en el que app.js puede ejecutarse.
- * - El módulo infra/httpAdapter.js se mockea para evitar peticiones HTTP reales.
- * - app.js se importa dinámicamente (dentro de beforeAll) para que el DOM
- *   ya esté montado cuando el módulo ejecuta sus referencias a getElementById.
+ * - Se monta solo el fragmento HTML del formulario en el DOM (jsdom).
+ * - Se instancia createMeasurementForm con un service mockeado (DI).
+ * - No se usa app.js ni se necesita mockear httpAdapter.
  *
  * Referencia: docs/testing/test-cases.md#TC-07, #TC-08
  *             docs/testing/aceptance-criteria.md#CA-06
@@ -17,22 +16,25 @@
  */
 
 import { jest, describe, test, expect, beforeAll, beforeEach } from '@jest/globals';
+import { createMeasurementForm } from '../src/components/MeasurementForm/MeasurementForm.js';
 
 // =========================================================
-// Mocks de infra/httpAdapter.js — deben registrarse ANTES del import dinámico
+// Mock del servicio (inyectado por DI en el componente)
 // =========================================================
 
-const mockGetMediciones = jest.fn().mockResolvedValue([]);
-const mockCrearMedicion = jest.fn();
+const mockServiceCreate = jest.fn();
+const mockServiceListAll = jest.fn().mockResolvedValue([]);
 
-jest.unstable_mockModule('../src/infra/httpAdapter.js', () => ({
-  getMediciones: mockGetMediciones,
-  crearMedicion: mockCrearMedicion,
-}));
+const mockService = {
+  create:  mockServiceCreate,
+  listAll: mockServiceListAll,
+};
+
+// Mock mínimo del Toast (no necesitamos verificar notificaciones en estos tests)
+const mockToast = { show: jest.fn(), mount: jest.fn() };
 
 // =========================================================
-// HTML mínimo necesario para que app.js pueda inicializarse
-// Contiene todos los elementos que app.js referencia con getElementById
+// HTML del formulario (único fragmento necesario para el componente)
 // =========================================================
 
 const HTML_FIXTURE = `
@@ -74,43 +76,37 @@ const HTML_FIXTURE = `
       <button id="btn-cancelar" type="button">Cancelar</button>
     </form>
   </section>
-
-  <section id="historial-root">
-    <div id="estado-cargando" hidden></div>
-    <div id="estado-error" hidden>
-      <button id="btn-reintentar">Reintentar</button>
-    </div>
-    <div id="estado-vacio" hidden></div>
-    <ul id="lista-mediciones"></ul>
-  </section>
 `;
 
 // =========================================================
-// Setup: montar DOM e importar app.js una sola vez
+// Setup: montar DOM e instanciar el componente una sola vez
 // =========================================================
 
-beforeAll(async () => {
+let formulario;
+
+beforeAll(() => {
   document.body.innerHTML = HTML_FIXTURE;
 
-  // Importar app.js después de que el DOM esté listo.
-  // app.js ejecuta cargarMediciones() al cargarse; el mock devuelve [].
-  await import('../src/app.js');
-
-  // Esperar a que la promesa inicial de cargarMediciones se resuelva
-  await Promise.resolve();
-  await Promise.resolve();
+  // Instanciar el componente con el servicio mockeado (DI)
+  formulario = createMeasurementForm(
+    document.getElementById('formulario-registro'),
+    {
+      service:   mockService,
+      toast:     mockToast,
+      onSuccess: jest.fn(),
+      onCerrar:  jest.fn(),
+    },
+  );
+  formulario.mount();
 });
 
 // Antes de cada test: resetear mocks y abrir el formulario limpio
-beforeEach(async () => {
-  mockCrearMedicion.mockReset();
-  mockGetMediciones.mockResolvedValue([]);
+beforeEach(() => {
+  mockServiceCreate.mockReset();
+  mockToast.show.mockReset();
 
-  // Abrir formulario (simula click en "Nueva medición")
-  document.getElementById('btn-nueva-medicion').click();
-
-  // Esperar micro-tarea para que el DOM se actualice
-  await Promise.resolve();
+  // Abrir formulario (igual que cuando el usuario pulsa el botón principal)
+  formulario.abrir();
 });
 
 // =========================================================
@@ -161,7 +157,7 @@ describe('TC-07 — Campos obligatorios vacíos', () => {
   test('muestra error en fecha cuando está vacía', () => {
     document.getElementById('input-systolic').value = '120';
     document.getElementById('input-diastolic').value = '80';
-    // Forzar vaciado aunque rellenarFechaActual() haya auto-rellenado el campo
+    // Forzar vaciado aunque fechaLocalActual() haya auto-rellenado el campo
     document.getElementById('input-fecha').value = '';
 
     enviarFormulario();
@@ -183,14 +179,14 @@ describe('TC-07 — Campos obligatorios vacíos', () => {
     expect(errorDe('error-fecha').hidden).toBe(false);
   });
 
-  test('NO llama al backend cuando hay campos obligatorios vacíos', () => {
+  test('NO llama al servicio cuando hay campos obligatorios vacíos', () => {
     document.getElementById('input-systolic').value = '';
     document.getElementById('input-diastolic').value = '';
     document.getElementById('input-fecha').value = '';
 
     enviarFormulario();
 
-    expect(mockCrearMedicion).not.toHaveBeenCalled();
+    expect(mockServiceCreate).not.toHaveBeenCalled();
   });
 });
 
@@ -223,14 +219,14 @@ describe('TC-08 — Sistólica ≤ diastólica', () => {
     expect(error.textContent.trim()).not.toBe('');
   });
 
-  test('NO llama al backend cuando sistólica ≤ diastólica', () => {
+  test('NO llama al servicio cuando sistólica ≤ diastólica', () => {
     document.getElementById('input-systolic').value = '70';
     document.getElementById('input-diastolic').value = '80';
     document.getElementById('input-fecha').value = '2026-02-18T10:00';
 
     enviarFormulario();
 
-    expect(mockCrearMedicion).not.toHaveBeenCalled();
+    expect(mockServiceCreate).not.toHaveBeenCalled();
   });
 
   test('no muestra error en sistólica cuando es mayor que la diastólica', () => {
@@ -238,10 +234,7 @@ describe('TC-08 — Sistólica ≤ diastólica', () => {
     document.getElementById('input-diastolic').value = '85';
     document.getElementById('input-fecha').value = '2026-02-18T10:00';
 
-    mockCrearMedicion.mockResolvedValue({
-      id: 'uuid-test',
-      systolic: 130,
-      diastolic: 85,
+    mockServiceCreate.mockResolvedValue({
       measuredAt: '2026-02-18T10:00:00.000Z',
       source: 'manual',
     });
