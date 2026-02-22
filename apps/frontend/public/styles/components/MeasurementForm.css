@@ -1,0 +1,118 @@
+/* =========================================================
+   MeasurementForm — Formulario de registro manual
+   ========================================================= */
+
+.formulario-registro {
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: var(--sombra-tarjeta);
+  padding: 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.formulario__titulo {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-texto-principal);
+}
+
+/* --- Campos del formulario --- */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.campo__label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-texto-principal);
+}
+
+.campo__requerido {
+  color: #c0392b;
+  margin-left: 0.125rem;
+}
+
+.campo__opcional {
+  font-weight: 400;
+  color: var(--color-texto-secundario);
+  font-size: 0.875rem;
+}
+
+.campo__fila {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.campo__input {
+  flex: 1;
+  min-height: 48px;
+  padding: 0.625rem 0.75rem;
+  border: 1.5px solid var(--color-borde);
+  border-radius: 8px;
+  font-family: var(--fuente);
+  font-size: 1rem;
+  color: var(--color-texto-principal);
+  background-color: var(--color-superficie);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.campo__input:focus {
+  outline: none;
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+}
+
+.campo__input--fecha {
+  width: 100%;
+}
+
+/* Estado de error en el input */
+.campo__input--invalido {
+  border-color: #c0392b;
+}
+
+.campo__input--invalido:focus {
+  border-color: #c0392b;
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+}
+
+.campo__unidad {
+  font-size: 0.875rem;
+  color: var(--color-texto-unidad);
+  white-space: nowrap;
+  min-width: 2.5rem;
+}
+
+.campo__error {
+  font-size: 0.875rem;
+  color: #c0392b;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* --- Error global del formulario (error del backend) --- */
+.formulario__error {
+  background-color: var(--color-error-fondo);
+  border: 1px solid var(--color-error-borde);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: var(--color-error-texto);
+  font-size: 0.9375rem;
+}
+
+/* --- Acciones --- */
+.formulario__acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding-top: 0.25rem;
+}

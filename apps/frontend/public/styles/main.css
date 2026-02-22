@@ -1,0 +1,145 @@
+/* =========================================================
+   Tensia — Estilos globales
+   Mobile-first. Variables CSS para facilitar theming futuro.
+   ========================================================= */
+
+/* =========================================================
+   Componentes (parciales) — deben ir ANTES de cualquier regla
+   ========================================================= */
+@import './components/MeasurementForm.css';
+@import './components/MeasurementList.css';
+@import './components/MeasurementChart.css';
+@import './components/Toast.css';
+@import './components/IosWarning.css';
+
+/* --- Variables del sistema de diseño --- */
+:root {
+  --color-fondo: #f5f5f5;
+  --color-superficie: #ffffff;
+  --color-borde: #e0e0e0;
+
+  --color-primario: #1a73e8;
+  --color-primario-hover: #1558b0;
+  --color-primario-texto: #ffffff;
+
+  --color-texto-principal: #1c1c1e;
+  --color-texto-secundario: #6e6e73;
+  --color-texto-unidad: #9e9e9e;
+
+  --color-error-fondo: #fff3cd;
+  --color-error-borde: #f5a623;
+  --color-error-texto: #856404;
+
+  --radio-tarjeta: 12px;
+  --radio-boton: 10px;
+  --sombra-tarjeta: 0 1px 4px rgba(0, 0, 0, 0.08);
+
+  --fuente: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --tamaño-base: 16px;
+}
+
+/* --- Reset mínimo --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--fuente);
+  font-size: var(--tamaño-base);
+  background-color: var(--color-fondo);
+  color: var(--color-texto-principal);
+  line-height: 1.5;
+  min-height: 100dvh;
+}
+
+/* --- Header --- */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  background-color: var(--color-superficie);
+  border-bottom: 1px solid var(--color-borde);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.header__logo {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.header__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* --- Contenido principal --- */
+.main {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* --- Botones --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 48px; /* área táctil mínima WCAG */
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: var(--radio-boton);
+  font-family: var(--fuente);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+  text-decoration: none;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn--primario {
+  width: 100%;
+  background-color: var(--color-primario);
+  color: var(--color-primario-texto);
+}
+
+.btn--primario:hover:not(:disabled) {
+  background-color: var(--color-primario-hover);
+}
+
+.btn--secundario {
+  background-color: transparent;
+  color: var(--color-primario);
+  border: 1.5px solid var(--color-primario);
+  padding: 0.5rem 1rem;
+  min-height: 40px;
+  font-size: 0.9375rem;
+}
+
+.btn--secundario:hover:not(:disabled) {
+  background-color: rgba(26, 115, 232, 0.06);
+}
+
+/* --- Utilidades --- */
+[hidden] {
+  display: none !important;
+}
+
+

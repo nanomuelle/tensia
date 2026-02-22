@@ -1,0 +1,27 @@
+/* =========================================================
+   IosWarning — Aviso informativo iOS/Safari (política ITP)
+   Muestra advertencia sobre posible borrado de localStorage
+   tras 7 días de inactividad en Safari/WebKit.
+   ========================================================= */
+
+.aviso-ios {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background-color: #fef3c7;
+  border-bottom: 1px solid #f59e0b;
+  color: #78350f;
+  font-size: 0.875rem;
+  padding: 0.625rem 1rem;
+}
+
+.aviso-ios__cerrar {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: inherit;
+  flex-shrink: 0;
+  padding: 0 0.25rem;
+}

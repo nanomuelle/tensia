@@ -25,7 +25,7 @@ gestionado mediante un adaptador intercambiable inyectado en los servicios (`Jso
 ## ADR-002: Arquitectura frontend/backend desacoplada
 
 **Fecha:** 2026-02-18
-**Estado:** Aceptado
+**Estado:** Aceptado _(revisado parcialmente por ADR-005)_
 
 ### Contexto
 Si el frontend accediera directamente a la persistencia, cualquier cambio de storage
@@ -33,29 +33,33 @@ Si el frontend accediera directamente a la persistencia, cualquier cambio de sto
 Además, el OCR post-MVP y la autenticación futura residen en el backend.
 
 ### Decisión
-El frontend solo se comunica con el backend vía HTTP (API REST).
-La capa de persistencia es un adaptador interno del backend, invisible para el frontend.
+El frontend no conoce los detalles de implementación de la capa de persistencia.
+La persistencia es un **adaptador intercambiable** inyectado en `measurementService`.
+
+> ⚠️ **Revisión ADR-005 (2026-02-18):** La formulación original decía "el frontend solo se comunica con el backend vía HTTP (API REST)". Con ADR-005 aceptado, los datos de mediciones no pasan por HTTP en el MVP: la capa de persistencia es `localStorageAdapter` en el cliente. El espíritu de desacoplamiento se mantiene. En post-MVP, la comunicación HTTP se usa exclusivamente para OAuth y OCR.
 
 ### Consecuencias
-- El contrato API (`docs/architecture/api-contract.md`) es el único punto de acoplamiento entre capas.
-- El frontend puede desarrollarse y testearse de forma independiente con mocks del API.
-- La persistencia puede migrarse (Google Drive, SQLite, PostgreSQL) sin tocar el frontend.
+- El contrato de la capa de persistencia (`docs/architecture/api-contract.md` — sección _Contrato del adaptador_) es el único punto de acoplamiento entre servicios y almacenamiento.
+- `measurementService` puede testearse de forma independiente inyectando un adaptador mock.
+- La persistencia puede migrarse (`localStorage` → `googleDriveAdapter`) sin modificar el servicio.
+- El backend está desacoplado de la lógica de datos del frontend: no almacena ni gestiona mediciones en el MVP.
 
 ---
 
 ## ADR-003: Vanilla JS como stack del frontend para el MVP
 
 **Fecha:** 2026-02-18
-**Estado:** Aceptado
+**Estado:** Aceptado _(estructura actualizada en refactorización 2026-02-22)_
 
 ### Contexto
-El alcance del MVP del frontend es una sola pantalla con dos funciones:
+El alcance del MVP del frontend incluye:
 1. Formulario para registrar una medición manual.
 2. Listado de mediciones ordenadas por fecha.
+3. Gráfica de evolución temporal (D3.js — ADR-006).
+4. Navegación hash-based entre vistas (implementada en refactorización 2026-02-22).
 
-No hay routing, no hay autenticación, no hay estado complejo compartido entre vistas.
-El backend ya maneja toda la lógica de negocio y validación.
-Las features de crecimiento (OCR, gráficas) son post-MVP y no están priorizadas.
+La lógica de dominio y validación reside en el frontend (ADR-005).
+Las features de crecimiento (OCR, Google Drive, OAuth) son post-MVP.
 
 Se evaluaron tres opciones:
 
@@ -66,27 +70,35 @@ Se evaluaron tres opciones:
 | Vue 3 (CDN) | Opcional | Vue (~40 KB) | Overkill para 1 pantalla |
 
 ### Decisión
-Usar **Vanilla JS** con la API `fetch` nativa para consumir el backend.
+Usar **Vanilla JS** con ES Modules nativos.
 Sin frameworks, sin paso de compilación. Los ficheros se sirven estáticamente
 desde `apps/frontend/public/`.
 
-Estructura mínima:
+Estructura actual (tras refactorización 2026-02-22):
 ```
 apps/frontend/
   public/
-    index.html       ← única página
-    app.js           ← lógica de la UI (fetch, DOM)
-    styles.css       ← estilos
+    index.html              ← shell: <header> + <main id="app"> + registro SW
+    styles/main.css         ← variables CSS + parciales por componente
   src/
-    api.js           ← módulo de acceso al backend (fetch wrapper)
+    app.js                  ← ~40 líneas: bootstrap (service, store, toast, router)
+    router.js               ← router hash-based
+    chart.js                ← módulo D3 puro
+    domain/                 ← validaciones de negocio
+    infra/                  ← adaptadores de persistencia (localStorageAdapter, httpAdapter)
+    services/               ← lógica de aplicación
+    store/appStore.js       ← estado global reactivo (pub/sub)
+    views/HomeView.js       ← orquestación de componentes
+    components/             ← IosWarning, Toast, MeasurementForm, MeasurementList, MeasurementChart
+    shared/                 ← formatters, validators, constants, eventBus
   tests/
 ```
 
 ### Consecuencias
-- **Ventajas:** setup inmediato, cero dependencias, bundle mínimo, compatible con cualquier servidor estático.
-- **Desventaja:** sin reactividad declarativa; añadir features complejas (OCR live preview, gráficas interactivas) requerirá más código imperativo.
-- **Camino de migración:** si el UI crece más allá del MVP, se recomienda migrar a **Svelte + Vite** por su bundle compilado mínimo y su sintaxis cercana a HTML/JS nativo. La separación `src/api.js` facilita esta migración.
-- El contrato con el backend no cambia; solo cambia cómo se renderiza el frontend.
+- **Ventajas:** setup inmediato, cero dependencias de framework, bundle mínimo, compatible con cualquier servidor estático.
+- **Desventaja:** sin reactividad declarativa; la arquitectura de componentes (patrón función constructora + `mount/unmount/update`) es imperativa, aunque sigue un contrato consistente.
+- **Camino de migración:** si el UI crece más allá del MVP, se recomienda migrar a **Svelte + Vite** por su bundle compilado mínimo y su sintaxis cercana a HTML/JS nativo. La separación por capas (`domain/`, `services/`, `infra/`) facilita esta migración.
+- El contrato del adaptador de persistencia no cambia con el stack de UI; solo cambia cómo se renderiza el frontend.
 
 ---
 

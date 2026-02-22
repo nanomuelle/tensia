@@ -8,6 +8,7 @@
  */
 
 import { validateMeasurement } from '../domain/measurement.js';
+import { emit, Events } from '../shared/eventBus.js';
 
 /**
  * Crea una instancia del servicio de mediciones.
@@ -58,11 +59,7 @@ export function createMeasurementService(adapter) {
     // Notificar a observadores de que se ha guardado una medición (US-12).
     // El CustomEvent permite que la gráfica y la lista se actualicen
     // automáticamente sin que el formulario los llame directamente.
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(
-        new CustomEvent('medicion-guardada', { detail: nuevaMedicion }),
-      );
-    }
+    emit(Events.MEASUREMENT_SAVED, nuevaMedicion);
 
     return nuevaMedicion;
   }

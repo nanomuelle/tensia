@@ -1,0 +1,48 @@
+/**
+ * Estilos del componente Toast.
+ * Posicionado en la esquina inferior central, animado con transición de opacidad.
+ */
+
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  /* Animación de aparición */
+  animation: toast-in 0.2s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* --- Variantes --- */
+
+.toast--success {
+  background-color: #16a34a; /* verde */
+}
+
+.toast--error {
+  background-color: #dc2626; /* rojo */
+}
+
+.toast--info {
+  background-color: #2563eb; /* azul */
+}

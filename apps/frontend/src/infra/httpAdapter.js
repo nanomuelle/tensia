@@ -5,7 +5,7 @@
  * Con ADR-005, en producción MVP los datos viven en localStorage del cliente.
  * Este módulo ya no se usa en los flujos de la UI de producción.
  * Se mantiene para:
- *   - Tests de integración con el backend (api.test.js)
+ *   - Tests de integración con el backend (tests/infra/httpAdapter.test.js)
  *   - Entornos de desarrollo donde se quiere inspeccionar la API REST directamente
  *   - Compatibilidad con posibles herramientas de depuración
  *

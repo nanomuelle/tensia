@@ -7,19 +7,42 @@
  * por lo que la app funciona completamente offline una vez instalada.
  */
 
-// v3: añadidos módulos D3 (CDN jsDelivr) para soporte offline de la gráfica (BK-14)
-const CACHE_NAME = 'tensia-shell-v3';
+// v6: añadidos CSS de componentes a SHELL_URLS para garantizar disponibilidad offline
+const CACHE_NAME = 'tensia-shell-v6';
 
 /** Recursos estáticos del shell que se cachean al instalar el SW. */
 const SHELL_URLS = [
   '/',
-  '/styles.css',
+  '/styles/main.css',
+  '/styles/components/MeasurementForm.css',
+  '/styles/components/MeasurementList.css',
+  '/styles/components/MeasurementChart.css',
+  '/styles/components/Toast.css',
+  '/styles/components/IosWarning.css',
   '/src/app.js',
   '/src/chart.js',
-  '/src/validators.js',
-  '/src/infra/localStorageAdapter.js',
+  '/src/router.js',
+  // Dominio y servicios
   '/src/domain/measurement.js',
   '/src/services/measurementService.js',
+  // Adaptadores
+  '/src/infra/localStorageAdapter.js',
+  '/src/infra/httpAdapter.js',
+  // Store
+  '/src/store/appStore.js',
+  // Views
+  '/src/views/HomeView.js',
+  // Componentes
+  '/src/components/MeasurementList/MeasurementList.js',
+  '/src/components/MeasurementChart/MeasurementChart.js',
+  '/src/components/MeasurementForm/MeasurementForm.js',
+  '/src/components/Toast/Toast.js',
+  '/src/components/IosWarning/IosWarning.js',
+  // Shared
+  '/src/shared/constants.js',
+  '/src/shared/eventBus.js',
+  '/src/shared/formatters.js',
+  '/src/shared/validators.js',
   '/manifest.json',
   // D3 submódulos desde CDN jsDelivr (importmap en index.html — ADR-006)
   'https://cdn.jsdelivr.net/npm/d3-selection@3/+esm',

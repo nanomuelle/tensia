@@ -8,6 +8,7 @@ import { select } from 'd3-selection';
 import { scaleTime, scaleLinear } from 'd3-scale';
 import { axisBottom, axisLeft } from 'd3-axis';
 import { line, area } from 'd3-shape';
+import { MIN_MEDICIONES_GRAFICA } from './shared/constants.js';
 
 // --- Colores según especificación de diseño (screens.md) ---
 const COLOR_SISTOLICA   = '#ef4444';
@@ -36,7 +37,7 @@ export function renderChart(container, measurements) {
   if (!container) return;
 
   // Si measurements es null/undefined o tiene menos de 2 elementos, mostramos el skeleton
-  if (!measurements || measurements.length < 2) {
+  if (!measurements || measurements.length < MIN_MEDICIONES_GRAFICA) {
     renderSkeleton(container, measurements || null);
     return;
   }

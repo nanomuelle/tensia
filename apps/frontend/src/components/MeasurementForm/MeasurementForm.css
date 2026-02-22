@@ -1,0 +1,6 @@
+/**
+ * Estilos del componente MeasurementForm.
+ * Los estilos definitivos residen en public/styles/components/MeasurementForm.css,
+ * importados desde public/styles/main.css vía @import (sin bundler — ADR-003).
+ * Este fichero es un placeholder co-ubicado con el JS del componente.
+ */

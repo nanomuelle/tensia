@@ -11,12 +11,9 @@
  *   - NHS — Blood pressure test (nov. 2025)
  */
 
-/** Límites fisiológicamente posibles para automedición doméstica. */
-export const MEASUREMENT_LIMITS = {
-  systolic:  { min: 50,  max: 300 }, // mmHg
-  diastolic: { min: 30,  max: 200 }, // mmHg
-  pulse:     { min: 20,  max: 300 }, // bpm
-};
+// Fuente única de verdad: los límites viven en la capa de dominio.
+import { MEASUREMENT_LIMITS } from '../domain/measurement.js';
+export { MEASUREMENT_LIMITS };
 
 /**
  * Valida los valores del formulario de registro manual.

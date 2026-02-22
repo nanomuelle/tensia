@@ -8,6 +8,7 @@
 
 import { jest, describe, test, expect, beforeEach, beforeAll, afterAll } from '@jest/globals';
 import { createMeasurementService } from '../../src/services/measurementService.js';
+import { Events } from '../../src/shared/eventBus.js';
 
 // =========================================================
 // Stub de crypto.randomUUID (no disponible en Node <19 como global)
@@ -173,21 +174,21 @@ describe('measurementService.create (frontend)', () => {
 });
 
 // =========================================================
-// create() — CustomEvent 'medicion-guardada' (US-12)
+// create() — CustomEvent Events.MEASUREMENT_SAVED (US-12)
 // =========================================================
 
-describe('measurementService.create — evento medicion-guardada (US-12)', () => {
+describe('measurementService.create — evento measurement:saved (US-12)', () => {
   test('despacha el CustomEvent tras guardar correctamente', async () => {
     const adapter = crearAdaptadorMock([]);
     const service = createMeasurementService(adapter);
 
     const evento = await new Promise((resolve) => {
-      window.addEventListener('medicion-guardada', (e) => resolve(e), { once: true });
+      window.addEventListener(Events.MEASUREMENT_SAVED, (e) => resolve(e), { once: true });
       service.create(datosBase);
     });
 
     expect(evento).toBeInstanceOf(Event);
-    expect(evento.type).toBe('medicion-guardada');
+    expect(evento.type).toBe(Events.MEASUREMENT_SAVED);
   });
 
   test('el detail del evento contiene la medición guardada', async () => {
@@ -195,7 +196,7 @@ describe('measurementService.create — evento medicion-guardada (US-12)', () =>
     const service = createMeasurementService(adapter);
 
     const evento = await new Promise((resolve) => {
-      window.addEventListener('medicion-guardada', (e) => resolve(e), { once: true });
+      window.addEventListener(Events.MEASUREMENT_SAVED, (e) => resolve(e), { once: true });
       service.create(datosBase);
     });
 
@@ -213,7 +214,7 @@ describe('measurementService.create — evento medicion-guardada (US-12)', () =>
     const service = createMeasurementService(adapter);
 
     const listener = jest.fn();
-    window.addEventListener('medicion-guardada', listener, { once: true });
+    window.addEventListener(Events.MEASUREMENT_SAVED, listener, { once: true });
 
     await expect(service.create({ systolic: -1 })).rejects.toThrow();
 
@@ -221,7 +222,7 @@ describe('measurementService.create — evento medicion-guardada (US-12)', () =>
     expect(listener).not.toHaveBeenCalled();
 
     // Limpiar el listener registrado por si no disparó
-    window.removeEventListener('medicion-guardada', listener);
+    window.removeEventListener(Events.MEASUREMENT_SAVED, listener);
   });
 
   test('la transición skeleton→gráfica ocurre: al pasar de 1 a 2 mediciones se emite el evento', async () => {
@@ -238,7 +239,7 @@ describe('measurementService.create — evento medicion-guardada (US-12)', () =>
     const service = createMeasurementService(adapter);
 
     const evento = await new Promise((resolve) => {
-      window.addEventListener('medicion-guardada', (e) => resolve(e), { once: true });
+      window.addEventListener(Events.MEASUREMENT_SAVED, (e) => resolve(e), { once: true });
       service.create(datosBase);
     });
 

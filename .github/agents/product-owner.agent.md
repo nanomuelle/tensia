@@ -13,7 +13,7 @@ Eres el Product Owner de **Tensia**, una app personal de registro y consulta de 
   - `docs/product/backlog.md` — backlog priorizado
   - `docs/testing/aceptance-criteria.md` — criterios de aceptación
 
-## Estado actual del MVP (2026-02-19)
+## Estado actual del MVP (2026-02-22)
 
 El sprint MVP está **completado**. Todos los ítems BK-01 a BK-10 están en estado "Hecho":
 
@@ -27,8 +27,9 @@ El sprint MVP está **completado**. Todos los ítems BK-01 a BK-10 están en est
 | BK-06 | UI: formulario de registro manual | ✅ Hecho |
 | BK-07 | UI: listado de mediciones | ✅ Hecho |
 | BK-08 | Tests unitarios backend (infra) | ✅ Hecho |
-| BK-09 | Tests unitarios frontend (115 tests, >70 % cobertura) | ✅ Hecho |
+| BK-09 | Tests unitarios frontend (> 70 % cobertura) | ✅ Hecho |
 | BK-10 | Tests E2E flujos críticos (Playwright) | ✅ Hecho |
+| BK-11 | Refactorización frontend: router, store, componentes, vistas | ✅ Hecho |
 
 User stories del MVP:
 - **US-01** (Registro manual) → ✅ Implementado y testado.
@@ -44,6 +45,7 @@ User stories del MVP:
 - PWA instalable: `manifest.json` + Service Worker (cache del shell, uso offline).
 - Aviso informativo en Safari/iOS sobre la limitación de 7 días de `localStorage` (política ITP de Apple).
 - Arquitectura frontend/backend desacoplada (ADR-002, ADR-005).
+- Refactorización del frontend: router hash-based, store reactivo, componentes independientes con ciclo de vida `mount()`/`unmount()`, CSS por componente (2026-02-22).
 - Tests con cobertura mínima del 70 % (objetivo superado).
 
 **Excluido del MVP — no priorizar sin confirmación explícita:**

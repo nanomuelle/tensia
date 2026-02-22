@@ -40,22 +40,54 @@ PWA (Frontend — Vanilla JS + Service Worker)
     └─ Endpoint OCR [post-MVP]
 ```
 
-**Estructura de la capa de persistencia (cliente):**
+**Estructura del frontend (tras refactorización — 2026-02-22):**
 
 ```
 apps/frontend/src/
+  app.js                    ← punto de entrada mínimo: inicializa store, toast, router
+  router.js                 ← router hash-based (#/, #/settings …)
+  chart.js                  ← módulo D3 (encapsulado, recibe contenedor y datos)
+
   domain/
-    measurement.js          ← validaciones de negocio
+    measurement.js          ← validaciones de negocio puras
   services/
     measurementService.js   ← lógica de aplicación (recibe adaptador por inyección)
   infra/
     localStorageAdapter.js  ← implementa getAll() / save()  [MVP]
-    googleDriveAdapter.js   ← implementa getAll() / save()  [post-MVP]
+    httpAdapter.js          ← fetch al backend; solo OCR y OAuth [post-MVP]
+  store/
+    appStore.js             ← estado global reactivo (pub/sub); sin dependencias DOM
+  views/
+    HomeView.js             ← orquesta MeasurementList + MeasurementChart + formulario
+  components/
+    MeasurementForm/        ← formulario de registro (JS + CSS)
+    MeasurementList/        ← historial de mediciones (JS)
+    MeasurementChart/       ← wrapper D3 del gráfico (JS + CSS)
+    Toast/                  ← notificaciones efímeras (JS + CSS)
+    IosWarning/             ← aviso ITP Safari/iOS (JS + CSS)
+  shared/
+    validators.js           ← validaciones de presentación (importa límites de domain/)
+    formatters.js           ← formato de fecha y unidades
+    constants.js            ← constantes de aplicación
+    eventBus.js             ← CustomEvent wrapper tipado (emit / on)
 ```
+
+**Estructura de CSS:**
+
+```
+apps/frontend/public/styles/
+  main.css                  ← variables globales + reset; importa parciales de componentes
+  components/               ← hojas de estilo de componentes complejos (IosWarning, MeasurementChart …)
+```
+
+Cada componente con estilos propios tiene su fichero `.css` junto al `.js` en `src/components/`.
 
 **Reglas críticas:**
 - La capa de persistencia es un **adaptador intercambiable** inyectado en el servicio: en sesión anónima se usa `localStorageAdapter`; en sesión autenticada, `googleDriveAdapter`.
 - El **backend no gestiona ni almacena datos de mediciones**; su rol en el MVP es únicamente servir los ficheros estáticos.
+- `app.js` es un punto de entrada mínimo: no contiene lógica de negocio ni manipulación directa del DOM más allá de montar Toast e IosWarning.
+- Las vistas (`views/`) y componentes (`components/`) exponen `mount()` / `unmount()` y se orquestan mediante el router.
+- `appStore.js` es la fuente única de verdad para el estado de mediciones; los componentes se suscriben a él.
 - En iOS (Safari/WebKit), el `localStorage` de una PWA puede borrarse tras 7 días de inactividad (política ITP). La UI debe mostrar un aviso informativo en Safari/iOS.
 - Las decisiones de arquitectura se documentan como ADRs en `docs/architecture/decisions.md`.
 
@@ -72,10 +104,38 @@ apps/
       infra/            ← adaptadores externos (JsonFileAdapter — solo dev/tests)
     tests/
   frontend/
+    public/
+      index.html        ← shell mínimo: <main id="app"> + imports del SW
+      manifest.json
+      sw.js
+      icons/
+      styles/
+        main.css        ← variables + reset global
+        components/     ← parciales CSS de componentes complejos
     src/
+      app.js            ← punto de entrada mínimo
+      router.js         ← router hash-based
+      chart.js          ← módulo D3
+      domain/
+      services/
+      infra/
+      store/
+      views/
+      components/
+      shared/
     tests/
+      chart.test.js
+      router.test.js
+      components/       ← tests unitarios de componentes
+      domain/
+      e2e/
+      infra/
+      services/
+      shared/
+      store/
 docs/
   architecture/         ← system-overview, api-contract, data-model, decisions (ADRs)
+                        ← frontend-refactor-assessment, frontend-refactor-workplan
   design/               ← screens, ux-flow
   product/              ← mvp-scope, user-stories, backlog
   testing/              ← test-strategy, test-cases, acceptance-criteria
@@ -203,6 +263,7 @@ Cobertura mínima objetivo: **70%**.
 | Frontend Dev | `.github/agents/frontend-dev.agent.md` | UI, formularios, consumo de API |
 | Diseñador UX/UI | `.github/agents/designer.agent.md` | Wireframes, flujos, accesibilidad |
 | QA | `.github/agents/qa.agent.md` | Plan de testing, tests, criterios de aceptación |
+| DevOps | `.github/agents/devops.agent.md` | CI/CD, GitHub Actions, despliegue |
 
 ---
 
