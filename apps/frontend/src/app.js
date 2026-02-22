@@ -9,6 +9,7 @@ import { createMeasurementService } from './services/measurementService.js';
 import { validarCamposMedicion, prepararDatosMedicion } from './validators.js';
 import { renderChart } from './chart.js';
 import { formatearFecha, fechaLocalActual } from './shared/formatters.js';
+import { on, Events } from './shared/eventBus.js';
 
 // Servicio con adaptador inyectado (anónimo → localStorage)
 const service = createMeasurementService(adapter);
@@ -285,7 +286,7 @@ formMedicion.addEventListener('submit', enviarFormulario);
 // Actualización reactiva de lista y gráfica al guardar una medición (US-12).
 // El servicio despacha este evento tras persistir en localStorage, de modo que
 // cualquier parte de la UI puede reaccionar sin acoplarse al formulario.
-window.addEventListener('medicion-guardada', () => cargarMediciones());
+on(Events.MEASUREMENT_SAVED, () => cargarMediciones());
 
 // Limpiar error de campo al empezar a escribir
 [inputSystolic, inputDiastolic, inputPulse, inputFecha].forEach((input) => {
