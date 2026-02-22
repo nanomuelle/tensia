@@ -7,18 +7,42 @@
  * por lo que la app funciona completamente offline una vez instalada.
  */
 
-// v5: eliminado shim validators.js; la validación vive en shared/validators.js (Paso 16)
-const CACHE_NAME = 'tensia-shell-v5';
+// v6: añadidos CSS de componentes a SHELL_URLS para garantizar disponibilidad offline
+const CACHE_NAME = 'tensia-shell-v6';
 
 /** Recursos estáticos del shell que se cachean al instalar el SW. */
 const SHELL_URLS = [
   '/',
   '/styles/main.css',
+  '/styles/components/MeasurementForm.css',
+  '/styles/components/MeasurementList.css',
+  '/styles/components/MeasurementChart.css',
+  '/styles/components/Toast.css',
+  '/styles/components/IosWarning.css',
   '/src/app.js',
   '/src/chart.js',
-  '/src/infra/localStorageAdapter.js',
+  '/src/router.js',
+  // Dominio y servicios
   '/src/domain/measurement.js',
   '/src/services/measurementService.js',
+  // Adaptadores
+  '/src/infra/localStorageAdapter.js',
+  '/src/infra/httpAdapter.js',
+  // Store
+  '/src/store/appStore.js',
+  // Views
+  '/src/views/HomeView.js',
+  // Componentes
+  '/src/components/MeasurementList/MeasurementList.js',
+  '/src/components/MeasurementChart/MeasurementChart.js',
+  '/src/components/MeasurementForm/MeasurementForm.js',
+  '/src/components/Toast/Toast.js',
+  '/src/components/IosWarning/IosWarning.js',
+  // Shared
+  '/src/shared/constants.js',
+  '/src/shared/eventBus.js',
+  '/src/shared/formatters.js',
+  '/src/shared/validators.js',
   '/manifest.json',
   // D3 submódulos desde CDN jsDelivr (importmap en index.html — ADR-006)
   'https://cdn.jsdelivr.net/npm/d3-selection@3/+esm',
