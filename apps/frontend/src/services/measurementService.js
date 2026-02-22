@@ -55,6 +55,15 @@ export function createMeasurementService(adapter) {
     mediciones.push(nuevaMedicion);
     await adapter.save(mediciones);
 
+    // Notificar a observadores de que se ha guardado una medición (US-12).
+    // El CustomEvent permite que la gráfica y la lista se actualicen
+    // automáticamente sin que el formulario los llame directamente.
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('medicion-guardada', { detail: nuevaMedicion }),
+      );
+    }
+
     return nuevaMedicion;
   }
 

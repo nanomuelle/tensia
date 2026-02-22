@@ -154,6 +154,22 @@ Estado: ✅ Cubierto — `apps/frontend/tests/e2e/flows/error-backend.spec.js` (
 
 ---
 
+**[TC-13] — Skeleton de gráfica cuando no hay datos suficientes (US-11)**
+Dado: `localStorage` contiene 0, 1 ó ≥2 mediciones al cargar la app
+Cuando: se accede a la pantalla principal
+Entonces:
+  - 0 mediciones → `#seccion-grafica` visible · `.chart-skeleton` visible · texto "Sin datos suficientes para mostrar la gráfica" · sin SVG
+  - 1 medición   → igual que con 0
+  - ≥2 mediciones → `.chart-skeleton` ausente · SVG con `role="img"` y `aria-label` correcto visible
+  - Transición: al guardar la 2.ª medición desde el formulario, el skeleton desaparece y el SVG aparece sin recargar
+  - Primera visita (clave ausente en localStorage) → skeleton visible con texto informativo
+Tipo: E2E
+Prioridad: Alta
+Nota: el seeding se realiza con `page.addInitScript()` escribiendo `bp_measurements` en localStorage — sin llamada HTTP (ADR-005).
+Estado: ✅ Cubierto — `apps/frontend/tests/e2e/flows/skeleton-grafica.spec.js` (15 tests, Playwright)
+
+---
+
 **[TC-12] — Rangos clínicamente plausibles (OMS / NHS)**
 Dado: el servidor / validador del formulario está activo
 Cuando: se envían valores fuera de los rangos clínicos para sistólica, diastólica o pulso

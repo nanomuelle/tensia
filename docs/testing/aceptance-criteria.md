@@ -1,6 +1,6 @@
 # Criterios de aceptación — MVP Tensia
 
-_Última revisión: 2026-02-19 — Actualizado para reflejar ADR-005_
+_Última revisión: 2026-02-22 — Añadidos CA-08 (gráfica) y CA-09 (skeleton US-11)_
 
 Cada criterio es verificable de forma objetiva. Un criterio no está "aceptado" hasta que existe un test que lo valida o se ha verificado manualmente con pasos documentados.
 
@@ -14,6 +14,8 @@ Cada criterio es verificable de forma objetiva. Un criterio no está "aceptado" 
 | CA-05 | Sin errores críticos en flujo principal | ✅ | E2E ✅ (TC-11) |
 | CA-06 | Validaciones del formulario manual | ✅ | Componente ✅ (TC-07, TC-08) |
 | CA-07 | Rangos clínicos en validaciones     | ✅ | ✅ (TC-12)                    |
+| CA-08 | Gráfica de evolución temporal        | ✅ | Unitario ✅ (chart.test.js)    |
+| CA-09 | Skeleton cuando no hay datos suficientes (US-11) | ✅ | E2E ✅ (TC-13) |
 
 ---
 
@@ -74,7 +76,7 @@ Cada criterio es verificable de forma objetiva. Un criterio no está "aceptado" 
 2. Si el almacenamiento local (`localStorage`) no está disponible, la app muestra un banner de error y no se rompe.
 3. Si el usuario envía datos inválidos, aparecen mensajes de error y la app no se queda bloqueada.
 
-**Estado:** ✅ Implementado — ✅ Test E2E automatizado (TC-11, `error-almacenamiento.spec.js`)
+**Estado:** ✅ Implementado — ✅ Test E2E automatizado (TC-11, `error-backend.spec.js`)
 
 ---
 
@@ -110,3 +112,30 @@ Los umbrales se basan en las guías de la **OMS** (*Hypertension Fact Sheet*, se
 | pulso      | 20   | 300  | bpm    |
 
 **Estado:** ✅ Implementado (frontend: `domain/measurement.js` + `validators.js`) — ✅ Unitario automatizado (TC-12, `measurement.test.js` + `validators.test.js`)
+
+---
+
+## CA-08 — Gráfica de evolución temporal
+
+**Verificable cuando:**
+1. Existen 2 o más mediciones guardadas en `localStorage`.
+2. Al cargar la app, se renderiza una gráfica SVG de líneas con la serie sistólica (rojo) y diastólica (azul).
+3. Las mediciones están representadas en orden cronológico ascendente (izquierda = más antigua).
+4. La gráfica incluye leyenda, ejes con etiquetas legibles y máximo 10 fechas en el eje X.
+5. El SVG tiene `role="img"` y `aria-label` descriptivo.
+
+**Estado:** ✅ Implementado (D3.js modular, ADR-006) — ✅ Unitario automatizado (23 tests, `chart.test.js`)
+
+---
+
+## CA-09 — Skeleton cuando no hay datos suficientes (US-11)
+
+**Verificable cuando:**
+1. `localStorage` contiene 0 o 1 medición.
+2. Al cargar la app, la sección `#seccion-grafica` es visible y contiene `.chart-skeleton`.
+3. El skeleton muestra el texto “Sin datos suficientes para mostrar la gráfica”.
+4. No se renderiza ningún SVG.
+5. En primera visita (clave ausente en localStorage) se muestra el mismo skeleton.
+6. Al guardar la segunda medición desde el formulario, el skeleton desaparece y la gráfica SVG aparece sin recargar.
+
+**Estado:** ✅ Implementado (`renderSkeleton()` en `chart.js`) — ✅ E2E automatizado (15 tests, TC-13, `skeleton-grafica.spec.js`)

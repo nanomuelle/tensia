@@ -12,7 +12,8 @@ Permitir a un usuario registrar y consultar sus mediciones de tensión arterial 
 - PWA instalable: `manifest.json` + Service Worker (cache del shell, uso offline)
 - Aviso informativo en Safari/iOS sobre la limitación de 7 días de `localStorage` (política ITP)
 - Arquitectura frontend/backend desacoplada (ADR-002, ADR-005)
-- Gráfica de evolución temporal de sistólica/diastólica con Canvas API nativo (BK-14, US-04)
+- Gráfica de evolución temporal de sistólica/diastólica con D3.js modular sobre SVG (ADR-006, BK-14, US-04)
+- Skeleton informativo en la gráfica cuando hay menos de 2 mediciones (US-11)
 - Tests con cobertura mínima del 70 %
 
 ## Excluido del MVP (no implementar sin confirmación)

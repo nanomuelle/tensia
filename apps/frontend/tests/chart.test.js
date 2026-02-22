@@ -74,17 +74,24 @@ describe('renderChart — casos de guarda', () => {
 
   test('no hace nada si measurements es null', () => {
     expect(() => renderChart(contenedor, null)).not.toThrow();
-    expect(contenedor.innerHTML).toBe('');
+    // Debe renderizar el skeleton informativo cuando measurements es null
+    const skeleton = contenedor.querySelector('.chart-skeleton');
+    expect(skeleton).not.toBeNull();
+    expect(skeleton.textContent).toContain('Sin datos suficientes para mostrar la gráfica');
   });
 
   test('no renderiza con 0 mediciones', () => {
     renderChart(contenedor, []);
-    expect(contenedor.innerHTML).toBe('');
+    const skeleton = contenedor.querySelector('.chart-skeleton');
+    expect(skeleton).not.toBeNull();
+    expect(skeleton.textContent).toContain('Sin datos suficientes para mostrar la gráfica');
   });
 
   test('no renderiza con exactamente 1 medición', () => {
     renderChart(contenedor, [fixturesMediciones()[0]]);
-    expect(contenedor.innerHTML).toBe('');
+    const skeleton = contenedor.querySelector('.chart-skeleton');
+    expect(skeleton).not.toBeNull();
+    expect(skeleton.textContent).toContain('Sin datos suficientes para mostrar la gráfica');
   });
 });
 
