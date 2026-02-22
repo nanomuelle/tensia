@@ -7,13 +7,12 @@
 import * as adapter from './infra/localStorageAdapter.js';
 import { createMeasurementService } from './services/measurementService.js';
 import { validarCamposMedicion, prepararDatosMedicion } from './shared/validators.js';
-import { renderChart } from './chart.js';
 import { fechaLocalActual } from './shared/formatters.js';
 import { on, Events } from './shared/eventBus.js';
-import { MIN_MEDICIONES_GRAFICA } from './shared/constants.js';
 import { createIosWarning } from './components/IosWarning/IosWarning.js';
 import { createToast } from './components/Toast/Toast.js';
 import { createMeasurementList } from './components/MeasurementList/MeasurementList.js';
+import { createMeasurementChart } from './components/MeasurementChart/MeasurementChart.js';
 
 // Servicio con adaptador inyectado (anónimo → localStorage)
 const service = createMeasurementService(adapter);
@@ -24,15 +23,11 @@ const historial = createMeasurementList(
   { onReintentar: () => cargarMediciones() },
 );
 
-// --- Referencias al DOM: gráfica ---
-const seccionGrafica   = document.getElementById('seccion-grafica');
-const containerChart   = document.getElementById('chart-mediciones');
-
-// Referencia a las últimas mediciones para que ResizeObserver pueda redibujar
-let ultimasMediciones = [];
-
-// ResizeObserver: se crea al primer renderizado de la gráfica (no en carga del módulo)
-let resizeObserver = null;
+// --- Gráfica (componente) ---
+const grafica = createMeasurementChart(
+  document.getElementById('seccion-grafica'),
+  document.getElementById('chart-mediciones'),
+);
 
 // --- Referencias al DOM: formulario ---
 const btnNuevaMedicion = document.getElementById('btn-nueva-medicion');
@@ -47,47 +42,6 @@ const inputFecha = document.getElementById('input-fecha');
 const errorFormulario = document.getElementById('error-formulario');
 
 // =========================================================
-// Gráfica: renderizado con D3 SVG (ADR-006)
-// =========================================================
-
-/**
- * Renderiza la gráfica de evolución de tensión arterial.
- * Muestra sistólica y diastólica en un gráfico de líneas SVG.
- * Solo se muestra con ≥ 2 mediciones.
- * El ResizeObserver se inicializa aquí, solo cuando la gráfica es visible.
- */
-function renderizarGrafica(mediciones) {
-  // Guardar referencia para que ResizeObserver pueda redibujar
-  ultimasMediciones = mediciones;
-
-  // Si no existe el DOM esperado, no hacemos nada
-  if (!seccionGrafica || !containerChart) return;
-
-  // Mostrar siempre la sección de gráfica: el módulo renderChart
-  // decidirá si dibuja la gráfica real o el skeleton cuando haya <2 mediciones
-  seccionGrafica.hidden = false;
-
-  // Si no hay suficientes mediciones, renderizamos el skeleton y salimos
-  if (mediciones.length < MIN_MEDICIONES_GRAFICA) {
-    renderChart(containerChart, mediciones);
-    return;
-  }
-
-  // Inicializar ResizeObserver solo cuando la gráfica es visible y tiene datos suficientes
-  if (!resizeObserver && typeof ResizeObserver !== 'undefined') {
-    resizeObserver = new ResizeObserver(() => {
-      if (ultimasMediciones.length >= MIN_MEDICIONES_GRAFICA && containerChart) {
-        renderChart(containerChart, ultimasMediciones);
-      }
-    });
-    resizeObserver.observe(containerChart);
-  }
-
-  // Renderizar usando el módulo de gráficas D3
-  renderChart(containerChart, mediciones);
-}
-
-// =========================================================
 // Historial: carga
 // =========================================================
 
@@ -98,14 +52,15 @@ async function cargarMediciones() {
     if (mediciones.length === 0) {
       historial.mostrarVacio();
       // Mostrar skeleton de la gráfica incluso con lista vacía
-      renderizarGrafica(mediciones);
+      grafica.update(mediciones);
     } else {
-      renderizarGrafica(mediciones);
+      grafica.update(mediciones);
       historial.mostrarLista(mediciones);
     }
   } catch {
     historial.mostrarError();
     // En caso de error, ocultamos la sección de gráfica
+    const seccionGrafica = document.getElementById('seccion-grafica');
     if (seccionGrafica) seccionGrafica.hidden = true;
   }
 }
@@ -247,5 +202,6 @@ const toast = createToast(document.getElementById('toast-container'));
 toast.mount();
 createIosWarning(document.getElementById('aviso-ios')).mount();
 historial.mount();
+grafica.mount();
 cargarMediciones();
 
