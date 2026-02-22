@@ -1,6 +1,6 @@
 # Backlog — Tensia
 
-_Última revisión: 2026-02-22 — BK-22 completado (modal formulario implementado); BK-21 completado (diseño layout columnas); BK-23 pendiente_
+_Última revisión: 2026-02-22 — BK-22 completado (modal formulario implementado); BK-21 completado (diseño layout columnas); BK-23 refinado y listo para desarrollo_
 
 ---
 
@@ -183,13 +183,163 @@ Rol: Frontend Dev
 Referencia: US-13, BK-20
 
 **BK-23 — [Frontend Dev] Implementar layout gráfica + historial en columnas**
-Descripción: Cambiar el layout de `HomeView` para que en pantallas ≥ 768 px la gráfica y el historial aparezcan en columnas (`display: grid` o `flex`). Tareas:
-- Modificar `apps/frontend/src/views/HomeView.js` para envolver gráfica e historial en un contenedor de dos columnas.
-- Añadir media query en CSS (`MeasurementChart.css` o nuevo parcial de layout) para activar el grid ≥ 768 px y mantener columna única < 768 px.
-- Hacer la columna del historial independientemente scrollable (`overflow-y: auto`, `max-height`).
-- Mantener comportamiento responsivo del `ResizeObserver` de la gráfica al cambiar el tamaño de su columna.
-- Verificar que skeleton (< 2 mediciones) no rompe el layout de columnas.
-- Añadir/actualizar tests: E2E o de componente que verifiquen las dos variantes de layout.
+
+Descripción: Cambiar el layout de `HomeView` para que en pantallas ≥ 768 px la gráfica y el historial aparezcan en dos columnas (gráfica sticky a la izquierda 55 %, historial scrollable a la derecha 45 %). En < 768 px o con 0 mediciones se usa siempre columna única. Diseño de referencia: `docs/design/screens.md#layout-gráfica--historial-en-columnas-us-14-bk-21`.
+
+---
+
+### Tarea 1 — Variables CSS en `main.css`
+
+Añadir a `:root` en `apps/frontend/public/styles/main.css` las dos variables requeridas por el layout (si no existen todavía):
+
+```css
+--header-height: 56px;
+--btn-nueva-height: 48px;
+```
+
+---
+
+### Tarea 2 — Crear `HomeLayout.css`
+
+Crear `apps/frontend/public/styles/components/HomeLayout.css` e importarlo en `main.css` como parcial (junto a los demás `@import`):
+
+```css
+/* =========================================================
+   HomeLayout — Layout de dos columnas (gráfica + historial)
+   Breakpoint: ≥ 768 px  (BK-23 / US-14)
+   ========================================================= */
+
+/*
+ * Contenedor del área de contenido (gráfica + historial).
+ * Por defecto (móvil <768 px y 0 mediciones): columna única.
+ */
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/*
+ * Dos columnas: solo se activa con ≥ 1 medición Y ≥ 768 px.
+ * La clase .dashboard-content--columnas la añade/quita HomeView.js
+ * en respuesta al estado del store.
+ */
+@media (min-width: 768px) {
+  .dashboard-content--columnas {
+    display: grid;
+    grid-template-columns: 55% 1fr;
+    gap: 24px;
+    align-items: start;
+    padding: 0 8px; /* padding lateral extra en desktop */
+  }
+
+  /* Columna izquierda: gráfica sticky */
+  .dashboard-content--columnas .grafica-seccion {
+    position: sticky;
+    top: calc(var(--header-height) + 8px);
+    overflow: visible;
+  }
+
+  /* Columna derecha: historial scrollable */
+  .dashboard-content--columnas .historial {
+    overflow-y: auto;
+    max-height: calc(
+      100vh - var(--header-height) - var(--btn-nueva-height) - 48px
+    );
+    padding-right: 4px;
+  }
+}
+
+/* Gap entre botón "Nueva medición" y el área de columnas */
+.dashboard-content {
+  margin-top: 0; /* el gap lo gestiona el flex/grid de .main */
+}
+```
+
+> **Nota:** `MeasurementChart.css` no debe modificarse para el layout; sólo gestiona la apariencia interna de la gráfica.
+
+---
+
+### Tarea 3 — Modificar `HomeView.js`
+
+#### 3a. Envolver gráfica e historial en `.dashboard-content`
+
+En el HTML generado por `mount()`, sustituir las dos secciones sueltas por un `div.dashboard-content` que las contenga:
+
+```js
+// ANTES
+`<section id="seccion-grafica" class="grafica-seccion" hidden></section>
+ <section id="historial-root" class="historial"></section>`
+
+// DESPUÉS
+`<div class="dashboard-content" id="dashboard-content">
+   <section id="seccion-grafica" class="grafica-seccion" hidden></section>
+   <section id="historial-root" class="historial"></section>
+ </div>`
+```
+
+#### 3b. Activar/desactivar el layout de columnas desde la suscripción al store
+
+En el callback de `store.subscribe`, añadir la lógica que alterna la clase `dashboard-content--columnas` según si hay mediciones:
+
+```js
+unsubscribeStore = store.subscribe((state) => {
+  const dashboardContent = containerEl.querySelector('#dashboard-content');
+
+  // Layout dos columnas: solo con ≥ 1 medición (esqueleto o gráfica real)
+  if (dashboardContent) {
+    dashboardContent.classList.toggle(
+      'dashboard-content--columnas',
+      state.mediciones.length >= 1,
+    );
+  }
+
+  // ... resto del código existente sin cambios
+});
+```
+
+#### 3c. Quitar el `hidden` de `#seccion-grafica` de forma coherente con el nuevo layout
+
+La sección de gráfica debe estar visible (sin `hidden`) siempre que haya ≥ 1 medición, incluso si el componente `MeasurementChart` muestra el skeleton (< 2 mediciones). La lógica existente de `seccionGrafica.hidden` en el handlerr del store ya cubre esto; revisar que no haya ruta de código que oculte la sección cuando `mediciones.length === 1`.
+
+---
+
+### Tarea 4 — Tests
+
+#### 4a. Tests unitarios / de componente (`HomeView.test.js`)
+
+Si no existe, crear `apps/frontend/tests/components/HomeView.test.js`. Cubrir al menos:
+
+1. Con 0 mediciones: `.dashboard-content` **no** tiene la clase `dashboard-content--columnas`.
+2. Con ≥ 1 medición: `.dashboard-content` **sí** tiene la clase `dashboard-content--columnas`.
+3. Al pasar de ≥ 1 a 0 mediciones: la clase se retira.
+
+#### 4b. Tests E2E (`apps/frontend/tests/e2e/flows/layout-columnas.spec.js`)
+
+Crear un fichero de spec con al menos los siguientes casos (usar Playwright con viewport configurado):
+
+| ID | Viewport | Mediciones | Expectativa |
+|---|---|---|---|
+| L-01 | 800 x 600 px | 0 | `.dashboard-content--columnas` ausente |
+| L-02 | 800 x 600 px | 2 | `.dashboard-content--columnas` presente |
+| L-03 | 375 x 812 px | 2 | `.dashboard-content--columnas` ausente (< 768 px) |
+| L-04 | 800 x 600 px | 1 | `.dashboard-content--columnas` presente + skeleton visible |
+| L-05 | 800 x 600 px | 2→0 | clase retirada tras eliminar todas las mediciones |
+
+---
+
+### Criterios de aceptación
+
+- [ ] En viewport ≥ 768 px con ≥ 1 medición, la gráfica y el historial se muestran en dos columnas (55 %/45 %).
+- [ ] La gráfica permanece sticky al hacer scroll del historial.
+- [ ] El historial es scroll independiente; la página no hace scroll al navegar por el historial con el ratón encima de la columna derecha.
+- [ ] En viewport < 768 px el layout es siempre columna única, independientemente del número de mediciones.
+- [ ] Con 0 mediciones el layout es columna única incluso en viewport ≥ 768 px.
+- [ ] El skeleton (< 2 mediciones) se muestra en la columna izquierda con `min-height: 120 px` y comportamiento sticky.
+- [ ] `ResizeObserver` redibuja la gráfica correctamente al redimensionar la ventana.
+- [ ] El cambio de columna única ↔ dos columnas al cruzar 768 px se gestiona íntegramente con CSS (sin JS adicional).
+- [ ] No hay regresiones: todos los tests existentes siguen pasando.
+
 Prioridad: Alta
 Estado: Pendiente
 Rol: Frontend Dev
