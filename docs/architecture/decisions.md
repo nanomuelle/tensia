@@ -463,3 +463,99 @@ export function renderChart(container, measurements)
 | `apps/frontend/src/app.js` | Importa `renderChart`, pasa canvas | Sin cambios (mismo contrato) |
 | `package.json` | Sin D3 | Añadir `d3-selection`, `d3-scale`, `d3-axis`, `d3-shape` |
 | Tests de `chart.js` | No existen | Nuevo: `apps/frontend/tests/chart.test.js` (BK-14) |
+
+---
+
+## ADR-007: Migración del frontend a Svelte 5 + Vite
+
+**Fecha:** 2026-02-23
+**Estado:** Aceptado
+
+### Contexto
+
+El proyecto Tensia ha completado su MVP y tiene confirmadas tres features de crecimiento que
+aumentarán significativamente la complejidad del frontend:
+
+1. **Login con Google (OAuth 2.0 + PKCE):** rutas protegidas, gestión reactiva del estado
+   de sesión, gestión segura de tokens, múltiples vistas.
+2. **OCR / AI (lectura de imagen de tensiómetro):** estados async complejos
+   (subiendo → procesando → confirmando → error), manejo de `File`/`Blob`, datos externos
+   que requieren escape sistemático para evitar XSS.
+3. **Google Drive como adaptador de persistencia:** intercambio de adaptador según sesión,
+   sincronización offline/online, refresh de tokens.
+
+El stack actual (Vanilla JS + ES Modules nativos) tiene dos limitaciones críticas ante
+estas features:
+
+- **Riesgo XSS estructural:** `MeasurementList` y `MeasurementForm` construyen HTML con
+  `innerHTML`. Con datos de OCR o Google Drive (externos, no confiables), este patrón
+  introduce un vector de XSS real. Un framework con templates declarativos elimina este
+  riesgo estructuralmente.
+- **Ausencia de reactividad declarativa:** múltiples vistas, sesión, spinners y errores
+  parciales de AI se gestionan con variables booleanas + llamadas manuales a `update()`.
+  A medida que el número de estados crece, este patrón es propenso a bugs de
+  sincronización de UI.
+
+Se evaluaron cuatro opciones (ver `docs/architecture/lit-element-assessment.md`):
+
+| Opción | Bundle runtime | Coste migración | XSS safe | Ergonomía OAuth/AI |
+|---|---|---|---|---|
+| Vanilla JS (status quo) | 0 KB | 0 j. | ⚠️ No | ⚠️ Manual, denso |
+| **Svelte 5 + Vite** | **~3 KB** | **8-10 j.** | **✅ Sí** | **✅ Sí** |
+| Vue 3 + Vite | ~22 KB | 9-12 j. | ✅ Sí | ✅ Sí |
+| React + Vite | ~45 KB | 12-16 j. | ✅ Sí | ✅ Sí |
+
+### Decisión
+
+Migrar el frontend a **Svelte 5 + Vite**.
+
+Svelte es la opción que mejor combina bundle mínimo (crítico para PWA en móvil), seguridad
+estructural XSS por defecto y el menor coste de migración entre las opciones con
+reactividad declarativa.
+
+El plan técnico detallado y los ítems de backlog propuestos para el PO se documentan en
+`docs/architecture/svelte-migration-plan.md`.
+
+**Puntos clave de la decisión:**
+
+- `npm run build` pasa de `node scripts/build.js` a `vite build`. El YAML de
+  `deploy-pages.yml` **no cambia**: sigue siendo `npm ci` + `npm run build` → `dist/`.
+- La migración se ejecuta en **4 fases incrementales**. En cada fase la app sigue
+  desplegándose sin regresiones.
+- Las capas `domain/`, `services/`, `infra/` y `shared/` son **portables al 100 %** sin
+  modificar una línea.
+- Solo se reescriben los 6 componentes de UI, vistas, router y store. Los tests de lógica
+  de negocio no se tocan; los de componentes se migran a Vitest + @testing-library/svelte.
+
+### Consecuencias
+
+**Positivas:**
+- Templates Svelte escapan automáticamente: XSS eliminado en todos los componentes nuevos
+  sin disciplina adicional del desarrollador.
+- Svelte Runes (`$state`, `$derived`) simplifican los estados async complejos de OAuth y
+  OCR/AI.
+- Bundle sin runtime (~3 KB overhead): el peso de la PWA en móvil se mantiene mínimo.
+- `vite-plugin-pwa` reemplaza `sw.js` manual por un Service Worker con precaching
+  automático y estrategias de red configurables.
+- El flujo `merge a main → publicar` no cambia.
+
+**Costes asumidos:**
+- Los tests de componentes (~1 400 LOC) deben migrarse de Jest + jsdom a Vitest +
+  @testing-library/svelte. Los tests de `domain/`, `services/`, `infra/` y `shared/`
+  funcionan en Vitest sin cambios.
+- ADR-003 queda supersedido en su decisión de "sin paso de compilación"; Vite añade ese
+  paso, aunque `vite dev` con HMR mejora el developer experience actual.
+- La separación `apps/frontend/public/` + `apps/frontend/src/` colapsa en una sola
+  estructura Vite (`apps/frontend/` → `dist/`). El script `scripts/build.js` de parcheo
+  de rutas se reemplaza por la opción `base` de Vite.
+
+### Impacto sobre ADRs existentes
+
+| ADR | Estado tras ADR-007 |
+|---|---|
+| ADR-002 (persistencia intercambiable) | Sin cambio: el contrato `getAll/save` es JS puro |
+| ADR-003 (Vanilla JS) | **Supersedido por ADR-007** |
+| ADR-004 (Playwright E2E) | Sin cambio: Playwright es agnóstico al framework |
+| ADR-005 (localStorage PWA) | Sin cambio: `localStorageAdapter.js` no se modifica |
+| ADR-006 (D3.js) | Sin cambio: `chart.js` se importa como módulo puro desde Svelte |
+
