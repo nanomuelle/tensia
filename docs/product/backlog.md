@@ -1,6 +1,6 @@
 # Backlog — Tensia
 
-_Última revisión: 2026-02-19 — Actualizado para reflejar ADR-005_
+_Última revisión: 2026-02-22 — Gráficas de evolución incorporadas al MVP_
 
 ---
 
@@ -72,6 +72,14 @@ Referencia: test-cases.md#BUG-01
 
 ---
 
+**BK-14 — Gráficas de evolución temporal**
+Descripción: Gráfica de líneas (sistólica/diastólica) con Canvas API nativo. Se muestra cuando hay ≥ 2 mediciones. Implementada en `apps/frontend/src/chart.js` e integrada en `app.js`.
+Prioridad: Media
+Estado: Hecho
+Referencia: US-04
+
+---
+
 ## Pendientes del MVP
 
 > No hay ítems pendientes en el sprint MVP. El MVP está completo.
@@ -86,10 +94,7 @@ Prioridad: Alta (cuando se abra el siguiente sprint)
 Estado: Pendiente
 Referencia: US-02, CA-02
 
-**BK-14 — Gráficas de evolución temporal**
-Descripción: Visualizar tendencia de sistólica/diastólica a lo largo del tiempo.
-Prioridad: Media
-Estado: Pendiente
+**BK-14 — Gráficas de evolución temporal** → _Movido al Sprint MVP (2026-02-22)_
 
 **BK-15 — Autenticación con Google OAuth**
 Descripción: Login opcional para persistencia multi-dispositivo vía Google Drive.
