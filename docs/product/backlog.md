@@ -113,14 +113,70 @@ Rol: Diseñador UX/UI
 Referencia: US-14
 
 **BK-22 — [Frontend Dev] Implementar modal del formulario de registro**
-Descripción: Convertir el componente `MeasurementForm` para que se monte dentro de una modal. Tareas:
-- Crear `ModalContainer` (o ampliar `MeasurementForm`) con overlay semitransparente, `role="dialog"`, `aria-modal="true"` y `aria-labelledby`.
-- Implementar focus trap (primer/último campo del formulario); cerrar con `Escape`.
-- Cerrar la modal al pulsar el overlay o el botón ✕; no cerrar mientras hay una solicitud en curso.
-- En viewport < 640 px: estilo bottom-sheet (anclado a la parte inferior, 100 % ancho).
-- Al guardar con éxito: cerrar modal + disparar toast + actualizar historial/gráfica vía `appStore`.
-- Añadir/actualizar CSS en `apps/frontend/src/components/MeasurementForm/`.
-- Añadir tests unitarios del ciclo de apertura/cierre y del focus trap.
+Descripción: Introducir un componente `Modal` genérico y reutilizable, y usarlo como contenedor de `MeasurementForm`. **`MeasurementForm` no debe ser modificado para incluir comportamiento de modal**; debe seguir siendo un componente de formulario puro. La composición se gestiona en `HomeView`.
+
+### Tarea 1 — Crear componente `Modal` (genérico, reutilizable)
+
+Ubicación: `apps/frontend/src/components/Modal/Modal.js` + `Modal.css`
+
+**Contrato público:**
+```js
+// Instanciación
+const modal = new Modal({
+  title: 'Nueva medición',    // string — texto del encabezado
+  onClose: () => {},          // callback invocado al cerrar (✕, Escape, overlay)
+  contentFactory: (container) => component, // función que monta el contenido y devuelve { unmount }
+  locked: false               // boolean reactivo: bloquea cierre cuando true (estado "enviando")
+});
+
+modal.open()     // monta en DOM, lanza animación de apertura, activa focus trap
+modal.close()    // lanza animación de cierre, desactiva focus trap, desmonta del DOM
+modal.lock()     // activa estado "enviando": deshabilita ✕, Escape y click en overlay
+modal.unlock()   // revierte lock()
+```
+
+**Responsabilidades del componente `Modal`:**
+- Crear y gestionar el overlay semitransparente (`rgba(0,0,0,0.45)`).
+- Renderizar el contenedor con cabecera (título + botón ✕) y área de contenido.
+- Llamar a `contentFactory(contentContainer)` al abrir para que el contenido se monte en su interior; invocar el `unmount` devuelto al cerrar.
+- Implementar el **focus trap**: `Tab`/`Shift+Tab` ciclan dentro de la modal; el primer elemento enfocable recibe el foco al finalizar la animación de apertura.
+- Gestionar el cierre con `Escape`, click en overlay y botón ✕, respetando el estado `locked`.
+- Aplicar las **animaciones de apertura y cierre** según las especificaciones de `screens.md`:
+  - Desktop/tablet (≥ 640 px): `opacity` + `translateY(16px → 0)` en apertura (180 ms ease-out); inverso en cierre (200 ms ease-in).
+  - Móvil (< 640 px): bottom-sheet — `translateY(100% → 0)` (260 ms cubic-bezier); inverso en cierre (240 ms ease-in).
+  - Devolver el foco al elemento de origen (`opener`) **al finalizar** la transición de cierre (`transitionend`).
+- Atributos de accesibilidad: `role="dialog"`, `aria-modal="true"`, `aria-labelledby` apuntando al título.
+- CSS en `apps/frontend/public/styles/components/Modal.css`; importado desde `main.css`.
+
+**Comportamiento bottom-sheet en móvil (< 640 px):**
+- Contenedor anclado a `bottom: 0`, ancho 100 %, `border-radius` 16 px top-left/top-right.
+- Handle visual: pill `40 × 4 px`, color `#d1d5db`, centrado, `margin-top: 8 px`.
+
+### Tarea 2 — Integrar `Modal` + `MeasurementForm` en `HomeView`
+
+- En `HomeView.js`, el botón "Nueva medición" actúa como *opener*: guarda la referencia del botón para devolver el foco al cerrar.
+- Al pulsar el botón: instanciar `Modal` pasando como `contentFactory` una función que monte `MeasurementForm` en el contenedor proporcionado.
+- `MeasurementForm` notifica el éxito mediante el `eventBus` o un callback; `HomeView` escucha ese evento para llamar a `modal.close()`, disparar el toast y actualizar el store.
+- Mientras `MeasurementForm` está en estado "enviando", `HomeView` llama a `modal.lock()` / `modal.unlock()`.
+
+### Tarea 3 — CSS
+
+- `Modal.css` cubre overlay, contenedor, cabecera, botón ✕, handle del bottom-sheet y todas las animaciones.
+- No modificar `MeasurementForm.css`; solo ajustar si hay conflictos de espaciado interior con el nuevo contenedor.
+- Importar `Modal.css` como parcial en `apps/frontend/public/styles/main.css`.
+
+### Tarea 4 — Tests
+
+- **`apps/frontend/tests/components/Modal.test.js`** — tests unitarios del componente `Modal` en aislamiento (con `contentFactory` stub):
+  - `open()` inserta el overlay y el contenedor en el DOM.
+  - `close()` elimina overlay y contenedor del DOM tras la transición.
+  - Focus trap: Tab no sale de la modal.
+  - Escape cierra la modal en estado normal; no la cierra en estado `locked`.
+  - Click en overlay cierra la modal en estado normal; no la cierra en estado `locked`.
+  - Foco devuelto al opener al cerrar.
+  - `lock()` / `unlock()` habilitan e inhabilitan el botón ✕.
+- **`apps/frontend/tests/components/MeasurementForm.test.js`** — verificar que `MeasurementForm` sigue funcionando montado fuera de una modal (sin regresiones).
+
 Prioridad: Alta
 Estado: Pendiente
 Rol: Frontend Dev
