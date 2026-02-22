@@ -73,16 +73,18 @@ Referencia: test-cases.md#BUG-01
 ---
 
 **BK-14 — Gráficas de evolución temporal**
-Descripción: Gráfica de líneas (sistólica/diastólica) con Canvas API nativo. Se muestra cuando hay ≥ 2 mediciones. Implementada en `apps/frontend/src/chart.js` e integrada en `app.js`.
+Descripción: Gráfica de líneas (sistólica/diastólica) con D3.js modular sobre SVG (ADR-006). Se muestra cuando hay ≥ 2 mediciones. Implementada en `apps/frontend/src/chart.js` e integrada en `app.js` con `ResizeObserver`. `index.html` usa `<div id="chart-mediciones">` con `importmap` para D3 vía CDN jsDelivr. Service Worker actualizado (v3) para cachear módulos D3 y garantizar uso offline. 23 tests unitarios en `apps/frontend/tests/chart.test.js`.
 Prioridad: Media
 Estado: Hecho
-Referencia: US-04
+Referencia: US-04, ADR-006
 
 ---
 
-## Pendientes del MVP
-
-> No hay ítems pendientes en el sprint MVP. El MVP está completo.
+**BK-18 — Migrar chart.js a D3.js modular + tests**
+Descripción: Reescribir `apps/frontend/src/chart.js` usando D3 (d3-selection, d3-scale, d3-axis, d3-shape) con salida SVG. Cambiado `<canvas>` por `<div id="chart-mediciones">` en `index.html`. Añadido `importmap` para carga ESM sin bundler. Tests en `apps/frontend/tests/chart.test.js` (23 tests). El contrato externo de `renderChart()` no cambió.
+Prioridad: Media
+Estado: Hecho
+Referencia: US-04, ADR-006
 
 ---
 
