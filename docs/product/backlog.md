@@ -15,19 +15,209 @@ _Última revisión: 2026-02-23._
 ---
 
 **BK-24 — Fase 0: Integrar Vite como build tool**
-Descripción: Sustituir `scripts/build.js` por `vite build` sin migrar ningún componente. Verificar que el flujo `merge a main → GitHub Actions → GitHub Pages` sigue produciendo la misma app. Instalar `vite`, `@sveltejs/vite-plugin-svelte` y `vite-plugin-pwa`; crear `vite.config.js`; ajustar `index.html` y `deploy-pages.yml` (`BASE_PATH` → `VITE_BASE_PATH`).
+Descripción: Sustituir `scripts/build.js` por `vite build` sin migrar ningún componente a Svelte. Verificar que el flujo `merge a main → GitHub Actions → GitHub Pages` sigue produciendo la misma app. Los componentes siguen siendo Vanilla JS; Vite solo toma el rol de bundler y servidor de desarrollo. Como efecto secundario necesario, `vite-plugin-pwa` reemplaza el `sw.js` manual porque el Service Worker actual tiene URLs hardcodeadas a `/src/app.js`, `/src/router.js`, etc., que dejan de existir individualmente al bundlear.
 Prioridad: Alta
 Estimación: 1-2 jornadas
 Dependencias: ninguna
 Estado: Pendiente
 Tipo: Tarea técnica (enabler)
+Referencia técnica: `docs/architecture/svelte-migration-plan.md` §§ 3.2, 3.3, 4 (Fase 0)
 
-Criterios de aceptación:
-- [ ] `npm run build` usa Vite y produce `dist/` equivalente al actual.
-- [ ] `deploy-pages.yml` funciona sin cambiar el YAML.
-- [ ] Todos los tests existentes siguen pasando.
-- [ ] La app desplegada en GitHub Pages es funcionalmente idéntica a la versión anterior.
-- [ ] `vite dev` arranca el servidor de desarrollo local.
+---
+
+### Contexto técnico
+
+**¿Por qué Vite y no seguir con `scripts/build.js`?**
+El build actual copia ficheros sin transformar. Para poder montar componentes Svelte (fases 1-3) necesitamos un bundler con soporte de `.svelte`. Vite es el bundler oficial del ecosistema Svelte y el elegido en ADR-007.
+
+**Problema con el `sw.js` manual:**
+El SW actual lista explícitamente rutas como `/src/app.js`, `/src/chart.js`, etc. Cuando Vite bundlea la app, esos ficheros se emiten a `dist/assets/app-[hash].js` y ya no existen en esas rutas. Por tanto el SW falla al intentar precargar la caché. La solución es `vite-plugin-pwa` (Workbox): genera el SW automáticamente con las URLs reales del bundle de cada build.
+
+**D3 y el importmap CDN:**
+El `importmap` en `index.html` redirige `d3-selection`, `d3-scale`, etc., a jsDelivr porque la app actual no tiene bundler. Con Vite, el bundler resuelve esos imports desde `node_modules` (las dependencias D3 ya están en `package.json`). El `importmap` se elimina.
+
+---
+
+### Tareas técnicas (ordenadas)
+
+#### 1. Instalar dependencias
+
+```bash
+npm install --save-dev vite @sveltejs/vite-plugin-svelte vite-plugin-pwa
+```
+
+> `@sveltejs/vite-plugin-svelte` se instala ahora pero no se configura hasta BK-25. Su presencia no rompe nada en Phase 0.
+
+#### 2. Crear `vite.config.js` en la raíz del repositorio
+
+```js
+// vite.config.js  (raíz del repo — junto a package.json)
+import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
+
+export default defineConfig({
+  root: 'apps/frontend',           // index.html vive aquí tras el paso 3
+  base: process.env.VITE_BASE_PATH ?? '/',
+  build: {
+    outDir: '../../dist',          // relativo al root → dist/ en la raíz del repo
+    emptyOutDir: true,
+  },
+  plugins: [
+    VitePWA({
+      registerType: 'autoUpdate',
+      // manifest.json manual: lo gestionamos nosotros (en public/)
+      manifest: false,
+      workbox: {
+        // Precachear todos los assets generados por Vite
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+      },
+    }),
+  ],
+});
+```
+
+> El plugin `svelte()` se añadirá en BK-25. En Phase 0 no se incluye para no confundir al desarrollador.
+
+#### 3. Mover `index.html` al root de Vite
+
+Vite exige que `index.html` esté en `root` (`apps/frontend/`). El directorio `apps/frontend/public/` pasa a ser el directorio de activos estáticos de Vite (se copia tal cual a `dist/`).
+
+```bash
+mv apps/frontend/public/index.html apps/frontend/index.html
+```
+
+A continuación, aplicar estos cambios en el fichero movido `apps/frontend/index.html`:
+
+**a) Eliminar el bloque `<script type="importmap">` completo** (D3 pasa a resolverse desde `node_modules` por Vite):
+
+```diff
+-    <script type="importmap">
+-    {
+-      "imports": {
+-        "d3-selection": "https://cdn.jsdelivr.net/npm/d3-selection@3/+esm",
+-        "d3-scale":     "https://cdn.jsdelivr.net/npm/d3-scale@4/+esm",
+-        "d3-axis":      "https://cdn.jsdelivr.net/npm/d3-axis@3/+esm",
+-        "d3-shape":     "https://cdn.jsdelivr.net/npm/d3-shape@3/+esm"
+-      }
+-    }
+-    </script>
+```
+
+**b) El tag `<script type="module" src="src/app.js">` se conserva** — Vite lo considera el entry point y lo bundlea.
+
+**c) Eliminar el bloque de registro manual del Service Worker** — `vite-plugin-pwa` con `registerType: 'autoUpdate'` lo inyecta automáticamente en el bundle:
+
+```diff
+-    <script>
+-      if ('serviceWorker' in navigator) {
+-        navigator.serviceWorker.register('/sw.js').catch((err) => {
+-          console.warn('[Tensia] No se pudo registrar el Service Worker:', err);
+-        });
+-      }
+-    </script>
+```
+
+**d) Ajustar la referencia a la hoja de estilos** — `styles/main.css` vive en `public/styles/`, Vite lo copia sin transformar, la ruta sigue siendo válida:
+
+```html
+<!-- sin cambios -->
+<link rel="stylesheet" href="styles/main.css" />
+```
+
+#### 4. Eliminar `apps/frontend/public/sw.js`
+
+`vite-plugin-pwa` genera `dist/sw.js` automáticamente. Si se deja el manual en `public/`, Vite lo copiará a `dist/sw.js` **sobrescribiendo** el generado por Workbox. Se debe eliminar:
+
+```bash
+rm apps/frontend/public/sw.js
+```
+
+> Si hay tests que importan `sw.js` directamente, eliminarlos o adaptarlos (el SW generado por Workbox no es testeable unitariamente).
+
+#### 5. Actualizar scripts en `package.json`
+
+```diff
+  "scripts": {
+    "start": "SERVE_STATIC=true OPEN_BROWSER=true node apps/backend/src/index.js",
+-   "dev":   "SERVE_STATIC=true OPEN_BROWSER=true nodemon apps/backend/src/index.js",
++   "dev":   "vite",
+    "build": "vite build",
++   "preview": "vite preview",
+    "test":           "node --experimental-vm-modules node_modules/.bin/jest",
+    "test:coverage":  "node --experimental-vm-modules node_modules/.bin/jest --coverage",
+    "test:e2e":       "playwright test"
+  }
+```
+
+> `nodemon` sigue en `devDependencies` (se elimina en BK-28). El servidor Express con `npm start` sigue disponible para stubs de API locales si se necesita.
+>
+> `vite` arranca el servidor de desarrollo en `http://localhost:5173` sirviendo `apps/frontend/` como raíz.
+
+#### 6. Actualizar `deploy-pages.yml`
+
+Cambiar la variable de entorno en el paso _"Build del sitio estático"_:
+
+```diff
+      - name: Build del sitio estático
+        run: npm run build
+        env:
+-         BASE_PATH: ${{ steps.pages.outputs.base_path }}
+-         BUILD_ID: ${{ github.sha }}
++         VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+```
+
+> `BUILD_ID` ya no es necesario: Vite genera nombres de fichero con hash de contenido (`app-[hash].js`), lo que invalida la caché del navegador automáticamente.
+
+#### 7. Verificación local antes de abrir PR
+
+```bash
+# Build limpio
+npm run build
+
+# Comprobar que dist/ tiene la estructura esperada:
+#   dist/index.html
+#   dist/assets/app-[hash].js
+#   dist/assets/[hash].css  (si extrae CSS)
+#   dist/manifest.json
+#   dist/sw.js              ← generado por vite-plugin-pwa
+#   dist/styles/main.css    ← copiado de public/
+#   dist/icons/             ← copiado de public/
+ls -R dist/
+
+# Vista previa local del build (no el servidor Express)
+npm run preview
+
+# Tests Jest (deben seguir en verde sin cambios)
+npm test
+
+# Tests E2E contra el preview server (ajustar baseURL en playwright.config.js si apunta a :3000)
+npm run test:e2e
+```
+
+---
+
+### Posibles problemas y soluciones
+
+| Problema | Causa | Solución |
+|---|---|---|
+| SW no precachea nada | `globPatterns` no coincide con la salida de Vite | Inspeccionar `dist/` y ajustar el patrón en `workbox.globPatterns` |
+| Error `Cannot find module 'd3-selection'` en Jest | Jest no usa Vite; necesita resolver D3 de `node_modules` | Asegurarse de que D3 está en `dependencies` (ya lo está); el `moduleNameMapper` de Jest no debe interferir |
+| Playwright falla con `ERR_CONNECTION_REFUSED` | `baseURL` en `playwright.config.js` apunta a `:3000` (Express) pero `vite preview` usa `:4173` | Actualizar `baseURL` o arrancar el Preview server en el puerto correcto con `--port 3000` |
+| `start_url` incorrecto en GitHub Pages | `manifest.json` tiene `start_url: "/"` sin el base path | Añadir `manifest: { start_url: '/' }` en la config de `VitePWA` y dejar que Vite ajuste el `base` — o parchear manualmente `manifest.json` como hacía `scripts/build.js` |
+| `public/sw.js` sobrescribe el SW generado | El fichero manual sigue en `public/` | Confirmar que se ha eliminado en el paso 4 |
+
+---
+
+### Criterios de aceptación
+
+- [ ] `npm run build` usa Vite y produce `dist/` con `index.html`, `assets/app-[hash].js`, `sw.js` (generado por Workbox) y los activos estáticos de `public/`.
+- [ ] `npm run preview` sirve la app en local y esta funciona igual que la versión actual (registro manual, listado, gráfica, aviso iOS).
+- [ ] `deploy-pages.yml` despliega sin cambiar la lógica del YAML (solo la variable de entorno).
+- [ ] La app desplegada en GitHub Pages es funcionalmente idéntica a la versión anterior (PWA instalable, uso offline, `start_url` correcto).
+- [ ] Todos los tests Jest existentes siguen pasando (`npm test`).
+- [ ] Los tests E2E Playwright pasan contra el build de Vite.
+- [ ] `vite` (`npm run dev`) arranca el servidor de desarrollo en `:5173` sin errores.
+- [ ] No hay referencias a `scripts/build.js` en ningún script activo (puede mantenerse como fichero histórico hasta BK-28).
 
 ---
 

@@ -17,18 +17,7 @@
 
     <link rel="stylesheet" href="styles/main.css" />
 
-    <!-- Mapa de importación para D3 (sin bundler — ADR-003, ADR-006) -->
-    <!-- El SW cachea estas URLs para uso offline -->
-    <script type="importmap">
-    {
-      "imports": {
-        "d3-selection": "https://cdn.jsdelivr.net/npm/d3-selection@3/+esm",
-        "d3-scale":     "https://cdn.jsdelivr.net/npm/d3-scale@4/+esm",
-        "d3-axis":      "https://cdn.jsdelivr.net/npm/d3-axis@3/+esm",
-        "d3-shape":     "https://cdn.jsdelivr.net/npm/d3-shape@3/+esm"
-      }
-    }
-    </script>
+    <!-- D3 resuelto desde node_modules por Vite (BK-24) -->
   </head>
   <body>
     <!-- Aviso informativo Safari/iOS: localStorage puede borrarse tras 7 días de inactividad (ITP) -->
@@ -52,14 +41,6 @@
 
     <script type="module" src="src/app.js"></script>
 
-    <!-- Registro del Service Worker -->
-    <script>
-      // Registro del SW (solo si el navegador lo soporta)
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch((err) => {
-          console.warn('[Tensia] No se pudo registrar el Service Worker:', err);
-        });
-      }
-    </script>
+    <!-- vite-plugin-pwa inyecta el registro del Service Worker automáticamente (BK-24) -->
   </body>
 </html>

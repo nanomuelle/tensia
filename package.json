@@ -4,9 +4,10 @@
   "description": "Aplicación personal de registro y consulta de mediciones de tensión arterial",
   "type": "module",
   "scripts": {
-    "start": "SERVE_STATIC=true OPEN_BROWSER=true node apps/backend/src/index.js",
-    "dev": "SERVE_STATIC=true OPEN_BROWSER=true nodemon apps/backend/src/index.js",
-    "build": "node scripts/build.js",
+    "start": "node apps/backend/src/index.js",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "node --experimental-vm-modules node_modules/.bin/jest",
     "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
     "test:e2e": "playwright test"
@@ -33,10 +34,13 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^30.2.0",
     "nodemon": "^3.1.11",
-    "supertest": "^7.2.2"
+    "supertest": "^7.2.2",
+    "vite": "^7.3.1",
+    "vite-plugin-pwa": "^1.2.0"
   },
   "jest": {
     "testEnvironment": "node",

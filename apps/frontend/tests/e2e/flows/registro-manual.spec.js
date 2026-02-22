@@ -79,6 +79,9 @@ test.describe('TC-09 — Registro manual completo', () => {
     await rellenarFormulario(page, { systolic: 110, diastolic: 70, measuredAt: '2026-02-18T10:00' });
     await page.locator(SELECTORS.btnGuardar).click();
     await expect(page.locator(SELECTORS.listaMediciones)).toBeVisible();
+    // Esperar a que el modal anterior desaparezca del DOM antes de abrir el siguiente
+    // (la animación de cierre puede mantener #form-medicion en el árbol unos instantes)
+    await expect(page.locator(SELECTORS.formulario)).toHaveCount(0);
 
     // Segunda medición — más reciente
     await rellenarFormulario(page, { systolic: 130, diastolic: 85, measuredAt: '2026-02-18T11:00' });
