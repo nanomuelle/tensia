@@ -72,3 +72,49 @@ para revisar mi evolución y detectar tendencias sin necesidad de herramientas e
 - Las mediciones están ordenadas por fecha descendente (la más reciente primero).
 - Dado que no hay mediciones, cuando la app carga, entonces se muestra el mensaje "Sin mediciones todavía" y el botón "Nueva medición".
 - Dado que el backend no está disponible, cuando la app intenta cargar el historial, entonces se muestra un banner de error con la opción de reintentar.
+
+---
+
+## US-11 — Mostrar skeleton vacío cuando no hay datos suficientes
+
+**Estado:** Pendiente
+
+Como usuario de la app,
+quiero que la vista de la gráfica muestre un skeleton vacío cuando no hay datos suficientes,
+para entender que la gráfica está disponible pero aún no tiene datos para renderizarse.
+
+### Criterios de aceptación
+
+- Dado que el almacenamiento contiene menos de 2 mediciones válidas (o el umbral definido), cuando accedo a la pantalla de historial/gráfica, entonces se muestra un skeleton/placeholder de la gráfica en lugar del gráfico real.
+- El skeleton debe ocupar el mismo espacio que la gráfica real y mostrar texto/ícono informativo: "Sin datos suficientes para mostrar la gráfica".
+- El comportamiento debe aplicarse leyendo los datos desde `localStorage` (clave `bp_measurements`) — no se debe consultar ninguna API HTTP.
+- Las pruebas unitarias del componente/función que decide mostrar el skeleton deben cubrir:
+	- estado con 0 mediciones,
+	- estado con 1 medición,
+	- estado con 2 o más mediciones (no mostrar skeleton).
+- En Safari/iOS, si el localStorage está ausente o se ha perdido, se muestra el mismo skeleton con una nota opcional sobre la limitación de almacenamiento.
+
+---
+
+## US-12 — Actualizar la gráfica en tiempo real al introducir datos
+
+**Estado:** Pendiente
+
+Como usuario que registra mediciones,
+quiero que la gráfica se actualice automáticamente a medida que introduzco nuevas mediciones,
+para ver reflejados inmediatamente mis últimos cambios sin tener que recargar la página.
+
+### Criterios de aceptación
+
+- Dado que el usuario añade o edita una medición (formulario manual), cuando la operación es exitosa y se guarda en `localStorage` (clave `bp_measurements`), entonces la gráfica se actualiza automáticamente para incluir el cambio.
+- La actualización debe:
+	- reflejar las mediciones ordenadas por `measuredAt` descendente,
+	- mantener zoom/escala razonable (si aplica) y actualizar ejes/ticks según los nuevos datos,
+	- animar la transición o re-renderizar de forma fluida para no desorientar al usuario.
+- El servicio/mediate layer que provee los datos a la gráfica debe exponer un mecanismo de notificación/observable (por ejemplo, evento de aplicación, callback o `CustomEvent`) que dispare la re-renderización cuando `localStorage` cambie desde la UI.
+- No se deben usar peticiones HTTP para esta sincronización; todo el flujo usa `localStorage` en el cliente.
+- Tests de integración/componentes que verifiquen:
+	- añadir una medición causa la actualización visible de la gráfica,
+	- editar/eliminar medición actualiza la gráfica accordingly,
+	- si al añadir mediciones se supera el umbral de datos (de 0/1 a >=2), la vista pasa de skeleton a gráfica real.
+- La UX debe ser coherente en PWA offline: la actualización ocurre aun sin conexión porque depende de `localStorage`.
