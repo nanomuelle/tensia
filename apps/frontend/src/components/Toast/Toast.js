@@ -3,29 +3,50 @@
  * Muestra un mensaje que desaparece automáticamente tras un tiempo configurable.
  * Variantes: 'success', 'error', 'info'.
  *
- * @param {HTMLElement} rootEl - El contenedor #toast-container que vive en index.html.
+ * mount() crea su propio nodo contenedor y lo anexa a <body> cuando no se
+ * proporciona rootEl (Paso 14b). Si se pasa rootEl, lo usa como contenedor
+ * (compatible con tests que crean el nodo externamente).
+ *
+ * @param {HTMLElement} [rootEl] - Contenedor externo opcional. Si se omite,
+ *                                 mount() crea y añade #toast-container a <body>.
  * @returns {{ mount: Function, unmount: Function, show: Function }}
  */
 export function createToast(rootEl) {
-  // Nodo interno del toast actual (se reutiliza entre llamadas)
-  let toastEl = null;
-  let timerId = null;
+  let containerEl = rootEl ?? null;  // se rellena en mount() si no se proporcionó
+  let toastEl     = null;
+  let timerId     = null;
+  let ownContainer = false;          // indica si el componente creó su propio contenedor
 
   function mount() {
-    if (!rootEl) return;
+    // Si no se proporcionó contenedor externo, crear el propio y añadirlo a <body>
+    if (!containerEl) {
+      containerEl = document.createElement('div');
+      containerEl.id = 'toast-container';
+      containerEl.setAttribute('aria-live', 'polite');
+      containerEl.setAttribute('aria-atomic', 'true');
+      document.body.appendChild(containerEl);
+      ownContainer = true;
+    }
+
     // Crear el nodo del toast y ocultarlo inicialmente
     toastEl = document.createElement('div');
     toastEl.className = 'toast';
     toastEl.setAttribute('role', 'status');
     toastEl.setAttribute('aria-live', 'polite');
     toastEl.hidden = true;
-    rootEl.appendChild(toastEl);
+    containerEl.appendChild(toastEl);
   }
 
   function unmount() {
     if (timerId) clearTimeout(timerId);
     if (toastEl && toastEl.parentNode) toastEl.parentNode.removeChild(toastEl);
     toastEl = null;
+    // Si el componente creó su propio contenedor, eliminarlo también
+    if (ownContainer && containerEl && containerEl.parentNode) {
+      containerEl.parentNode.removeChild(containerEl);
+      containerEl = null;
+      ownContainer = false;
+    }
   }
 
   /**

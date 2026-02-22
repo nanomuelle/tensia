@@ -3,18 +3,14 @@
  * Muestra el aviso informativo sobre la política ITP de Safari/iOS
  * (localStorage puede borrarse tras 7 días de inactividad).
  *
- * El HTML del aviso (#aviso-ios y #btn-cerrar-aviso-ios) vive en index.html.
- * Este módulo solo encapsula la detección de plataforma y la lógica de visibilidad.
+ * mount() genera su propio HTML dentro de rootEl (Paso 14a).
  *
- * @param {HTMLElement} rootEl - El elemento #aviso-ios.
+ * @param {HTMLElement} rootEl - El elemento contenedor #aviso-ios (vacío en index.html).
  * @returns {{ mount: Function, unmount: Function }}
  */
 export function createIosWarning(rootEl) {
-  // Referencia al botón de cierre
-  const btnCerrar = rootEl
-    ? rootEl.querySelector('#btn-cerrar-aviso-ios') ??
-      document.getElementById('btn-cerrar-aviso-ios')
-    : null;
+  // Referencia al botón de cierre (se captura en mount() tras generar el HTML)
+  let btnCerrar = null;
 
   /** Detecta si el navegador es Safari o un dispositivo iOS. */
   function esPlataformaAfectada() {
@@ -31,6 +27,20 @@ export function createIosWarning(rootEl) {
 
   function mount() {
     if (!rootEl) return;
+
+    // Generar el HTML interno del aviso
+    rootEl.innerHTML = `
+      <span>⚠️ En Safari/iOS los datos pueden borrarse si no usas la app durante 7 días.</span>
+      <button
+        id="btn-cerrar-aviso-ios"
+        class="aviso-ios__cerrar"
+        aria-label="Cerrar aviso"
+      >✕</button>
+    `;
+
+    // Capturar ref al botón tras generar el HTML
+    btnCerrar = rootEl.querySelector('#btn-cerrar-aviso-ios');
+
     if (esPlataformaAfectada()) {
       rootEl.hidden = false;
     }
@@ -42,6 +52,7 @@ export function createIosWarning(rootEl) {
   function unmount() {
     if (btnCerrar) {
       btnCerrar.removeEventListener('click', onCerrar);
+      btnCerrar = null;
     }
   }
 

@@ -37,45 +37,10 @@ const mockToast = { show: jest.fn(), mount: jest.fn() };
 // HTML del formulario (único fragmento necesario para el componente)
 // =========================================================
 
+// Tras el Paso 14e, el componente genera su propio HTML en mount().
+// El fixture solo necesita el contenedor vacío.
 const HTML_FIXTURE = `
-  <button id="btn-nueva-medicion">+ Nueva medición</button>
-
-  <section id="formulario-registro" hidden>
-    <form id="form-medicion" novalidate>
-      <input
-        id="input-systolic"
-        type="number"
-        aria-describedby="error-systolic"
-      />
-      <span id="error-systolic" hidden></span>
-
-      <input
-        id="input-diastolic"
-        type="number"
-        aria-describedby="error-diastolic"
-      />
-      <span id="error-diastolic" hidden></span>
-
-      <input
-        id="input-pulse"
-        type="number"
-        aria-describedby="error-pulse"
-      />
-      <span id="error-pulse" hidden></span>
-
-      <input
-        id="input-fecha"
-        type="datetime-local"
-        aria-describedby="error-fecha"
-      />
-      <span id="error-fecha" hidden></span>
-
-      <div id="error-formulario" hidden></div>
-
-      <button id="btn-guardar" type="submit">Guardar medición</button>
-      <button id="btn-cancelar" type="button">Cancelar</button>
-    </form>
-  </section>
+  <section id="formulario-registro" hidden></section>
 `;
 
 // =========================================================

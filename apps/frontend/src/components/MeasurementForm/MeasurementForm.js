@@ -3,17 +3,17 @@
  * Gestiona el formulario de registro manual de mediciones:
  * apertura/cierre, validación inline y envío al servicio.
  *
- * El HTML vive en index.html (dentro de #formulario-registro).
- * Este módulo encapsula toda la lógica del formulario que antes estaba en app.js.
+ * mount() genera su propio HTML dentro de rootEl (Paso 14e).
+ * rootEl (#formulario-registro) es el único nodo que debe existir en el HTML padre.
  *
- * @param {HTMLElement} rootEl - El elemento #formulario-registro.
+ * @param {HTMLElement} rootEl - El elemento #formulario-registro (vacío al montarse).
  * @param {{
- *   service:   object,
+ *   service:    object,
  *   onSuccess?: Function,
- *   onCerrar?: Function,
- *   toast:     object
+ *   onCerrar?:  Function,
+ *   toast:      object
  * }} opciones
- *   - service   — servicio de mediciones (inyectado desde app.js).
+ *   - service   — servicio de mediciones (inyectado desde HomeView).
  *   - onSuccess — callback invocado tras guardar con éxito (p.ej. recargar la lista).
  *   - onCerrar  — callback invocado al cerrar el formulario (p.ej. mostrar el botón principal).
  *   - toast     — instancia del componente Toast para notificaciones efímeras.
@@ -24,15 +24,15 @@ import { validarCamposMedicion, prepararDatosMedicion } from '../../shared/valid
 import { fechaLocalActual } from '../../shared/formatters.js';
 
 export function createMeasurementForm(rootEl, { service, onSuccess, onCerrar, toast }) {
-  // Referencias internas al DOM (buscadas dentro de rootEl)
-  const formMedicion    = rootEl?.querySelector('#form-medicion');
-  const btnGuardar      = rootEl?.querySelector('#btn-guardar');
-  const btnCancelar     = rootEl?.querySelector('#btn-cancelar');
-  const inputSystolic   = rootEl?.querySelector('#input-systolic');
-  const inputDiastolic  = rootEl?.querySelector('#input-diastolic');
-  const inputPulse      = rootEl?.querySelector('#input-pulse');
-  const inputFecha      = rootEl?.querySelector('#input-fecha');
-  const errorFormulario = rootEl?.querySelector('#error-formulario');
+  // Referencias internas al DOM (se inicializan en mount() tras generar el HTML)
+  let formMedicion    = null;
+  let btnGuardar      = null;
+  let btnCancelar     = null;
+  let inputSystolic   = null;
+  let inputDiastolic  = null;
+  let inputPulse      = null;
+  let inputFecha      = null;
+  let errorFormulario = null;
 
   // -------------------------------------------------------
   // Helpers internos: errores inline
@@ -171,20 +171,146 @@ export function createMeasurementForm(rootEl, { service, onSuccess, onCerrar, to
   // -------------------------------------------------------
 
   function mount() {
-    if (formMedicion)  formMedicion.addEventListener('submit',  _handleSubmit);
-    if (btnCancelar)   btnCancelar.addEventListener('click',    _handleCancelar);
+    if (!rootEl) return;
+
+    // Generar el HTML del formulario dentro del contenedor
+    rootEl.innerHTML = `
+      <h2 class="formulario__titulo">Nueva medición</h2>
+
+      <form id="form-medicion" novalidate>
+        <!-- Sistólica -->
+        <div class="campo">
+          <label class="campo__label" for="input-systolic">
+            Sistólica <span class="campo__requerido" aria-hidden="true">*</span>
+          </label>
+          <div class="campo__fila">
+            <input
+              id="input-systolic"
+              name="systolic"
+              type="number"
+              class="campo__input"
+              inputmode="numeric"
+              min="1"
+              placeholder="ej. 120"
+              required
+              aria-required="true"
+              aria-describedby="error-systolic"
+            />
+            <span class="campo__unidad" aria-hidden="true">mmHg</span>
+          </div>
+          <span id="error-systolic" class="campo__error" role="alert" hidden></span>
+        </div>
+
+        <!-- Diastólica -->
+        <div class="campo">
+          <label class="campo__label" for="input-diastolic">
+            Diastólica <span class="campo__requerido" aria-hidden="true">*</span>
+          </label>
+          <div class="campo__fila">
+            <input
+              id="input-diastolic"
+              name="diastolic"
+              type="number"
+              class="campo__input"
+              inputmode="numeric"
+              min="1"
+              placeholder="ej. 80"
+              required
+              aria-required="true"
+              aria-describedby="error-diastolic"
+            />
+            <span class="campo__unidad" aria-hidden="true">mmHg</span>
+          </div>
+          <span id="error-diastolic" class="campo__error" role="alert" hidden></span>
+        </div>
+
+        <!-- Pulso (opcional) -->
+        <div class="campo">
+          <label class="campo__label" for="input-pulse">
+            Pulso <span class="campo__opcional">(opcional)</span>
+          </label>
+          <div class="campo__fila">
+            <input
+              id="input-pulse"
+              name="pulse"
+              type="number"
+              class="campo__input"
+              inputmode="numeric"
+              min="1"
+              placeholder="ej. 72"
+              aria-describedby="error-pulse"
+            />
+            <span class="campo__unidad" aria-hidden="true">ppm</span>
+          </div>
+          <span id="error-pulse" class="campo__error" role="alert" hidden></span>
+        </div>
+
+        <!-- Fecha y hora -->
+        <div class="campo">
+          <label class="campo__label" for="input-fecha">
+            Fecha y hora <span class="campo__requerido" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="input-fecha"
+            name="measuredAt"
+            type="datetime-local"
+            class="campo__input campo__input--fecha"
+            required
+            aria-required="true"
+            aria-describedby="error-fecha"
+          />
+          <span id="error-fecha" class="campo__error" role="alert" hidden></span>
+        </div>
+
+        <!-- Error global del formulario -->
+        <div id="error-formulario" class="formulario__error" role="alert" hidden></div>
+
+        <!-- Acciones -->
+        <div class="formulario__acciones">
+          <button type="submit" id="btn-guardar" class="btn btn--primario">
+            Guardar medición
+          </button>
+          <button type="button" id="btn-cancelar" class="btn btn--secundario">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    `;
+
+    // Capturar refs tras generar el HTML
+    formMedicion    = rootEl.querySelector('#form-medicion');
+    btnGuardar      = rootEl.querySelector('#btn-guardar');
+    btnCancelar     = rootEl.querySelector('#btn-cancelar');
+    inputSystolic   = rootEl.querySelector('#input-systolic');
+    inputDiastolic  = rootEl.querySelector('#input-diastolic');
+    inputPulse      = rootEl.querySelector('#input-pulse');
+    inputFecha      = rootEl.querySelector('#input-fecha');
+    errorFormulario = rootEl.querySelector('#error-formulario');
+
+    // Registrar listeners
+    if (formMedicion) formMedicion.addEventListener('submit',  _handleSubmit);
+    if (btnCancelar)  btnCancelar.addEventListener('click',    _handleCancelar);
     [inputSystolic, inputDiastolic, inputPulse, inputFecha].forEach((input) => {
       if (input) input.addEventListener('input', _handleInputChange);
     });
   }
 
   function unmount() {
-    if (formMedicion)  formMedicion.removeEventListener('submit',  _handleSubmit);
-    if (btnCancelar)   btnCancelar.removeEventListener('click',    _handleCancelar);
+    if (formMedicion) formMedicion.removeEventListener('submit',  _handleSubmit);
+    if (btnCancelar)  btnCancelar.removeEventListener('click',    _handleCancelar);
     [inputSystolic, inputDiastolic, inputPulse, inputFecha].forEach((input) => {
       if (input) input.removeEventListener('input', _handleInputChange);
     });
+    formMedicion    = null;
+    btnGuardar      = null;
+    btnCancelar     = null;
+    inputSystolic   = null;
+    inputDiastolic  = null;
+    inputPulse      = null;
+    inputFecha      = null;
+    errorFormulario = null;
   }
 
   return { mount, unmount, abrir, cerrar };
 }
+

@@ -20,8 +20,8 @@ const service = createMeasurementService(adapter);
 // Store de estado: fuente única de verdad para mediciones, carga y error
 const store = createAppStore(service);
 
-// Toast: disponible de forma transversal para todos las vistas
-const toast = createToast(document.getElementById('toast-container'));
+// Toast: crea su propio contenedor en <body> (Paso 14b)
+const toast = createToast();
 toast.mount();
 
 // Aviso iOS/Safari (política ITP de 7 días en localStorage)

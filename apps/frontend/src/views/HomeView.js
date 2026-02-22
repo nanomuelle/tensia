@@ -3,10 +3,10 @@
  * Encapsula la orquestación de todos los componentes de la pantalla del dashboard:
  * historial, gráfica, formulario de registro y el botón "Nueva medición".
  *
- * Recibe el store, el servicio y el toast por inyección de dependencias.
- * Expone mount() y unmount() para que el router pueda gestionar su ciclo de vida.
+ * mount() genera todo el HTML interno del contenedor (Paso 14f), vacía <main> en
+ * index.html y lo rellena al montarse. Expone mount() y unmount() para el router.
  *
- * @param {HTMLElement} containerEl - Elemento contenedor de la vista (p.ej. <main>).
+ * @param {HTMLElement} containerEl - Elemento contenedor vacío de la vista (<main>).
  * @param {{
  *   store:   object,
  *   service: object,
@@ -24,17 +24,41 @@ export function createHomeView(containerEl, { store, service, toast }) {
   let historial  = null;
   let grafica    = null;
   let formulario = null;
-  let unsubscribeStore   = null;
-  let cleanupBtnNueva    = null;
+  let unsubscribeStore = null;
+  let cleanupBtnNueva  = null;
 
   // -------------------------------------------------------
   // Lifecycle
   // -------------------------------------------------------
 
   function mount() {
+    // Generar la estructura HTML de la vista dentro del contenedor
+    containerEl.innerHTML = `
+      <section class="nueva-medicion">
+        <button
+          id="btn-nueva-medicion"
+          class="btn btn--primario"
+          aria-label="Registrar nueva medición"
+        >
+          + Nueva medición
+        </button>
+      </section>
+
+      <section
+        id="formulario-registro"
+        class="formulario-registro"
+        aria-label="Registro de medición manual"
+        hidden
+      ></section>
+
+      <section id="seccion-grafica" class="grafica-seccion" hidden></section>
+
+      <section id="historial-root" class="historial"></section>
+    `;
+
     const btnNuevaMedicion = containerEl.querySelector('#btn-nueva-medicion');
 
-    // Crear instancias de componentes con referencias al DOM dentro del contenedor
+    // Crear instancias de componentes con referencias a los contenedores recién creados
     historial = createMeasurementList(
       containerEl.querySelector('#historial-root'),
       { onReintentar: () => store.cargarMediciones() },
@@ -42,7 +66,6 @@ export function createHomeView(containerEl, { store, service, toast }) {
 
     grafica = createMeasurementChart(
       containerEl.querySelector('#seccion-grafica'),
-      containerEl.querySelector('#chart-mediciones'),
     );
 
     formulario = createMeasurementForm(
@@ -55,7 +78,7 @@ export function createHomeView(containerEl, { store, service, toast }) {
       },
     );
 
-    // Montar todos los componentes
+    // Montar todos los componentes (cada uno genera su propio HTML interno)
     historial.mount();
     grafica.mount();
     formulario.mount();
@@ -110,6 +133,9 @@ export function createHomeView(containerEl, { store, service, toast }) {
     historial  = null;
     grafica    = null;
     formulario = null;
+
+    // Limpiar el HTML del contenedor
+    if (containerEl) containerEl.innerHTML = '';
   }
 
   return { mount, unmount };

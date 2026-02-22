@@ -3,21 +3,43 @@
  * Wrapper sobre chart.js (renderChart) que gestiona la sección de gráfica,
  * el ResizeObserver y el ciclo de vida del componente.
  *
- * El HTML (#seccion-grafica y #chart-mediciones) vive en index.html.
+ * mount() genera su propio HTML interno dentro de seccionEl (Paso 14c).
+ * seccionEl (#seccion-grafica) vive en index.html como contenedor vacío
+ * hasta que HomeView lo genere también (Paso 14f).
  *
- * @param {HTMLElement} seccionEl   - El elemento #seccion-grafica.
- * @param {HTMLElement} containerEl - El elemento #chart-mediciones donde D3 inserta el SVG.
+ * @param {HTMLElement} seccionEl - El elemento #seccion-grafica (vacío al montarse).
  * @returns {{ mount: Function, unmount: Function, update: Function }}
  */
 
 import { renderChart } from '../../chart.js';
 import { MIN_MEDICIONES_GRAFICA } from '../../shared/constants.js';
 
-export function createMeasurementChart(seccionEl, containerEl) {
-  let resizeObserver = null;
+export function createMeasurementChart(seccionEl) {
+  let resizeObserver  = null;
   let ultimasMediciones = [];
+  let containerEl     = null;  // se captura en mount() tras generar el HTML
 
   function mount() {
+    if (!seccionEl) return;
+
+    // Generar el HTML interno de la sección de gráfica
+    seccionEl.innerHTML = `
+      <div class="grafica-header">
+        <h2 class="grafica__titulo">Evolución</h2>
+        <span class="grafica__unidad" aria-hidden="true">mmHg</span>
+      </div>
+      <div class="grafica__leyenda" aria-hidden="true">
+        <span class="leyenda-pill leyenda-pill--sistolica">Sistólica</span>
+        <span class="leyenda-pill leyenda-pill--diastolica">Diastólica</span>
+      </div>
+      <div class="grafica-contenedor">
+        <div id="chart-mediciones"></div>
+      </div>
+    `;
+
+    // Capturar ref al contenedor D3 después de generar el HTML
+    containerEl = seccionEl.querySelector('#chart-mediciones');
+
     // La inicialización del ResizeObserver se difiere hasta el primer update()
     // con datos suficientes, para no observar un contenedor vacío.
   }
@@ -27,6 +49,7 @@ export function createMeasurementChart(seccionEl, containerEl) {
       resizeObserver.disconnect();
       resizeObserver = null;
     }
+    containerEl = null;
   }
 
   /**

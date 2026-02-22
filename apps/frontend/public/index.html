@@ -32,211 +32,23 @@
   </head>
   <body>
     <!-- Aviso informativo Safari/iOS: localStorage puede borrarse tras 7 días de inactividad (ITP) -->
-    <!-- Se muestra solo en iOS/Safari mediante JS inline; se oculta por defecto con hidden -->
+    <!-- El contenido lo genera IosWarning.mount() (Paso 14a) -->
     <div
       id="aviso-ios"
       class="aviso-ios"
       role="alert"
       aria-live="polite"
       hidden
-    >
-      <span>⚠️ En Safari/iOS los datos pueden borrarse si no usas la app durante 7 días.</span>
-      <button
-        id="btn-cerrar-aviso-ios"
-        class="aviso-ios__cerrar"
-        aria-label="Cerrar aviso"
-      >✕</button>
-    </div>
+    ></div>
     <!-- Header fijo -->
     <header class="header">
       <span class="header__logo" aria-hidden="true">🩺</span>
       <h1 class="header__title">Tensia</h1>
     </header>
 
-    <main class="main">
-      <!-- Botón de acción principal -->
-      <section class="nueva-medicion">
-        <button
-          id="btn-nueva-medicion"
-          class="btn btn--primario"
-          aria-label="Registrar nueva medición"
-        >
-          + Nueva medición
-        </button>
-      </section>
-
-      <!-- Formulario de registro manual (oculto por defecto) -->
-      <section
-        id="formulario-registro"
-        class="formulario-registro"
-        aria-label="Registro de medición manual"
-        hidden
-      >
-        <h2 class="formulario__titulo">Nueva medición</h2>
-
-        <form id="form-medicion" novalidate>
-          <!-- Sistólica -->
-          <div class="campo">
-            <label class="campo__label" for="input-systolic">
-              Sistólica <span class="campo__requerido" aria-hidden="true">*</span>
-            </label>
-            <div class="campo__fila">
-              <input
-                id="input-systolic"
-                name="systolic"
-                type="number"
-                class="campo__input"
-                inputmode="numeric"
-                min="1"
-                placeholder="ej. 120"
-                required
-                aria-required="true"
-                aria-describedby="error-systolic"
-              />
-              <span class="campo__unidad" aria-hidden="true">mmHg</span>
-            </div>
-            <span id="error-systolic" class="campo__error" role="alert" hidden></span>
-          </div>
-
-          <!-- Diastólica -->
-          <div class="campo">
-            <label class="campo__label" for="input-diastolic">
-              Diastólica <span class="campo__requerido" aria-hidden="true">*</span>
-            </label>
-            <div class="campo__fila">
-              <input
-                id="input-diastolic"
-                name="diastolic"
-                type="number"
-                class="campo__input"
-                inputmode="numeric"
-                min="1"
-                placeholder="ej. 80"
-                required
-                aria-required="true"
-                aria-describedby="error-diastolic"
-              />
-              <span class="campo__unidad" aria-hidden="true">mmHg</span>
-            </div>
-            <span id="error-diastolic" class="campo__error" role="alert" hidden></span>
-          </div>
-
-          <!-- Pulso (opcional) -->
-          <div class="campo">
-            <label class="campo__label" for="input-pulse">
-              Pulso <span class="campo__opcional">(opcional)</span>
-            </label>
-            <div class="campo__fila">
-              <input
-                id="input-pulse"
-                name="pulse"
-                type="number"
-                class="campo__input"
-                inputmode="numeric"
-                min="1"
-                placeholder="ej. 72"
-                aria-describedby="error-pulse"
-              />
-              <span class="campo__unidad" aria-hidden="true">ppm</span>
-            </div>
-            <span id="error-pulse" class="campo__error" role="alert" hidden></span>
-          </div>
-
-          <!-- Fecha y hora -->
-          <div class="campo">
-            <label class="campo__label" for="input-fecha">
-              Fecha y hora <span class="campo__requerido" aria-hidden="true">*</span>
-            </label>
-            <input
-              id="input-fecha"
-              name="measuredAt"
-              type="datetime-local"
-              class="campo__input campo__input--fecha"
-              required
-              aria-required="true"
-              aria-describedby="error-fecha"
-            />
-            <span id="error-fecha" class="campo__error" role="alert" hidden></span>
-          </div>
-
-          <!-- Error global del formulario (validación de dominio o error inesperado) -->
-          <div id="error-formulario" class="formulario__error" role="alert" hidden></div>
-
-          <!-- Acciones -->
-          <div class="formulario__acciones">
-            <button type="submit" id="btn-guardar" class="btn btn--primario">
-              Guardar medición
-            </button>
-            <button type="button" id="btn-cancelar" class="btn btn--secundario">
-              Cancelar
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <!-- Sección gráfica (BK-14 / ADR-006): visible cuando hay ≥ 2 mediciones -->
-      <section id="seccion-grafica" class="grafica-seccion" hidden>
-        <div class="grafica-header">
-          <h2 class="grafica__titulo">Evolución</h2>
-          <span class="grafica__unidad" aria-hidden="true">mmHg</span>
-        </div>
-        <!-- Leyenda: aria-hidden porque el aria-label del SVG ya describe la gráfica -->
-        <div class="grafica__leyenda" aria-hidden="true">
-          <span class="leyenda-pill leyenda-pill--sistolica">Sistólica</span>
-          <span class="leyenda-pill leyenda-pill--diastolica">Diastólica</span>
-        </div>
-        <div class="grafica-contenedor">
-          <!-- div en lugar de canvas (ADR-006): D3 inserta el SVG aquí -->
-          <div id="chart-mediciones"></div>
-        </div>
-      </section>
-
-      <!-- Sección historial -->
-      <section id="historial-root" class="historial">
-        <h2 class="historial__titulo">Historial</h2>
-
-        <!-- Estado: cargando -->
-        <div
-          id="estado-cargando"
-          class="estado estado--cargando"
-          aria-live="polite"
-          aria-label="Cargando"
-          hidden
-        >
-          <span class="spinner" aria-hidden="true"></span>
-          <span>Cargando mediciones…</span>
-        </div>
-
-        <!-- Estado: error -->
-        <div
-          id="estado-error"
-          class="estado estado--error"
-          role="alert"
-          hidden
-        >
-          <span>⚠️ No se pudieron cargar las mediciones.</span>
-          <button id="btn-reintentar" class="btn btn--secundario">
-            Reintentar
-          </button>
-        </div>
-
-        <!-- Estado: sin mediciones -->
-        <div id="estado-vacio" class="estado estado--vacio" hidden>
-          <p>Sin mediciones todavía.</p>
-          <p>Pulsa "Nueva medición" para registrar la primera.</p>
-        </div>
-
-        <!-- Lista de mediciones -->
-        <ul
-          id="lista-mediciones"
-          class="lista-mediciones"
-          role="list"
-          aria-label="Historial de mediciones"
-        ></ul>
-      </section>
-    </main>
-
-    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+    <!-- HomeView.mount() genera todo el contenido de <main> (Paso 14f) -->
+    <!-- Toast.mount() crea su propio contenedor y lo añade a <body> (Paso 14b) -->
+    <main class="main"></main>
 
     <script type="module" src="src/app.js"></script>
 
