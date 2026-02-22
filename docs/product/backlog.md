@@ -1,6 +1,6 @@
 # Backlog — Tensia
 
-_Última revisión: 2026-02-22 — BK-22 completado (modal formulario implementado); BK-21 y BK-23 pendientes_
+_Última revisión: 2026-02-22 — BK-22 completado (modal formulario implementado); BK-21 completado (diseño layout columnas); BK-23 pendiente_
 
 ---
 
@@ -108,7 +108,7 @@ Referencia: US-13
 **BK-21 — [Diseñador] Diseño: layout gráfica + historial en columnas (≥ 768 px)**
 Descripción: Definir y documentar en `docs/design/screens.md` el wireframe del layout de dos columnas para pantallas anchas: proporciones de columna (sugerido 55 % gráfica / 45 % historial o 50/50), comportamiento sticky de la gráfica, scroll independiente del historial, breakpoints exactos y degradación a columna única en móvil. Incluir especificaciones de espaciado y alineación entre columnas.
 Prioridad: Alta
-Estado: Pendiente
+Estado: Hecho — Wireframes columna única (< 768 px) y dos columnas (≥ 768 px), proporciones 55 %/45 %, gap 24 px, sticky con `top: calc(var(--header-height) + 8px)`, historial scrollable con `max-height` basado en variables CSS, estados intermedios (0 mediciones → columna única, 1 medición → skeleton + historial, ≥ 2 mediciones → gráfica + historial), tabla de espaciado, accesibilidad WCAG AA y notas de implementación para BK-23. Flujo responsivo añadido en `ux-flow.md`.
 Rol: Diseñador UX/UI
 Referencia: US-14
 
