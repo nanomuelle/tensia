@@ -8,15 +8,10 @@ import * as adapter from './infra/localStorageAdapter.js';
 import { createMeasurementService } from './services/measurementService.js';
 import { validarCamposMedicion, prepararDatosMedicion } from './validators.js';
 import { renderChart } from './chart.js';
+import { formatearFecha, fechaLocalActual } from './shared/formatters.js';
 
 // Servicio con adaptador inyectado (anónimo → localStorage)
 const service = createMeasurementService(adapter);
-
-// --- Formato de fecha localizado ---
-const formatearFecha = new Intl.DateTimeFormat('es', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
 
 // --- Referencias al DOM: historial ---
 const estadoCargando = document.getElementById('estado-cargando');
@@ -175,19 +170,9 @@ async function cargarMediciones() {
 // Formulario: mostrar / ocultar
 // =========================================================
 
-/** Rellena el campo fecha con la fecha y hora actuales (formato datetime-local). */
-function rellenarFechaActual() {
-  // datetime-local acepta "YYYY-MM-DDTHH:MM:SS" en hora local.
-  // Se incluyen segundos para evitar timestamps idénticos entre mediciones
-  // creadas dentro del mismo minuto (BUG-01).
-  const ahora = new Date();
-  const local = new Date(ahora.getTime() - ahora.getTimezoneOffset() * 60000);
-  inputFecha.value = local.toISOString().slice(0, 19);
-}
-
 function abrirFormulario() {
   limpiarFormulario();
-  rellenarFechaActual();
+  inputFecha.value = fechaLocalActual();
   formularioRegistro.hidden = false;
   btnNuevaMedicion.hidden = true;
   inputSystolic.focus();
