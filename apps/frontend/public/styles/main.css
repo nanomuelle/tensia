@@ -12,6 +12,7 @@
 @import './components/Toast.css';
 @import './components/IosWarning.css';
 @import './components/Modal.css';
+@import './components/HomeLayout.css';
 
 /* --- Variables del sistema de diseño --- */
 :root {
@@ -30,6 +31,9 @@
   --color-error-fondo: #fff3cd;
   --color-error-borde: #f5a623;
   --color-error-texto: #856404;
+
+  --header-height: 56px;
+  --btn-nueva-height: 48px;
 
   --radio-tarjeta: 12px;
   --radio-boton: 10px;

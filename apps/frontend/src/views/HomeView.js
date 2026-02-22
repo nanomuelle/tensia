@@ -107,9 +107,10 @@ export function createHomeView(containerEl, { store, service, toast }) {
         </button>
       </section>
 
-      <section id="seccion-grafica" class="grafica-seccion" hidden></section>
-
-      <section id="historial-root" class="historial"></section>
+      <div class="dashboard-content" id="dashboard-content">
+        <section id="seccion-grafica" class="grafica-seccion" hidden></section>
+        <section id="historial-root" class="historial"></section>
+      </div>
     `;
 
     const btnNuevaMedicion = containerEl.querySelector('#btn-nueva-medicion');
@@ -130,6 +131,16 @@ export function createHomeView(containerEl, { store, service, toast }) {
 
     // Suscribir los componentes al store
     unsubscribeStore = store.subscribe((state) => {
+      const dashboardContent = containerEl.querySelector('#dashboard-content');
+
+      // Layout dos columnas: solo con ≥ 1 medición (esqueleto o gráfica real)
+      if (dashboardContent) {
+        dashboardContent.classList.toggle(
+          'dashboard-content--columnas',
+          state.mediciones.length >= 1,
+        );
+      }
+
       if (state.cargando) {
         historial.mostrarCargando();
       } else if (state.error) {

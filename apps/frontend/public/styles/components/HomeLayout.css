@@ -1,0 +1,50 @@
+/* =========================================================
+   HomeLayout — Layout de dos columnas (gráfica + historial)
+   Breakpoint: ≥ 768 px  (BK-23 / US-14)
+   ========================================================= */
+
+/*
+ * Contenedor del área de contenido (gráfica + historial).
+ * Por defecto (móvil <768 px y 0 mediciones): columna única.
+ */
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/*
+ * Dos columnas: solo se activa con ≥ 1 medición Y ≥ 768 px.
+ * La clase .dashboard-content--columnas la añade/quita HomeView.js
+ * en respuesta al estado del store.
+ */
+@media (min-width: 768px) {
+  .dashboard-content--columnas {
+    display: grid;
+    grid-template-columns: 55% 1fr;
+    gap: 24px;
+    align-items: start;
+    padding: 0 8px; /* padding lateral extra en desktop */
+  }
+
+  /* Columna izquierda: gráfica sticky */
+  .dashboard-content--columnas .grafica-seccion {
+    position: sticky;
+    top: calc(var(--header-height) + 8px);
+    overflow: visible;
+  }
+
+  /* Columna derecha: historial scrollable */
+  .dashboard-content--columnas .historial {
+    overflow-y: auto;
+    max-height: calc(
+      100vh - var(--header-height) - var(--btn-nueva-height) - 48px
+    );
+    padding-right: 4px;
+  }
+}
+
+/* Gap entre botón "Nueva medición" y el área de columnas */
+.dashboard-content {
+  margin-top: 0; /* el gap lo gestiona el flex/grid de .main */
+}

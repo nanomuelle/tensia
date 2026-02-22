@@ -577,94 +577,253 @@ El foco queda confinado dentro de la modal mientras está abierta. El orden de t
 
 ## Layout: Gráfica + Historial en columnas (US-14, BK-21)
 
-> ⚠️ **Pendiente de validación por el Diseñador** (BK-21). Las proporciones y especificaciones exactas deben definirse antes de comenzar BK-23.
+_Diseño validado: 2026-02-22 — BK-21 completado._
 
 ### Descripción
 
-En pantallas con viewport ≥ 768 px, el Dashboard muestra la gráfica y el historial en un layout de **dos columnas** para aprovechar el espacio horizontal. El historial puede hacer scroll de forma independiente sin desplazar la gráfica.
+En pantallas con viewport ≥ 768 px, el Dashboard organiza la gráfica y el historial en **dos columnas** para aprovechar el espacio horizontal disponible. La columna izquierda aloja la gráfica de evolución con comportamiento `sticky`, de modo que permanece visible al hacer scroll. La columna derecha contiene el historial con scroll independiente.
 
-En móvil (< 768 px) el layout colapsa a columna única (comportamiento actual del MVP): gráfica encima, historial debajo.
+En móvil y tablet estrecha (< 768 px) el layout colapsa a **columna única**: gráfica encima, historial debajo (comportamiento actual del MVP sin cambios).
 
-### Wireframe — Columna única (< 768 px) — sin cambios respecto al MVP
+---
+
+### Breakpoints
+
+| Rango de viewport | Layout | Descripción |
+|---|---|---|
+| < 768 px | Columna única | Comportamiento MVP actual; gráfica encima, historial debajo |
+| ≥ 768 px | Dos columnas | Gráfica sticky a la izquierda (55 %), historial scrollable a la derecha (45 %) |
+
+> Se elige 768 px como breakpoint porque coincide con el punto en que el dispositivo tiene suficiente ancho para mostrar la gráfica legible (≥ 420 px) y el historial con sus tarjetas sin truncar texto.
+
+---
+
+### Wireframe — Columna única (< 768 px)
+
+Sin cambios respecto al layout actual del MVP:
 
 ```
 ┌─────────────────────────────────┐
-│  🩺 Tensia              [fecha] │  ← Header sticky
+│  🩺 Tensia              [fecha] │  ← Header sticky (--header-height: 56px)
 ├─────────────────────────────────┤
-│  [ + Nueva medición ]           │
+│  [ + Nueva medición ]           │  ← Botón ancho completo
 ├─────────────────────────────────┤
-│  [Gráfica de evolución - 100%]  │
+│  Evolución              [mmHg]  │
+│  █ Sistólica  █ Diastólica     │
+│  [SVG gráfica — 100% ancho]     │  ← Alto fijo 200px en móvil
 ├─────────────────────────────────┤
 │  Historial                      │
-│  tarjeta · tarjeta · tarjeta …  │
+│  ─────────────────────────────  │
+│  18 feb 2026 · 10:00            │  ← Tarjetas
+│  120 / 80 mmHg  💓 72 ppm      │
+│  ─────────────────────────────  │
+│  (scroll de página normal)      │
 └─────────────────────────────────┘
 ```
+
+---
 
 ### Wireframe — Dos columnas (≥ 768 px)
 
 ```
-┌──────────────────────────────────────────────────────┐
-│  🩺 Tensia                                  [fecha]  │  ← Header sticky
-├──────────────────────────────────────────────────────┤
-│  [ + Nueva medición ]                                │  ← Botón ancho completo
-├──────────────────────┬───────────────────────────────┤
-│                      │  Historial                    │
-│  Evolución  [mmHg]   │─────────────────────────────  │
-│  █ Sist. █ Diast.   │  18 feb 2026 · 10:00          │
-│                      │  120 / 80 mmHg  💓 72 ppm    │
-│  [SVG gráfica]       │─────────────────────────────  │
-│                      │  17 feb 2026 · 08:30          │
-│  (sticky / fija)     │  135 / 88 mmHg  💓 80 ppm    │
-│                      │─────────────────────────────  │
-│                      │  (scroll independiente →)     │
-│                      │  ...más mediciones...         │
-│                      │                               │
-└──────────────────────┴───────────────────────────────┘
-  ← ~55 % ancho →       ← ~45 % ancho, scroll propio →
+┌─────────────────────────────────────────────────────────┐
+│  🩺 Tensia                                     [fecha]  │  ← Header sticky
+├─────────────────────────────────────────────────────────┤
+│  [ + Nueva medición ]                                   │  ← Botón ancho completo
+├─────────────────────────────┬───────────────────────────┤
+│                             │                           │
+│  Evolución         [mmHg]   │  Historial                │
+│                             │  ───────────────────────  │
+│  █ Sistólica                │  18 feb 2026 · 10:00      │
+│  █ Diastólica               │  120/80 mmHg  💓 72 ppm  │
+│                             │  ───────────────────────  │
+│  ┌─────────────────────┐    │  17 feb 2026 · 08:30      │
+│  │ SVG gráfica de      │    │  135/88 mmHg  💓 80 ppm  │
+│  │ líneas (D3)         │    │  ───────────────────────  │
+│  │ alto: 240px         │    │  16 feb 2026 · 20:15      │
+│  └─────────────────────┘    │  118/76 mmHg              │
+│                             │  ───────────────────────  │
+│  [ sticky: permanece        │  (más mediciones…)        │
+│    visible al hacer         │                           │
+│    scroll del historial ]   │  ↕ scroll independiente   │
+│                             │                           │
+└─────────────────────────────┴───────────────────────────┘
+  ←────── 55 % del ancho ──────→←───── 45 % del ancho ────→
+  ←──── gap: 24 px ────────────→
 ```
 
-### Especificaciones de layout (a validar por Diseñador en BK-21)
+---
 
-| Propiedad | Valor propuesto |
+### Especificaciones de layout
+
+#### Proporciones de columnas
+
+| Propiedad | Valor |
 |---|---|
-| Breakpoint activación | ≥ 768 px |
-| Ancho columna gráfica | ~55 % (o `minmax(320px, 55%)`) |
-| Ancho columna historial | ~45 % (resto / `1fr`) |
-| Gap entre columnas | 24 px |
-| Comportamiento gráfica | `position: sticky; top: <alto header> + 8px` |
-| Max-height historial | `calc(100vh - <alto header> - <alto botón> - 32px)` |
-| Scroll historial | `overflow-y: auto` |
-| Comportamiento skeleton (< 2 mediciones) | Ocupa columna izquierda; columna derecha muestra historial normalmente |
+| Columna izquierda (gráfica) | `55%` — garantiza ≥ 420 px en viewport de 768 px |
+| Columna derecha (historial) | `1fr` (aproximadamente 45 % menos el gap) |
+| Gap entre columnas | `24 px` |
+| Sistema de layout | `display: grid; grid-template-columns: 55% 1fr` |
+| `align-items` del grid | `start` (ambas columnas se alinean al tope) |
+
+> La proporción 55/45 proporciona a la gráfica espacio suficiente para ser legible, y al historial el mínimo de ~320 px para mostrar tarjetas sin truncar. Si en tests visuales la gráfica resulta demasiado grande, se puede ajustar a 50/50 sin impacto en el resto del diseño.
+
+#### Columna izquierda — Gráfica sticky
+
+| Propiedad | Valor |
+|---|---|
+| `position` | `sticky` |
+| `top` | `calc(var(--header-height) + 8px)` |
+| Comportamiento | La gráfica permanece visible en el viewport al hacer scroll del historial |
+| Alto del SVG | `240 px` (igual que en desktop de columna única) |
+| Ancho del SVG | `100 %` del contenedor de columna |
+| `ResizeObserver` | Ya existente; se redibuja al cambiar el ancho de la columna |
+| `overflow` | `visible` (no recortar el SVG) |
+
+#### Columna derecha — Historial scrollable
+
+| Propiedad | Valor |
+|---|---|
+| `overflow-y` | `auto` |
+| `max-height` | `calc(100vh - var(--header-height) - var(--btn-nueva-height) - 48px)` |
+| Scroll visual | Scrollbar del sistema (nativa); no personalizar en el MVP |
+| `padding-right` | `4 px` (para que la scrollbar no solape el borde de las tarjetas) |
+
+> El valor `48px` del `max-height` absorbe el padding vertical del contenedor principal y el gap entre el botón y el área de dos columnas.
+
+#### Variables CSS requeridas
+
+Deben definirse en `main.css` o `:root`:
+
+| Variable | Valor por defecto |
+|---|---|
+| `--header-height` | `56px` |
+| `--btn-nueva-height` | `48px` |
+
+---
+
+### Wireframe — Estado: skeleton (< 2 mediciones) en layout dos columnas
+
+Cuando hay < 2 mediciones no se muestra la gráfica. El área izquierda permanece visible con el **skeleton** (mensaje "Sin datos suficientes") para no crear un desequilibrio visual excesivo. El historial ocupa la columna derecha con normalidad.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  🩺 Tensia                                     [fecha]  │
+├─────────────────────────────────────────────────────────┤
+│  [ + Nueva medición ]                                   │
+├─────────────────────────────┬───────────────────────────┤
+│                             │                           │
+│  ┌─────────────────────┐    │  Historial                │
+│  │                     │    │  ───────────────────────  │
+│  │  Sin datos          │    │  18 feb 2026 · 10:00      │
+│  │  suficientes para   │    │  120/80 mmHg              │
+│  │  mostrar la         │    │  ───────────────────────  │
+│  │  gráfica            │    │  Sin más mediciones       │
+│  │                     │    │                           │
+│  └─────────────────────┘    │                           │
+│  [ sticky ]                 │                           │
+└─────────────────────────────┴───────────────────────────┘
+```
+
+- El `div.chart-skeleton` ocupa la columna izquierda con `min-height: 120 px` para evitar que quede demasiado pequeño.
+- El skeleton es sticky igual que la gráfica real: permanece visible si el historial crece.
+
+---
+
+### Wireframe — Estado: sin gráfica ni skeleton (0 mediciones)
+
+Con 0 mediciones no hay gráfica ni skeleton: la columna izquierda queda vacía. Para evitar el desequilibrio visual, en 0 mediciones el layout **vuelve a columna única** (gráfica y historial apilados) aunque el viewport sea ≥ 768 px. El mensaje "Sin mediciones todavía" ocupa el ancho completo.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  🩺 Tensia                                     [fecha]  │
+├─────────────────────────────────────────────────────────┤
+│  [ + Nueva medición ]                                   │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│   Sin mediciones todavía.                               │  ← Columna única
+│   Pulsa "Nueva medición" para registrar la primera.     │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+> **Regla**: el layout dos columnas solo se activa si hay al menos 1 medición registrada (el historial tiene contenido). Con 0 mediciones se usa siempre columna única independientemente del viewport.
+
+---
+
+### Espaciado y alineación
+
+| Elemento | Espaciado |
+|---|---|
+| Padding exterior del contenedor principal | `16 px` lateral en móvil; `24 px` lateral en ≥ 768 px |
+| Gap entre botón "Nueva medición" y el área de columnas | `24 px` (margin-top del contenedor `.dashboard-content`) |
+| Separación entre tarjetas del historial | `1 px` (borde / divisor) o `8 px` vertical si se usan tarjetas con fondo |
+| Padding interno de cada tarjeta | `12 px` vertical, `16 px` horizontal |
+| Título de sección ("Historial", "Evolución") | `font-size: 15 px`, `font-weight: 600`, `margin-bottom: 12 px` |
+| Margen entre título de sección y primer elemento | `8 px` |
+
+---
 
 ### Comportamiento responsivo al cambiar tamaño
 
-- En el breakpoint de 768 px, el CSS activa/desactiva el grid; no hay lógica JS adicional.
-- `ResizeObserver` ya existente en la gráfica gestiona el redibujado al cambiar el ancho de su columna.
-- Al rotar el dispositivo de vertical a horizontal, si el nuevo viewport ≥ 768 px, el layout cambia a dos columnas automáticamente.
+| Evento | Comportamiento |
+|---|---|
+| Viewport pasa de < 768 px a ≥ 768 px | CSS activa el grid automáticamente; no se requiere JS |
+| Viewport pasa de ≥ 768 px a < 768 px | CSS desactiva el grid; columna única inmediata |
+| Rotación del dispositivo | Si el nuevo viewport ≥ 768 px, el layout cambia a dos columnas; `ResizeObserver` redibuja la gráfica |
+| Cambio de tamaño de ventana (desktop) | `ResizeObserver` redibuja la gráfica al nuevo ancho de columna, sin necesidad de lógica de layout adicional |
+
+---
+
+### Accesibilidad (WCAG AA)
+
+- El contenedor `.dashboard-content` es un `<div>` neutro, sin rol semántico propio (no es `<main>` o `<section>`); la semántica la aportan los componentes hijos ya documentados.
+- El scroll independiente del historial no introduce trampas de teclado: el foco puede salir de la columna con `Tab` normalmente.
+- El historial con scroll propio no oculta el foco visualmente al tabular hacia una tarjeta fuera del viewport visible; el navegador debe hacer scroll automático (`scroll-into-view`) en tarjetas focuseadas.
+- La gráfica sticky no superpone contenido interactivo al scrollear (el SVG no tiene controles interactivos en el MVP).
+- No usar `overflow: hidden` en la columna de la gráfica para no recortar el sticky.
+
+---
 
 ### Notas de implementación para el Frontend Dev (BK-23)
 
-- El contenedor de dos columnas se añade en `HomeView.js` como `<div class="dashboard-content">` que envuelve `#chart-mediciones` y `#historial`.
-- El CSS (nuevo parcial `layout.css` o dentro de `main.css`) define el grid:
-  ```css
-  @media (min-width: 768px) {
-    .dashboard-content {
-      display: grid;
-      grid-template-columns: 55% 1fr;
-      gap: 24px;
-      align-items: start;
-    }
-    .dashboard-content__chart {
-      position: sticky;
-      top: calc(var(--header-height) + 8px);
-    }
-    .dashboard-content__historial {
-      overflow-y: auto;
-      max-height: calc(100vh - var(--header-height) - var(--btn-nueva-height) - 32px);
-    }
+- Envolver `#chart-mediciones` y `#historial` en `<div class="dashboard-content">` dentro de `HomeView.js`.
+- Asignar las clases `dashboard-content__chart` y `dashboard-content__historial` a cada columna respectivamente.
+- La activación del grid solo aplica si hay ≥ 1 medición. Con 0 mediciones, añadir la clase `dashboard-content--vacio` al contenedor para sobrescribir el grid con `display: block`.
+- El CSS del grid puede vivir en un nuevo parcial `apps/frontend/public/styles/components/DashboardLayout.css` importado desde `main.css`, o añadirse a `main.css` directamente.
+- Snippet de referencia CSS:
+
+```css
+/* DashboardLayout.css */
+.dashboard-content {
+  margin-top: 24px;
+}
+
+@media (min-width: 768px) {
+  .dashboard-content:not(.dashboard-content--vacio) {
+    display: grid;
+    grid-template-columns: 55% 1fr;
+    gap: 24px;
+    align-items: start;
   }
-  ```
-- Variables CSS `--header-height` y `--btn-nueva-height` deben definirse en `main.css`.
+
+  .dashboard-content__chart {
+    position: sticky;
+    top: calc(var(--header-height) + 8px);
+    overflow: visible;
+  }
+
+  .dashboard-content__historial {
+    overflow-y: auto;
+    max-height: calc(100vh - var(--header-height) - var(--btn-nueva-height) - 48px);
+    padding-right: 4px;
+  }
+}
+```
+
+- Variables `--header-height: 56px` y `--btn-nueva-height: 48px` en `:root` de `main.css`.
+- El `ResizeObserver` de `chart.js` ya observa `#chart-mediciones`; no requiere cambios.
+- Verificar que el skeleton (`div.chart-skeleton`) tiene `min-height: 120px` para no colapsar la columna izquierda.
 
 ## Pantalla 3: Registro por foto (OCR)
 

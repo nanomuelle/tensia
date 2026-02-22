@@ -1,6 +1,6 @@
 # Flujo UX — Tensia
 
-_Última revisión: 2026-02-22 — Actualizado para ADR-005 (sin HTTP para datos), gráfica de evolución (BK-14) y modal del formulario (BK-20)_
+_Última revisión: 2026-02-22 — Actualizado para ADR-005 (sin HTTP para datos), gráfica de evolución (BK-14), modal del formulario (BK-20) y layout dos columnas (BK-21)_
 
 ---
 
@@ -131,6 +131,48 @@ _Última revisión: 2026-02-22 — Actualizado para ADR-005 (sin HTTP para datos
         │                     [Foco vuelve al botón "Nueva medición"]
         │
         └── [Guardar con éxito] ────────────────────▶ (igual que arriba)
+```
+
+---
+
+## Flujo: Layout responsivo — dos columnas (≥ 768 px)
+
+```
+[Dashboard se carga con viewport ≥ 768 px y ≥ 1 medición]
+        │
+        ▼
+[CSS activa display:grid — columna izquierda: gráfica / columna derecha: historial]
+        │
+        ├── 0 mediciones ──▶ [Columna única (clase dashboard-content--vacio)]
+        │                      Mensaje "Sin mediciones todavía" — ancho completo
+        │
+        ├── 1 medición ───▶ [Dos columnas activadas]
+        │                      Columna izquierda: skeleton "Sin datos suficientes"
+        │                      Columna derecha: historial con 1 tarjeta
+        │
+        └── ≥ 2 mediciones ▶ [Dos columnas activadas]
+                               Columna izquierda: gráfica SVG (sticky)
+                               Columna derecha: historial scrollable
+
+[Usuario hace scroll del historial]
+        │
+        ▼
+[La gráfica queda fija gracias a position:sticky]
+[El historial desplaza de forma independiente]
+
+[Usuario redimensiona ventana o rota dispositivo]
+        │
+        ├── Viewport pasa a < 768 px ──▶ [CSS desactiva el grid — columna única inmediata]
+        │
+        └── Viewport permanece ≥ 768 px ▶ [ResizeObserver redibuja SVG al nuevo ancho]
+                                           [Layout mantiene las dos columnas]
+
+[Usuario guarda nueva medición desde modal]
+        │
+        ├── Total pasa a 1 medición ──▶ [Dos columnas se activan (si viewport ≥ 768 px)]
+        │                               [Skeleton en columna izquierda]
+        │
+        └── Total pasa a ≥ 2 mediciones ▶ [Gráfica aparece/se redibuja en columna izquierda]
 ```
 
 ---
