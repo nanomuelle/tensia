@@ -32,8 +32,12 @@ const ALTO_DESKTOP = 240; // ≥ 640px
  * @param {Array}       measurements   - Array de mediciones (cualquier orden)
  */
 export function renderChart(container, measurements) {
-  // Guardia: al menos 2 mediciones para trazar una línea con sentido
-  if (!container || !measurements || measurements.length < 2) {
+  // Guardias básicas
+  if (!container) return;
+
+  // Si measurements es null/undefined o tiene menos de 2 elementos, mostramos el skeleton
+  if (!measurements || measurements.length < 2) {
+    renderSkeleton(container, measurements || null);
     return;
   }
 
@@ -179,4 +183,39 @@ export function renderChart(container, measurements) {
   // Diastólica primero (queda detrás), sistólica encima
   trazarSerie('diastolic', COLOR_DIASTOLICA, FILL_DIASTOLICA);
   trazarSerie('systolic',  COLOR_SISTOLICA,  FILL_SISTOLICA);
+}
+
+/**
+ * Renderiza un skeleton/placeholder ocupando el espacio de la gráfica.
+ * Muestra un mensaje informativo cuando no hay datos suficientes.
+ * @param {HTMLElement} container
+ * @param {Array} measurements
+ */
+function renderSkeleton(container, measurements) {
+  // Limpiar cualquier contenido previo
+  container.innerHTML = '';
+
+  // Creamos un contenedor accesible que ocupe el espacio esperado
+  const wrapper = document.createElement('div');
+  wrapper.className = 'chart-skeleton';
+  wrapper.setAttribute('role', 'img');
+  wrapper.setAttribute('aria-label', 'Gráfica de evolución de tensión arterial (sin datos suficientes)');
+
+  // Texto informativo dentro del skeleton
+  const mensaje = document.createElement('div');
+  mensaje.className = 'chart-skeleton__mensaje';
+  mensaje.textContent = 'Sin datos suficientes para mostrar la gráfica';
+
+  // Nota opcional: si localStorage parece ausente (mediciones === null), añadimos una nota
+  if (measurements === null) {
+    const nota = document.createElement('div');
+    nota.className = 'chart-skeleton__nota';
+    nota.textContent = 'Nota: el almacenamiento local no está disponible en este navegador.';
+    wrapper.appendChild(nota);
+  }
+
+  wrapper.appendChild(mensaje);
+
+  // Insertar wrapper en el contenedor
+  container.appendChild(wrapper);
 }

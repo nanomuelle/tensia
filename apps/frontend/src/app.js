@@ -121,16 +121,20 @@ function renderizarGrafica(mediciones) {
   // Guardar referencia para que ResizeObserver pueda redibujar
   ultimasMediciones = mediciones;
 
-  // Ocultar gráfica si no hay elementos DOM o datos suficientes
-  if (!seccionGrafica || !containerChart || mediciones.length < 2) {
-    if (seccionGrafica) seccionGrafica.hidden = true;
+  // Si no existe el DOM esperado, no hacemos nada
+  if (!seccionGrafica || !containerChart) return;
+
+  // Mostrar siempre la sección de gráfica: el módulo renderChart
+  // decidirá si dibuja la gráfica real o el skeleton cuando haya <2 mediciones
+  seccionGrafica.hidden = false;
+
+  // Si no hay suficientes mediciones, renderizamos el skeleton y salimos
+  if (mediciones.length < 2) {
+    renderChart(containerChart, mediciones);
     return;
   }
 
-  // Mostrar la sección de gráfica
-  seccionGrafica.hidden = false;
-
-  // Inicializar ResizeObserver solo cuando la gráfica es visible
+  // Inicializar ResizeObserver solo cuando la gráfica es visible y tiene datos suficientes
   if (!resizeObserver && typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(() => {
       if (ultimasMediciones.length >= 2 && containerChart) {
@@ -154,13 +158,15 @@ async function cargarMediciones() {
     const mediciones = await service.listAll();
     if (mediciones.length === 0) {
       mostrarVacio();
-      if (seccionGrafica) seccionGrafica.hidden = true;
+      // Mostrar skeleton de la gráfica incluso con lista vacía
+      renderizarGrafica(mediciones);
     } else {
       renderizarGrafica(mediciones);
       mostrarLista(mediciones);
     }
   } catch {
     mostrarError();
+    // En caso de error, ocultamos la sección de gráfica
     if (seccionGrafica) seccionGrafica.hidden = true;
   }
 }
