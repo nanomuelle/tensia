@@ -6,23 +6,23 @@
 
 ---
 
-**[TC-01] — Crear medición válida**
-Dado: el servidor está en marcha y el adaptador en memoria está vacío
-Cuando: se hace `POST /measurements` con `{ systolic: 120, diastolic: 80, pulse: 72, measuredAt: "2026-02-18T10:00:00.000Z" }`
-Entonces: la respuesta es `201 Created` con un objeto que incluye `id` (UUID), `source: "manual"` y los valores enviados
-Tipo: Integración
+**[TC-01] — Crear medición válida (JsonFileAdapter)**
+Dado: el adaptador `JsonFileAdapter` está inicializado con un fichero temporal
+Cuando: se llama a `save([medición])` con valores válidos
+Entonces: el fichero persiste la medición con `id` (UUID) y `source: "manual"`
+Tipo: Unitario infra (solo dev/tests — ADR-005)
 Prioridad: Alta
-Estado: ✅ Cubierto — `tests/api/measurements.test.js`
+Estado: ✅ Cubierto — `apps/backend/tests/infra/jsonFileAdapter.test.js`
 
 ---
 
 **[TC-02] — Rechazar sistólica inválida (negativa, cero, no numérica)**
-Dado: el servidor está en marcha
-Cuando: se hace `POST /measurements` con `systolic: 0`, `systolic: -10` o sin el campo
-Entonces: la respuesta es `400 Bad Request` con un campo `error` descriptivo
-Tipo: Integración
+Dado: el módulo de dominio frontend está cargado
+Cuando: se llama a `validateMeasurement()` con `systolic: 0`, `systolic: -10` o sin el campo
+Entonces: se lanza o devuelve un error descriptivo
+Tipo: Unitario dominio
 Prioridad: Alta
-Estado: ✅ Cubierto — `tests/api/measurements.test.js` + `tests/domain/measurement.test.js`
+Estado: ✅ Cubierto — `apps/frontend/tests/domain/measurement.test.js`
 
 ---
 
@@ -48,42 +48,42 @@ Estado: ⏸ Pendiente — funcionalidad post-MVP
 ---
 
 **[TC-05] — Listado ordenado por fecha descendente**
-Dado: existen tres mediciones con fechas distintas
-Cuando: se hace `GET /measurements`
+Dado: el servicio de mediciones recibe tres mediciones con fechas distintas
+Cuando: se llama a `listAll()`
 Entonces: el array devuelto está ordenado de más reciente a más antiguo
-Tipo: Integración
+Tipo: Unitario servicio
 Prioridad: Alta
-Estado: ✅ Cubierto — `tests/api/measurements.test.js` + `tests/services/measurementService.test.js`
+Estado: ✅ Cubierto — `apps/frontend/tests/services/measurementService.test.js`
 
 ---
 
 **[TC-06] — Rechazar diastólica mayor o igual a sistólica**
-Dado: el servidor está en marcha
-Cuando: se hace `POST /measurements` con `systolic: 80, diastolic: 80`
-Entonces: la respuesta es `400 Bad Request`
-Tipo: Integración
+Dado: el módulo de dominio frontend está cargado
+Cuando: se llama a `validateMeasurement()` con `systolic: 80, diastolic: 80`
+Entonces: se lanza o devuelve un error de dominio
+Tipo: Unitario dominio
 Prioridad: Alta
-Estado: ✅ Cubierto — `tests/api/measurements.test.js`
+Estado: ✅ Cubierto — `apps/frontend/tests/domain/measurement.test.js`
 
 ---
 
 **[TC-07] — Formulario frontend rechaza campos vacíos**
 Dado: el formulario de registro está abierto
 Cuando: el usuario pulsa "Guardar" sin rellenar ningún campo
-Entonces: se muestran mensajes de error inline en sistólica, diastólica y fecha; no se llama al backend
+Entonces: se muestran mensajes de error inline en sistólica, diastólica y fecha; no se persiste nada
 Tipo: Componente frontend
 Prioridad: Alta
-Estado: ✅ Cubierto — `apps/frontend/tests/formulario.test.js` (5 tests, jsdom)
+Estado: ✅ Cubierto — `apps/frontend/tests/components/MeasurementForm.test.js` (jsdom)
 
 ---
 
 **[TC-08] — Formulario frontend rechaza sistólica ≤ diastólica**
 Dado: el formulario de registro está abierto
 Cuando: el usuario introduce `systolic: 70, diastolic: 80` y pulsa "Guardar"
-Entonces: aparece error inline en sistólica; no se llama al backend
+Entonces: aparece error inline en sistólica; no se persiste nada
 Tipo: Componente frontend
 Prioridad: Alta
-Estado: ✅ Cubierto — `apps/frontend/tests/formulario.test.js` (4 tests, jsdom)
+Estado: ✅ Cubierto — `apps/frontend/tests/components/MeasurementForm.test.js` (jsdom)
 
 ---
 
@@ -171,17 +171,52 @@ Estado: ✅ Cubierto — `apps/frontend/tests/e2e/flows/skeleton-grafica.spec.js
 ---
 
 **[TC-12] — Rangos clínicamente plausibles (OMS / NHS)**
-Dado: el servidor / validador del formulario está activo
-Cuando: se envían valores fuera de los rangos clínicos para sistólica, diastólica o pulso
+Dado: el módulo de dominio y los validadores del formulario están activos
+Cuando: se validan valores fuera de los rangos clínicos para sistólica, diastólica o pulso
 Entonces:
-Fichero	Tests nuevos
-measurement.test.js	13 (4 sistólica · 4 diastólica · 5 pulso)
-validators.test.js
   - `systolic` < 50 o > 300 → error con mención al límite correspondiente
   - `diastolic` < 30 o > 200 → error con mención al límite correspondiente
   - `pulse` < 20 o > 300 → error con mención al límite correspondiente
   - Los valores en los límites exactos (50, 300, 30, 200, 20, 300) son aceptados sin error
-Tipo: Unitario (backend dominio + frontend validadores)
+Tipo: Unitario dominio + validadores
 Prioridad: Alta
-Estado: ✅ Cubierto — `apps/backend/tests/domain/measurement.test.js` (13 tests) · `apps/frontend/tests/validators.test.js` (13 tests)
+Estado: ✅ Cubierto — `apps/frontend/tests/domain/measurement.test.js` (13 tests) · `apps/frontend/tests/shared/validators.test.js` (13 tests)
 Fuente: OMS — *Hypertension Fact Sheet* (sept. 2025) · NHS — *Blood pressure test* (nov. 2025)
+
+---
+
+**[TC-14] — Aviso Safari/iOS mostrado en plataformas afectadas**
+Dado: el componente `IosWarning` está montado
+Cuando: el userAgent corresponde a Safari macOS, iPhone o iPad
+Entonces: el contenedor `#aviso-ios` queda visible (`hidden = false`)
+Cuando: el userAgent es Chrome/Linux
+Entonces: el contenedor permanece oculto (`hidden = true`)
+Cuando: el usuario pulsa el botón de cierre
+Entonces: el aviso se oculta y, tras `unmount()`, el click ya no tiene efecto
+Tipo: Unitario componente (jsdom)
+Prioridad: Alta — criterio de aceptación MVP
+Estado: ✅ Cubierto — `apps/frontend/tests/components/IosWarning.test.js`
+
+---
+
+**[TC-15] — EventBus: emisión y suscripción de eventos de dominio**
+Dado: el módulo `eventBus` está cargado
+Cuando: se llama a `emit(Events.MEASUREMENT_SAVED, detalle)`
+Entonces: el handler registrado con `on()` recibe el `CustomEvent` con el detalle correcto
+Cuando: se llama a la función de cleanup devuelta por `on()`
+Entonces: el handler ya no recibe eventos subsiguientes
+Tipo: Unitario (jsdom)
+Prioridad: Media
+Estado: ✅ Cubierto — `apps/frontend/tests/shared/eventBus.test.js`
+
+---
+
+**[TC-16] — Router hash-based: navegación y fallback**
+Dado: el router está creado con un mapa de rutas y un contenedor
+Cuando: se llama a `navigate('#/')` o a `navigate('#/ruta-inexistente')`
+Entonces: se monta la vista correcta (o el fallback `'/'`) y se desmonta la anterior
+Cuando: se llama a `start()` y se dispara `hashchange`
+Entonces: el router navega a la nueva ruta automáticamente
+Tipo: Unitario (jsdom)
+Prioridad: Media
+Estado: ✅ Cubierto — `apps/frontend/tests/router.test.js`

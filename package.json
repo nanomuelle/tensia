@@ -47,12 +47,18 @@
     "collectCoverageFrom": [
       "apps/backend/src/**/*.js",
       "!apps/backend/src/index.js",
-      "apps/frontend/src/validators.js",
-      "apps/frontend/src/infra/httpAdapter.js",
+      "!apps/backend/src/api/app.js",
       "apps/frontend/src/chart.js",
-      "apps/frontend/src/infra/localStorageAdapter.js",
+      "apps/frontend/src/router.js",
       "apps/frontend/src/domain/measurement.js",
-      "apps/frontend/src/services/measurementService.js"
+      "apps/frontend/src/infra/httpAdapter.js",
+      "apps/frontend/src/infra/localStorageAdapter.js",
+      "apps/frontend/src/services/measurementService.js",
+      "apps/frontend/src/shared/eventBus.js",
+      "apps/frontend/src/shared/formatters.js",
+      "apps/frontend/src/shared/validators.js",
+      "apps/frontend/src/store/appStore.js",
+      "apps/frontend/src/components/**/*.js"
     ],
     "coverageThreshold": {
       "global": {
