@@ -98,7 +98,7 @@ para entender que la gráfica está disponible pero aún no tiene datos para ren
 
 ## US-12 — Actualizar la gráfica en tiempo real al introducir datos
 
-**Estado:** Pendiente
+**Estado:** ✅ Implementado y testado
 
 Como usuario que registra mediciones,
 quiero que la gráfica se actualice automáticamente a medida que introduzco nuevas mediciones,

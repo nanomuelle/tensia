@@ -275,8 +275,9 @@ async function enviarFormulario(evento) {
 
   try {
     await service.create(datos);
+    // La actualización de lista y gráfica se dispara mediante el evento
+    // 'medicion-guardada' despachado por el servicio (US-12).
     cerrarFormulario();
-    await cargarMediciones();
   } catch (error) {
     // Error de validación de dominio u otro error
     errorFormulario.textContent = error.message;
@@ -295,6 +296,11 @@ btnNuevaMedicion.addEventListener('click', abrirFormulario);
 btnCancelar.addEventListener('click', cerrarFormulario);
 btnReintentar.addEventListener('click', cargarMediciones);
 formMedicion.addEventListener('submit', enviarFormulario);
+
+// Actualización reactiva de lista y gráfica al guardar una medición (US-12).
+// El servicio despacha este evento tras persistir en localStorage, de modo que
+// cualquier parte de la UI puede reaccionar sin acoplarse al formulario.
+window.addEventListener('medicion-guardada', () => cargarMediciones());
 
 // Limpiar error de campo al empezar a escribir
 [inputSystolic, inputDiastolic, inputPulse, inputFecha].forEach((input) => {

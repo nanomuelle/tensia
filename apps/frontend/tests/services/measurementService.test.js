@@ -2,6 +2,8 @@
  * Tests unitarios: capa de servicio (frontend) — measurementService.js
  * Usa un adaptador mock en memoria para aislar la lógica del servicio.
  * crypto.randomUUID se stub para que los ids sean predecibles en los tests.
+ *
+ * @jest-environment jsdom
  */
 
 import { jest, describe, test, expect, beforeEach, beforeAll, afterAll } from '@jest/globals';
@@ -167,5 +169,82 @@ describe('measurementService.create (frontend)', () => {
 
     await expect(service.create({ systolic: 'abc' })).rejects.toThrow();
     expect(adapter.save).not.toHaveBeenCalled();
+  });
+});
+
+// =========================================================
+// create() — CustomEvent 'medicion-guardada' (US-12)
+// =========================================================
+
+describe('measurementService.create — evento medicion-guardada (US-12)', () => {
+  test('despacha el CustomEvent tras guardar correctamente', async () => {
+    const adapter = crearAdaptadorMock([]);
+    const service = createMeasurementService(adapter);
+
+    const evento = await new Promise((resolve) => {
+      window.addEventListener('medicion-guardada', (e) => resolve(e), { once: true });
+      service.create(datosBase);
+    });
+
+    expect(evento).toBeInstanceOf(Event);
+    expect(evento.type).toBe('medicion-guardada');
+  });
+
+  test('el detail del evento contiene la medición guardada', async () => {
+    const adapter = crearAdaptadorMock([]);
+    const service = createMeasurementService(adapter);
+
+    const evento = await new Promise((resolve) => {
+      window.addEventListener('medicion-guardada', (e) => resolve(e), { once: true });
+      service.create(datosBase);
+    });
+
+    expect(evento.detail).toMatchObject({
+      systolic: datosBase.systolic,
+      diastolic: datosBase.diastolic,
+      pulse: datosBase.pulse,
+      source: 'manual',
+    });
+    expect(evento.detail.id).toBeTruthy();
+  });
+
+  test('NO despacha el evento si la validación de dominio falla', async () => {
+    const adapter = crearAdaptadorMock([]);
+    const service = createMeasurementService(adapter);
+
+    const listener = jest.fn();
+    window.addEventListener('medicion-guardada', listener, { once: true });
+
+    await expect(service.create({ systolic: -1 })).rejects.toThrow();
+
+    // El evento no debe haberse lanzado
+    expect(listener).not.toHaveBeenCalled();
+
+    // Limpiar el listener registrado por si no disparó
+    window.removeEventListener('medicion-guardada', listener);
+  });
+
+  test('la transición skeleton→gráfica ocurre: al pasar de 1 a 2 mediciones se emite el evento', async () => {
+    // Verificamos que añadir una segunda medición (umbral ≥2) sigue emitiendo el evento,
+    // lo que permitiría a la gráfica pasar de skeleton a renderizado real.
+    const medicionExistente = {
+      id: 'prev',
+      systolic: 115,
+      diastolic: 75,
+      measuredAt: '2026-01-01T00:00:00.000Z',
+      source: 'manual',
+    };
+    const adapter = crearAdaptadorMock([medicionExistente]);
+    const service = createMeasurementService(adapter);
+
+    const evento = await new Promise((resolve) => {
+      window.addEventListener('medicion-guardada', (e) => resolve(e), { once: true });
+      service.create(datosBase);
+    });
+
+    // El evento se emitió con la segunda medición
+    expect(evento.detail.systolic).toBe(datosBase.systolic);
+    // El almacén ahora tiene 2 mediciones (supera el umbral)
+    expect(adapter._getAlmacen()).toHaveLength(2);
   });
 });

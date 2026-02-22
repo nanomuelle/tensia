@@ -29,4 +29,10 @@ export const SELECTORS = {
   estadoError: '#estado-error',
   estadoVacio: '#estado-vacio',
   btnReintentar: '#btn-reintentar',
+  // Sección de gráfica y skeleton (US-11)
+  seccionGrafica: '#seccion-grafica',
+  chartContainer: '#chart-mediciones',
+  chartSvg: '#chart-mediciones svg',
+  chartSkeleton: '.chart-skeleton',
+  chartSkeletonMensaje: '.chart-skeleton__mensaje',
 };
