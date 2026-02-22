@@ -1,17 +1,19 @@
 /**
  * Lógica de la interfaz — pantalla principal de Tensia.
- * Orquesta los componentes, gestiona los estados de la UI y delega la persistencia
+ * Orquesta los componentes y el store de estado; delega la persistencia
  * al servicio local (ADR-005): en sesión anónima usa localStorageAdapter.
  *
- * Tras el Paso 10 del plan de refactorización, app.js se limita a:
- *   - Crear el servicio con el adaptador inyectado.
+ * Tras el Paso 11 del plan de refactorización, app.js se limita a:
+ *   - Crear el servicio y el store.
  *   - Instanciar y montar los componentes.
+ *   - Suscribir los componentes al store.
  *   - Gestionar el botón principal "Nueva medición".
- *   - Arrancar la carga inicial del historial.
+ *   - Arrancar la carga inicial a través del store.
  */
 
 import * as adapter from './infra/localStorageAdapter.js';
 import { createMeasurementService } from './services/measurementService.js';
+import { createAppStore } from './store/appStore.js';
 import { createIosWarning } from './components/IosWarning/IosWarning.js';
 import { createToast } from './components/Toast/Toast.js';
 import { createMeasurementList } from './components/MeasurementList/MeasurementList.js';
@@ -21,6 +23,9 @@ import { createMeasurementForm } from './components/MeasurementForm/MeasurementF
 // Servicio con adaptador inyectado (anónimo → localStorage)
 const service = createMeasurementService(adapter);
 
+// Store de estado: fuente única de verdad para mediciones, carga y error
+const store = createAppStore(service);
+
 // =========================================================
 // Instanciación de componentes
 // =========================================================
@@ -29,7 +34,7 @@ const toast = createToast(document.getElementById('toast-container'));
 
 const historial = createMeasurementList(
   document.getElementById('historial-root'),
-  { onReintentar: () => cargarMediciones() },
+  { onReintentar: () => store.cargarMediciones() },
 );
 
 const grafica = createMeasurementChart(
@@ -44,34 +49,32 @@ const formulario = createMeasurementForm(
   {
     service,
     toast,
-    onSuccess:  () => cargarMediciones(),
-    onCerrar:   () => { btnNuevaMedicion.hidden = false; },
+    onSuccess: () => store.cargarMediciones(),
+    onCerrar:  () => { btnNuevaMedicion.hidden = false; },
   },
 );
 
 // =========================================================
-// Historial: carga
+// Suscripción de componentes al store
 // =========================================================
 
-async function cargarMediciones() {
-  historial.mostrarCargando();
-  try {
-    const mediciones = await service.listAll();
-    if (mediciones.length === 0) {
-      historial.mostrarVacio();
-      // Mostrar skeleton de la gráfica incluso con lista vacía
-      grafica.update(mediciones);
-    } else {
-      grafica.update(mediciones);
-      historial.mostrarLista(mediciones);
-    }
-  } catch {
+store.subscribe((state) => {
+  if (state.cargando) {
+    historial.mostrarCargando();
+  } else if (state.error) {
     historial.mostrarError();
-    // En caso de error, ocultamos la sección de gráfica
+    // Ocultar la sección de gráfica en caso de error (igual que antes)
     const seccionGrafica = document.getElementById('seccion-grafica');
     if (seccionGrafica) seccionGrafica.hidden = true;
+  } else if (!state.mediciones.length) {
+    historial.mostrarVacio();
+    // Mostrar skeleton de la gráfica incluso con lista vacía
+    grafica.update(state.mediciones);
+  } else {
+    historial.mostrarLista(state.mediciones);
+    grafica.update(state.mediciones);
   }
-}
+});
 
 // =========================================================
 // Evento: botón "Nueva medición"
@@ -90,5 +93,5 @@ createIosWarning(document.getElementById('aviso-ios')).mount();
 historial.mount();
 grafica.mount();
 formulario.mount();
-cargarMediciones();
+store.cargarMediciones();
 
