@@ -21,8 +21,8 @@ Eres el desarrollador backend de **Tensia**. Con ADR-005 aceptado, el rol del ba
 ### `apps/backend/src/api/app.js`
 
 Sirve únicamente ficheros estáticos del frontend mediante dos montajes `express.static`:
-1. `apps/frontend/public/` → raíz del servidor (`/index.html`, `/styles.css`, `/sw.js`, `/manifest.json`).
-2. `apps/frontend/` → módulos ES del frontend (`/src/app.js`, `/src/infra/*`, `/src/domain/*`, `/src/services/*`).
+1. `apps/frontend/public/` → raíz del servidor (`/index.html`, `/styles/main.css`, `/sw.js`, `/manifest.json`, `/icons/`).
+2. `apps/frontend/` → módulos ES del frontend (`/src/app.js`, `/src/router.js`, `/src/infra/*`, `/src/domain/*`, `/src/services/*`, `/src/store/*`, `/src/views/*`, `/src/components/*`, `/src/shared/*`).
 
 No existen rutas REST de datos activas en producción. Cualquier ruta no encontrada devuelve `404 JSON`.
 
