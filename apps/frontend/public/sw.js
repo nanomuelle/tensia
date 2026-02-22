@@ -7,7 +7,8 @@
  * por lo que la app funciona completamente offline una vez instalada.
  */
 
-const CACHE_NAME = 'tensia-shell-v2';
+// v3: añadidos módulos D3 (CDN jsDelivr) para soporte offline de la gráfica (BK-14)
+const CACHE_NAME = 'tensia-shell-v3';
 
 /** Recursos estáticos del shell que se cachean al instalar el SW. */
 const SHELL_URLS = [
@@ -20,6 +21,11 @@ const SHELL_URLS = [
   '/src/domain/measurement.js',
   '/src/services/measurementService.js',
   '/manifest.json',
+  // D3 submódulos desde CDN jsDelivr (importmap en index.html — ADR-006)
+  'https://cdn.jsdelivr.net/npm/d3-selection@3/+esm',
+  'https://cdn.jsdelivr.net/npm/d3-scale@4/+esm',
+  'https://cdn.jsdelivr.net/npm/d3-axis@3/+esm',
+  'https://cdn.jsdelivr.net/npm/d3-shape@3/+esm',
 ];
 
 // --- Instalación: precaché del shell ---
@@ -46,20 +52,18 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// --- Fetch: cache-first para el shell, red para el resto ---
+// --- Fetch: cache-first para el shell + CDN D3, red para el resto ---
 self.addEventListener('fetch', (event) => {
-  // Solo interceptamos peticiones GET al mismo origen
   const url = new URL(event.request.url);
-  if (event.request.method !== 'GET' || url.origin !== self.location.origin) {
-    return;
-  }
+  if (event.request.method !== 'GET') return;
 
   // Las rutas de la API van siempre a la red (en MVP no se usan para datos,
   // pero se mantiene por compatibilidad con entornos de desarrollo/tests)
-  if (url.pathname.startsWith('/measurements')) {
+  if (url.origin === self.location.origin && url.pathname.startsWith('/measurements')) {
     return;
   }
 
+  // Para recursos del mismo origen o CDN D3 cacheados: cache-first
   event.respondWith(
     caches.match(event.request).then(
       (cached) => cached ?? fetch(event.request),

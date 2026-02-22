@@ -16,6 +16,19 @@
     <meta name="theme-color" content="#2563eb" />
 
     <link rel="stylesheet" href="styles.css" />
+
+    <!-- Mapa de importación para D3 (sin bundler — ADR-003, ADR-006) -->
+    <!-- El SW cachea estas URLs para uso offline -->
+    <script type="importmap">
+    {
+      "imports": {
+        "d3-selection": "https://cdn.jsdelivr.net/npm/d3-selection@3/+esm",
+        "d3-scale":     "https://cdn.jsdelivr.net/npm/d3-scale@4/+esm",
+        "d3-axis":      "https://cdn.jsdelivr.net/npm/d3-axis@3/+esm",
+        "d3-shape":     "https://cdn.jsdelivr.net/npm/d3-shape@3/+esm"
+      }
+    }
+    </script>
   </head>
   <body>
     <!-- Aviso informativo Safari/iOS: localStorage puede borrarse tras 7 días de inactividad (ITP) -->
@@ -161,11 +174,20 @@
         </form>
       </section>
 
-      <!-- Sección gráfica -->
+      <!-- Sección gráfica (BK-14 / ADR-006): visible cuando hay ≥ 2 mediciones -->
       <section id="seccion-grafica" class="grafica-seccion" hidden>
-        <h2 class="grafica__titulo">Evolución</h2>
+        <div class="grafica-header">
+          <h2 class="grafica__titulo">Evolución</h2>
+          <span class="grafica__unidad" aria-hidden="true">mmHg</span>
+        </div>
+        <!-- Leyenda: aria-hidden porque el aria-label del SVG ya describe la gráfica -->
+        <div class="grafica__leyenda" aria-hidden="true">
+          <span class="leyenda-pill leyenda-pill--sistolica">Sistólica</span>
+          <span class="leyenda-pill leyenda-pill--diastolica">Diastólica</span>
+        </div>
         <div class="grafica-contenedor">
-          <canvas id="chart-mediciones" aria-label="Gráfica de evolución de tensión arterial"></canvas>
+          <!-- div en lugar de canvas (ADR-006): D3 inserta el SVG aquí -->
+          <div id="chart-mediciones"></div>
         </div>
       </section>
 

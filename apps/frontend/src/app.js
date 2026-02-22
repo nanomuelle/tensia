@@ -26,8 +26,11 @@ const listaMediciones = document.getElementById('lista-mediciones');
 const btnReintentar = document.getElementById('btn-reintentar');
 
 // --- Referencias al DOM: gráfica ---
-const seccionGrafica = document.getElementById('seccion-grafica');
-const canvasChart = document.getElementById('chart-mediciones');
+const seccionGrafica   = document.getElementById('seccion-grafica');
+const containerChart   = document.getElementById('chart-mediciones');
+
+// Referencia a las últimas mediciones para que ResizeObserver pueda redibujar
+let ultimasMediciones = [];
 
 // --- Referencias al DOM: formulario ---
 const btnNuevaMedicion = document.getElementById('btn-nueva-medicion');
@@ -102,16 +105,36 @@ function mostrarLista(mediciones) {
 }
 
 // =========================================================
-// Gráfica: renderizado con Canvas nativo
+// Gráfica: renderizado con D3 SVG (ADR-006)
 // =========================================================
 
-/** 
+/**
+ * ResizeObserver: redibuja la gráfica cuando cambia el tamaño del contenedor.
+ * Se inicializa una sola vez; el callback usa `ultimasMediciones` en memoria.
+ */
+const resizeObserver = (typeof ResizeObserver !== 'undefined')
+  ? new ResizeObserver(() => {
+      if (ultimasMediciones.length >= 2 && containerChart) {
+        renderChart(containerChart, ultimasMediciones);
+      }
+    })
+  : null;
+
+if (resizeObserver && containerChart) {
+  resizeObserver.observe(containerChart);
+}
+
+/**
  * Renderiza la gráfica de evolución de tensión arterial.
- * Muestra sistólica y diastólica en un gráfico de líneas.
+ * Muestra sistólica y diastólica en un gráfico de líneas SVG.
+ * Solo se muestra con ≥ 2 mediciones.
  */
 function renderizarGrafica(mediciones) {
+  // Guardar referencia para que ResizeObserver pueda redibujar
+  ultimasMediciones = mediciones;
+
   // Ocultar gráfica si no hay elementos DOM o datos suficientes
-  if (!seccionGrafica || !canvasChart || mediciones.length < 2) {
+  if (!seccionGrafica || !containerChart || mediciones.length < 2) {
     if (seccionGrafica) seccionGrafica.hidden = true;
     return;
   }
@@ -119,8 +142,8 @@ function renderizarGrafica(mediciones) {
   // Mostrar la sección de gráfica
   seccionGrafica.hidden = false;
 
-  // Renderizar usando el módulo de gráficas
-  renderChart(canvasChart, mediciones);
+  // Renderizar usando el módulo de gráficas D3
+  renderChart(containerChart, mediciones);
 }
 
 // =========================================================

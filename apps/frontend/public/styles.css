@@ -138,7 +138,7 @@ body {
   margin-bottom: 0.5rem;
 }
 
-/* --- Gráfica --- */
+/* --- Gráfica (BK-14 / ADR-006) --- */
 .grafica-seccion {
   background-color: var(--color-superficie);
   border: 1px solid var(--color-borde);
@@ -147,24 +147,72 @@ body {
   padding: 1rem;
 }
 
+/* Cabecera de la sección: título + etiqueta de unidad */
+.grafica-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
 .grafica__titulo {
-  font-size: 1.0625rem;
+  font-size: 0.9375rem; /* 15px — screens.md */
   font-weight: 600;
-  color: var(--color-texto-secundario);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: #1f2937;
+  margin: 0;
+}
+
+.grafica__unidad {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Leyenda: pills de color (screens.md: Sistólica rojo, Diastólica azul) */
+.grafica__leyenda {
+  display: flex;
+  gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
 
+.leyenda-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem; /* 12px — screens.md */
+  color: #374151;
+}
+
+.leyenda-pill::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.leyenda-pill--sistolica::before  { background-color: #ef4444; }
+.leyenda-pill--diastolica::before { background-color: #3b82f6; }
+
+/* Contenedor del SVG generado por D3 */
 .grafica-contenedor {
   position: relative;
   width: 100%;
-  max-height: 300px;
 }
 
-.grafica-contenedor canvas {
-  max-width: 100%;
+/* SVG responsivo: ancho 100%, alto fijo según altura del atributo height del SVG */
+.grafica-contenedor svg {
+  display: block;
+  width: 100%;
   height: auto;
+}
+
+/* Breakpoint desktop: se lee desde el JS (container.clientWidth) */
+@media (min-width: 640px) {
+  .grafica-contenedor svg {
+    /* El alto lo controla D3 con el atributo height; solo garantizamos el display */
+    height: auto;
+  }
 }
 
 /* --- Lista de mediciones --- */
