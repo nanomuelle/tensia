@@ -6,7 +6,7 @@
  *
  * Estrategia:
  * - jsdom proporciona un DOM real en el que app.js puede ejecutarse.
- * - El módulo api.js se mockea para evitar peticiones HTTP reales.
+ * - El módulo infra/httpAdapter.js se mockea para evitar peticiones HTTP reales.
  * - app.js se importa dinámicamente (dentro de beforeAll) para que el DOM
  *   ya esté montado cuando el módulo ejecuta sus referencias a getElementById.
  *
@@ -19,13 +19,13 @@
 import { jest, describe, test, expect, beforeAll, beforeEach } from '@jest/globals';
 
 // =========================================================
-// Mocks de api.js — deben registrarse ANTES del import dinámico
+// Mocks de infra/httpAdapter.js — deben registrarse ANTES del import dinámico
 // =========================================================
 
 const mockGetMediciones = jest.fn().mockResolvedValue([]);
 const mockCrearMedicion = jest.fn();
 
-jest.unstable_mockModule('../src/api.js', () => ({
+jest.unstable_mockModule('../src/infra/httpAdapter.js', () => ({
   getMediciones: mockGetMediciones,
   crearMedicion: mockCrearMedicion,
 }));

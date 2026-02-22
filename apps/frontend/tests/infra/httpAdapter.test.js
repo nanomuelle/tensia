@@ -1,11 +1,11 @@
 /**
- * Tests unitarios: cliente HTTP del frontend — api.js
+ * Tests unitarios: cliente HTTP del frontend — infra/httpAdapter.js
  * Se mockea global.fetch para probar el módulo sin red real.
  * @jest-environment node
  */
 
 import { jest, describe, test, expect, beforeEach } from '@jest/globals';
-import { getMediciones, crearMedicion } from '../src/api.js';
+import { getMediciones, crearMedicion } from '../../src/infra/httpAdapter.js';
 
 // =========================================================
 // Helpers

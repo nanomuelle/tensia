@@ -48,7 +48,7 @@
       "apps/backend/src/**/*.js",
       "!apps/backend/src/index.js",
       "apps/frontend/src/validators.js",
-      "apps/frontend/src/api.js",
+      "apps/frontend/src/infra/httpAdapter.js",
       "apps/frontend/src/chart.js",
       "apps/frontend/src/infra/localStorageAdapter.js",
       "apps/frontend/src/domain/measurement.js",
