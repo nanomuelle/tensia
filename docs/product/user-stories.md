@@ -1,6 +1,6 @@
 # User Stories — Tensia MVP
 
-_Última revisión: 2026-02-18_
+_Última revisión: 2026-02-22_
 
 ---
 
@@ -40,7 +40,7 @@ para que la app extraiga los valores automáticamente y no tenga que introducirl
 
 ## US-04 — Gráfica de evolución de tensión arterial
 
-**Estado:** ✅ Implementado (pendiente tests)
+**Estado:** ✅ Implementado y testado
 
 Como usuario,
 quiero ver una gráfica con la evolución de mi tensión arterial a lo largo del tiempo,
@@ -49,7 +49,7 @@ para identificar tendencias y detectar si mis valores mejoran o empeoran.
 ### Criterios de aceptación
 
 - Dado que existen 2 o más mediciones, cuando la app carga el historial, entonces se muestra una gráfica de líneas con la serie de sistólica (rojo) y diastólica (azul).
-- Dado que solo hay 1 medición o ninguna, cuando la app carga, entonces la gráfica no se muestra (no hay suficientes puntos para trazar una línea).
+- Dado que solo hay 1 medición o ninguna, cuando la app carga, entonces se muestra un skeleton con el texto "Sin datos suficientes para mostrar la gráfica" en lugar de la gráfica real.
 - Las mediciones se representan en orden cronológico ascendente (izquierda = más antigua).
 - Cada punto de la gráfica corresponde a una medición; el eje Y muestra valores en mmHg.
 - La gráfica incluye una leyenda que identifica sistólica y diastólica.
@@ -71,13 +71,13 @@ para revisar mi evolución y detectar tendencias sin necesidad de herramientas e
 - Dado que existen mediciones guardadas, cuando la app carga, entonces el historial muestra todas las mediciones con fecha formateada, sistólica/diastólica en mmHg y pulso (si existe).
 - Las mediciones están ordenadas por fecha descendente (la más reciente primero).
 - Dado que no hay mediciones, cuando la app carga, entonces se muestra el mensaje "Sin mediciones todavía" y el botón "Nueva medición".
-- Dado que el backend no está disponible, cuando la app intenta cargar el historial, entonces se muestra un banner de error con la opción de reintentar.
+- Dado que `localStorage` no está disponible (almacenamiento bloqueado), cuando la app intenta cargar el historial, entonces se muestra un banner de error con la opción de reintentar.
 
 ---
 
 ## US-11 — Mostrar skeleton vacío cuando no hay datos suficientes
 
-**Estado:** Pendiente
+**Estado:** ✅ Implementado y testado
 
 Como usuario de la app,
 quiero que la vista de la gráfica muestre un skeleton vacío cuando no hay datos suficientes,

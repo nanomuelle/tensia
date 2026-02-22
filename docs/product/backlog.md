@@ -49,12 +49,12 @@ Prioridad: Alta
 Estado: Hecho
 
 **BK-09 — Tests unitarios frontend**
-Descripción: Cobertura de `domain/measurement.js`, `services/measurementService.js`, `infra/localStorageAdapter.js`, `validators.js` y `api.js` con Jest + jsdom. 115 tests, 7 suites, cobertura global > 70 % (objetivo cumplido).
+Descripción: Cobertura de `domain/measurement.js`, `services/measurementService.js`, `infra/localStorageAdapter.js`, `validators.js` y `api.js` con Jest + jsdom. 142 tests, 8 suites, cobertura global > 70 % (objetivo cumplido).
 Prioridad: Alta
 Estado: Hecho
 
 **BK-10 — Tests E2E flujos críticos (Playwright)**
-Descripción: TC-09 registro manual, TC-10 estado vacío, TC-11 error de almacenamiento local (`localStorage` bloqueado).
+Descripción: TC-09 registro manual, TC-10 estado vacío, TC-11 error de almacenamiento local (`localStorage` bloqueado), TC-13 skeleton de gráfica cuando no hay datos suficientes (US-11).
 Prioridad: Alta
 Estado: Hecho
 
@@ -85,6 +85,14 @@ Descripción: Reescribir `apps/frontend/src/chart.js` usando D3 (d3-selection, d
 Prioridad: Media
 Estado: Hecho
 Referencia: US-04, ADR-006
+
+---
+
+**BK-19 — Skeleton de gráfica cuando no hay datos suficientes (US-11)**
+Descripción: `renderSkeleton()` en `apps/frontend/src/chart.js`: cuando hay < 2 mediciones, `renderChart()` muestra un `div.chart-skeleton` con el texto "Sin datos suficientes para mostrar la gráfica" en lugar del SVG. Integrado en `app.js` mediante `renderizarGrafica()`. Tests E2E: `skeleton-grafica.spec.js` (15 tests, TC-13), que cubren 0 mediciones, 1 medición, ≥2 mediciones, transición y primera visita.
+Prioridad: Alta
+Estado: Hecho
+Referencia: US-11, TC-13
 
 ---
 
