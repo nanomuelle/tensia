@@ -6,7 +6,7 @@
 
 import * as adapter from './infra/localStorageAdapter.js';
 import { createMeasurementService } from './services/measurementService.js';
-import { validarCamposMedicion, prepararDatosMedicion } from './validators.js';
+import { validarCamposMedicion, prepararDatosMedicion } from './shared/validators.js';
 import { renderChart } from './chart.js';
 import { formatearFecha, fechaLocalActual } from './shared/formatters.js';
 import { on, Events } from './shared/eventBus.js';

@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect } from '@jest/globals';
-import { validarCamposMedicion, prepararDatosMedicion, MEASUREMENT_LIMITS } from '../src/validators.js';
+import { validarCamposMedicion, prepararDatosMedicion, MEASUREMENT_LIMITS } from '../src/shared/validators.js';
 
 // Valores base válidos reutilizables
 const camposValidos = {

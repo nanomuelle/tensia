@@ -1,9 +1,19 @@
 /**
- * @deprecated Usa 'shared/validators.js' directamente.
- * Este fichero es un shim de compatibilidad temporal.
+ * Módulo de validación de formulario — capa de presentación.
+ * Funciones puras: reciben valores planos y devuelven objetos de error.
+ * No dependen del DOM ni de fetch; son directamente testeables en cualquier entorno.
+ *
+ * La validación de negocio definitiva siempre la aplica el backend (400).
+ * Este módulo solo evita peticiones innecesarias con datos manifiestamente inválidos.
+ *
+ * Rangos clínicamente plausibles basados en:
+ *   - OMS (WHO) — Hypertension Fact Sheet (sept. 2025)
+ *   - NHS — Blood pressure test (nov. 2025)
  */
-export * from './shared/validators.js';
 
+// Fuente única de verdad: los límites viven en la capa de dominio.
+import { MEASUREMENT_LIMITS } from '../domain/measurement.js';
+export { MEASUREMENT_LIMITS };
 
 /**
  * Valida los valores del formulario de registro manual.
