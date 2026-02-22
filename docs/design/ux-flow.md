@@ -1,6 +1,6 @@
 # Flujo UX — Tensia
 
-_Última revisión: 2026-02-22 — Actualizado para ADR-005 (sin HTTP para datos) y gráfica de evolución (BK-14)_
+_Última revisión: 2026-02-22 — Actualizado para ADR-005 (sin HTTP para datos), gráfica de evolución (BK-14) y modal del formulario (BK-20)_
 
 ---
 
@@ -32,26 +32,50 @@ _Última revisión: 2026-02-22 — Actualizado para ADR-005 (sin HTTP para datos
 ```
 [Dashboard]
         │
-  [+ Nueva medición]
+  [+ Nueva medición]       ← el botón es el "opener" (recibe el foco al cerrar)
         │
         ▼
-[Formulario de registro — aparece en la misma página]
+[Animación de apertura — overlay + modal aparecen]
+(180 ms ease-out en desktop; 260 ms cubic-bezier en bottom-sheet móvil)
+        │
+        ▼
+[Modal de registro — abierta]
+  (foco va al campo Sistólica al terminar la animación)
+  (focus trap activo: Tab/Shift+Tab ciclan dentro de la modal)
         │
         ├── [Rellenar: sistólica, diastólica, pulso?, fecha]
         │
         ├── [Guardar]
         │       │
-        │       ├── Validación KO ▶ [Errores inline en cada campo]
+        │       ├── Validación KO ▶ [Errores inline bajo cada campo afectado]
+        │       │                    (modal permanece abierta; rol="alert")
         │       │
-        │       └── Validación OK ──▶ [Escritura en localStorage]
-        │                             │
-        │                             ├── Éxito ▶ [Dashboard actualizado]
-        │                             │          (nueva tarjeta al inicio del historial)
-        │                             │          (gráfica se redibuja si ≥ 2 mediciones)
-        │                             │
-        │                             └── Error ▶ [Mensaje error en formulario]
+        │       └── Validación OK
+        │               │
+        │               ▼
+        │       [Estado: Enviando — inputs y botón deshabilitados]
+        │               │
+        │               ▼
+        │       [Escritura síncrona en localStorage]
+        │               │
+        │               ├── Éxito ──▶ [Animación de cierre de la modal]
+        │               │             (foco vuelve al botón "Nueva medición")
+        │               │             [Dashboard actualizado]
+        │               │               (nueva tarjeta al inicio del historial)
+        │               │               (gráfica se redibuja si ≥ 2 mediciones)
+        │               │             [Toast de éxito — visible ~3 s]
+        │               │
+        │               └── Error ──▶ [Inputs y botón vuelven a habilitarse]
+        │                             [Mensaje de error inline en el formulario]
         │
-        └── [Cancelar] ▶ [Dashboard sin cambios]
+        ├── [✕ / Escape / click en overlay]   ← no disponible mientras se guarda
+        │       │
+        │       ▼
+        │   [Animación de cierre de la modal]
+        │   (foco vuelve al botón "Nueva medición" al terminar la animación)
+        │   [Dashboard sin cambios]
+        │
+        └── [Tab hasta Guardar → Shift+Tab → cicla al campo Sistólica]
 ```
 
 ---
@@ -88,12 +112,38 @@ _Última revisión: 2026-02-22 — Actualizado para ADR-005 (sin HTTP para datos
 
 ---
 
+## Flujo: Apertura y cierre de la modal
+
+```
+[Botón "Nueva medición" en Dashboard]
+        │
+        ▼
+[Overlay + modal aparecen con animación de apertura]
+[Focus trap se activa]
+[Foco va al campo Sistólica]
+        │
+        ├── [Escape] ────────────────────────────────┐
+        ├── [Click en overlay] ─────────────────────┤
+        ├── [Botón ✕] ──────────────────────────────┤
+        │                                            ▼
+        │                     [Animación de cierre (200-240 ms)]
+        │                     [Focus trap se desactiva]
+        │                     [Foco vuelve al botón "Nueva medición"]
+        │
+        └── [Guardar con éxito] ────────────────────▶ (igual que arriba)
+```
+
+---
+
 ## Estados de la UI por acción
 
 | Acción | Estado intermedio | Estado final OK | Estado final KO |
 |---|---|---|---|
 | Cargar historial | "Cargando…" (síncrono, muy breve) | Lista + gráfica (si ≥ 2) | Banner error + Reintentar |
-| Guardar medición | Botón deshabilitado | Formulario oculto, lista + gráfica actualizadas | Mensaje de error inline |
+| Abrir modal | Animación apertura (180-260 ms) | Modal abierta, foco en Sistólica | — |
+| Cerrar modal (✕ / Escape / overlay) | Animación cierre (200-240 ms) | Dashboard sin cambios, foco en botón | — |
+| Guardar medición — validación KO | — | Modal permanece abierta, errores inline | — |
+| Guardar medición — validación OK | Enviando (inputs + botón disabled) | Modal cerrada, lista + gráfica actualizadas, toast éxito | Mensaje error inline, inputs + botón re-enabled |
 | Reintentar carga | "Cargando…" | Lista + gráfica (si ≥ 2) | Banner error |
 | Rotar pantalla | — | Gráfica redibujada al nuevo ancho | — |
 

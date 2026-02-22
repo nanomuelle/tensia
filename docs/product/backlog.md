@@ -1,6 +1,6 @@
 # Backlog — Tensia
 
-_Última revisión: 2026-02-22 — Añadidos BK-20 a BK-23 (modal formulario y layout columnas)_
+_Última revisión: 2026-02-22 — BK-20 completado (modal formulario diseño); BK-21 a BK-23 pendientes_
 
 ---
 
@@ -101,7 +101,7 @@ Referencia: US-11, TC-13
 **BK-20 — [Diseñador] Diseño: modal del formulario de registro**
 Descripción: Definir y documentar en `docs/design/screens.md` el wireframe detallado de la ventana modal que contiene el formulario de nueva medición: overlay, animación de apertura/cierre, comportamiento bottom-sheet en móvil (< 640 px), posición y estilo del botón de cierre (✕), focus trap y estados (abierta / cerrando / error de validación).
 Prioridad: Alta
-Estado: Pendiente
+Estado: Hecho — wireframes desktop y bottom-sheet móvil, animaciones de apertura/cierre, estado enviando, estado error de validación, especificaciones visuales (overlay, contenedor, botón ✕), order de tabulación del focus trap, tabla de interacciones y accesibilidad WCAG AA. Flujo actualizado en `ux-flow.md`.
 Rol: Diseñador UX/UI
 Referencia: US-13
 
