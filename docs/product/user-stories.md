@@ -1,6 +1,6 @@
 # User Stories — Tensia MVP
 
-_Última revisión: 2026-02-22_
+_Última revisión: 2026-02-22 — Añadidas US-13 (modal formulario) y US-14 (layout columnas gráfica/historial)_
 
 ---
 
@@ -118,3 +118,43 @@ para ver reflejados inmediatamente mis últimos cambios sin tener que recargar l
 	- editar/eliminar medición actualiza la gráfica accordingly,
 	- si al añadir mediciones se supera el umbral de datos (de 0/1 a >=2), la vista pasa de skeleton a gráfica real.
 - La UX debe ser coherente en PWA offline: la actualización ocurre aun sin conexión porque depende de `localStorage`.
+
+---
+
+## US-13 — Formulario de registro en modal
+
+**Estado:** Pendiente
+
+Como usuario,
+quiero que el formulario de nueva medición se abra en una ventana modal sobre el resto de la app,
+para no perder el contexto del historial y la gráfica mientras registro una medición.
+
+### Criterios de aceptación
+
+- Dado que el usuario pulsa "Nueva medición", cuando se abre la modal, entonces el fondo (historial + gráfica) queda bloqueado bajo un overlay semitransparente y el foco se mueve al primer campo del formulario.
+- Dado que la modal está abierta, cuando el usuario pulsa el botón "Cerrar" (✕) o el área de overlay, entonces la modal se cierra sin guardar datos y el historial queda de nuevo activo.
+- Dado que la modal está abierta, cuando el usuario pulsa la tecla `Escape`, entonces la modal se cierra sin guardar datos.
+- Dado que el usuario guarda una medición correctamente, cuando la operación tiene éxito, entonces la modal se cierra, el historial se actualiza con la nueva medición al inicio y se muestra un toast de confirmación.
+- La modal no provoca navegación a otra URL; permanece en `#/`.
+- La modal es accesible: `role="dialog"`, `aria-modal="true"`, `aria-labelledby` apuntando al título del formulario y gestión del foco atrapado (focus trap) mientras está abierta.
+- El overlay de fondo impide interacción con el resto del DOM mientras la modal está visible.
+- En pantallas pequeñas (< 640 px) la modal ocupa el 100 % del ancho y aparece anclada a la parte inferior (bottom sheet) o en pantalla completa.
+
+---
+
+## US-14 — Layout gráfica + historial en columnas
+
+**Estado:** Pendiente
+
+Como usuario con pantalla ancha,
+quiero ver la gráfica de evolución al lado del historial de mediciones,
+para comparar visualmente la tendencia con los valores concretos sin tener que hacer scroll entre ambas secciones.
+
+### Criterios de aceptación
+
+- Dado que el viewport tiene ≥ 768 px de ancho, cuando se carga el historial con 2 o más mediciones, entonces la gráfica ocupa una columna a la izquierda y el historial de tarjetas ocupa la columna a la derecha, ambas visibles simultáneamente.
+- Dado que el viewport tiene < 768 px de ancho (móvil), cuando se carga el historial, entonces la gráfica se muestra encima del historial (layout en columna única), manteniendo el comportamiento actual del MVP.
+- Dado que el viewport tiene < 768 px y no hay datos suficientes para la gráfica (< 2 mediciones), el skeleton ocupa el ancho completo encima de la lista sin cambios.
+- El historial es scrollable de forma independiente en el layout de dos columnas (la gráfica permanece fija/sticky en su columna mientras el usuario hace scroll en el historial).
+- La gráfica mantiene su comportamiento responsivo interno (`ResizeObserver`) al cambiar el tamaño de su columna.
+- Dado que se añade una nueva medición, la gráfica y el historial se actualizan sin recargar la página, conservando el layout de columnas.

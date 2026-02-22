@@ -1,6 +1,6 @@
 # Backlog — Tensia
 
-_Última revisión: 2026-02-22 — Gráficas de evolución incorporadas al MVP_
+_Última revisión: 2026-02-22 — BK-22 completado (modal formulario implementado); BK-21 y BK-23 pendientes_
 
 ---
 
@@ -93,6 +93,107 @@ Descripción: `renderSkeleton()` en `apps/frontend/src/chart.js`: cuando hay < 2
 Prioridad: Alta
 Estado: Hecho
 Referencia: US-11, TC-13
+
+---
+
+## Próximo sprint — Mejoras de UX (post-MVP confirmadas)
+
+**BK-20 — [Diseñador] Diseño: modal del formulario de registro**
+Descripción: Definir y documentar en `docs/design/screens.md` el wireframe detallado de la ventana modal que contiene el formulario de nueva medición: overlay, animación de apertura/cierre, comportamiento bottom-sheet en móvil (< 640 px), posición y estilo del botón de cierre (✕), focus trap y estados (abierta / cerrando / error de validación).
+Prioridad: Alta
+Estado: Hecho — wireframes desktop y bottom-sheet móvil, animaciones de apertura/cierre, estado enviando, estado error de validación, especificaciones visuales (overlay, contenedor, botón ✕), order de tabulación del focus trap, tabla de interacciones y accesibilidad WCAG AA. Flujo actualizado en `ux-flow.md`.
+Rol: Diseñador UX/UI
+Referencia: US-13
+
+**BK-21 — [Diseñador] Diseño: layout gráfica + historial en columnas (≥ 768 px)**
+Descripción: Definir y documentar en `docs/design/screens.md` el wireframe del layout de dos columnas para pantallas anchas: proporciones de columna (sugerido 55 % gráfica / 45 % historial o 50/50), comportamiento sticky de la gráfica, scroll independiente del historial, breakpoints exactos y degradación a columna única en móvil. Incluir especificaciones de espaciado y alineación entre columnas.
+Prioridad: Alta
+Estado: Pendiente
+Rol: Diseñador UX/UI
+Referencia: US-14
+
+**BK-22 — [Frontend Dev] Implementar modal del formulario de registro**
+Descripción: Introducir un componente `Modal` genérico y reutilizable, y usarlo como contenedor de `MeasurementForm`. **`MeasurementForm` no debe ser modificado para incluir comportamiento de modal**; debe seguir siendo un componente de formulario puro. La composición se gestiona en `HomeView`.
+
+### Tarea 1 — Crear componente `Modal` (genérico, reutilizable)
+
+Ubicación: `apps/frontend/src/components/Modal/Modal.js` + `Modal.css`
+
+**Contrato público:**
+```js
+// Instanciación
+const modal = new Modal({
+  title: 'Nueva medición',    // string — texto del encabezado
+  onClose: () => {},          // callback invocado al cerrar (✕, Escape, overlay)
+  contentFactory: (container) => component, // función que monta el contenido y devuelve { unmount }
+  locked: false               // boolean reactivo: bloquea cierre cuando true (estado "enviando")
+});
+
+modal.open()     // monta en DOM, lanza animación de apertura, activa focus trap
+modal.close()    // lanza animación de cierre, desactiva focus trap, desmonta del DOM
+modal.lock()     // activa estado "enviando": deshabilita ✕, Escape y click en overlay
+modal.unlock()   // revierte lock()
+```
+
+**Responsabilidades del componente `Modal`:**
+- Crear y gestionar el overlay semitransparente (`rgba(0,0,0,0.45)`).
+- Renderizar el contenedor con cabecera (título + botón ✕) y área de contenido.
+- Llamar a `contentFactory(contentContainer)` al abrir para que el contenido se monte en su interior; invocar el `unmount` devuelto al cerrar.
+- Implementar el **focus trap**: `Tab`/`Shift+Tab` ciclan dentro de la modal; el primer elemento enfocable recibe el foco al finalizar la animación de apertura.
+- Gestionar el cierre con `Escape`, click en overlay y botón ✕, respetando el estado `locked`.
+- Aplicar las **animaciones de apertura y cierre** según las especificaciones de `screens.md`:
+  - Desktop/tablet (≥ 640 px): `opacity` + `translateY(16px → 0)` en apertura (180 ms ease-out); inverso en cierre (200 ms ease-in).
+  - Móvil (< 640 px): bottom-sheet — `translateY(100% → 0)` (260 ms cubic-bezier); inverso en cierre (240 ms ease-in).
+  - Devolver el foco al elemento de origen (`opener`) **al finalizar** la transición de cierre (`transitionend`).
+- Atributos de accesibilidad: `role="dialog"`, `aria-modal="true"`, `aria-labelledby` apuntando al título.
+- CSS en `apps/frontend/public/styles/components/Modal.css`; importado desde `main.css`.
+
+**Comportamiento bottom-sheet en móvil (< 640 px):**
+- Contenedor anclado a `bottom: 0`, ancho 100 %, `border-radius` 16 px top-left/top-right.
+- Handle visual: pill `40 × 4 px`, color `#d1d5db`, centrado, `margin-top: 8 px`.
+
+### Tarea 2 — Integrar `Modal` + `MeasurementForm` en `HomeView`
+
+- En `HomeView.js`, el botón "Nueva medición" actúa como *opener*: guarda la referencia del botón para devolver el foco al cerrar.
+- Al pulsar el botón: instanciar `Modal` pasando como `contentFactory` una función que monte `MeasurementForm` en el contenedor proporcionado.
+- `MeasurementForm` notifica el éxito mediante el `eventBus` o un callback; `HomeView` escucha ese evento para llamar a `modal.close()`, disparar el toast y actualizar el store.
+- Mientras `MeasurementForm` está en estado "enviando", `HomeView` llama a `modal.lock()` / `modal.unlock()`.
+
+### Tarea 3 — CSS
+
+- `Modal.css` cubre overlay, contenedor, cabecera, botón ✕, handle del bottom-sheet y todas las animaciones.
+- No modificar `MeasurementForm.css`; solo ajustar si hay conflictos de espaciado interior con el nuevo contenedor.
+- Importar `Modal.css` como parcial en `apps/frontend/public/styles/main.css`.
+
+### Tarea 4 — Tests
+
+- **`apps/frontend/tests/components/Modal.test.js`** — tests unitarios del componente `Modal` en aislamiento (con `contentFactory` stub):
+  - `open()` inserta el overlay y el contenedor en el DOM.
+  - `close()` elimina overlay y contenedor del DOM tras la transición.
+  - Focus trap: Tab no sale de la modal.
+  - Escape cierra la modal en estado normal; no la cierra en estado `locked`.
+  - Click en overlay cierra la modal en estado normal; no la cierra en estado `locked`.
+  - Foco devuelto al opener al cerrar.
+  - `lock()` / `unlock()` habilitan e inhabilitan el botón ✕.
+- **`apps/frontend/tests/components/MeasurementForm.test.js`** — verificar que `MeasurementForm` sigue funcionando montado fuera de una modal (sin regresiones).
+
+Prioridad: Alta
+Estado: Hecho — `Modal.js` + `Modal.css` en `apps/frontend/src/components/Modal/` y `apps/frontend/public/styles/components/`; `HomeView.js` actualizado para componer Modal + MeasurementForm; 21 tests unitarios en `Modal.test.js`; suite completa 247 tests pasando (sin regresiones).
+Rol: Frontend Dev
+Referencia: US-13, BK-20
+
+**BK-23 — [Frontend Dev] Implementar layout gráfica + historial en columnas**
+Descripción: Cambiar el layout de `HomeView` para que en pantallas ≥ 768 px la gráfica y el historial aparezcan en columnas (`display: grid` o `flex`). Tareas:
+- Modificar `apps/frontend/src/views/HomeView.js` para envolver gráfica e historial en un contenedor de dos columnas.
+- Añadir media query en CSS (`MeasurementChart.css` o nuevo parcial de layout) para activar el grid ≥ 768 px y mantener columna única < 768 px.
+- Hacer la columna del historial independientemente scrollable (`overflow-y: auto`, `max-height`).
+- Mantener comportamiento responsivo del `ResizeObserver` de la gráfica al cambiar el tamaño de su columna.
+- Verificar que skeleton (< 2 mediciones) no rompe el layout de columnas.
+- Añadir/actualizar tests: E2E o de componente que verifiquen las dos variantes de layout.
+Prioridad: Alta
+Estado: Pendiente
+Rol: Frontend Dev
+Referencia: US-14, BK-21
 
 ---
 

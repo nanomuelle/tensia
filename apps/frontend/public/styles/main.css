@@ -11,6 +11,7 @@
 @import './components/MeasurementChart.css';
 @import './components/Toast.css';
 @import './components/IosWarning.css';
+@import './components/Modal.css';
 
 /* --- Variables del sistema de diseño --- */
 :root {

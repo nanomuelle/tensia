@@ -1,6 +1,6 @@
 # Pantallas — Tensia
 
-_Última revisión: 2026-02-22 — Añadido componente Gráfica de evolución (BK-14, ADR-006)_
+_Última revisión: 2026-02-22 — Añadidos: modal formulario (BK-20/US-13) y layout columnas (BK-21/US-14)_
 
 ---
 
@@ -272,11 +272,399 @@ Eje X: se muestran como máximo **10 etiquetas de fecha**, distribuidas uniforme
 
 ---
 
-## Pantalla 2: Formulario de registro manual
+## Pantalla 2: Modal del formulario de registro (US-13, BK-20)
 
-> Pendiente de diseño detallado — se define en la siguiente iteración.
+_Diseño validado: 2026-02-22 — BK-20 completado._
+
+### Descripción
+
+El formulario de nueva medición se muestra en una ventana modal que se superpone sobre el Dashboard. Al activarse, el resto del contenido queda bloqueado mediante un overlay semitransparente que impide la interacción con el fondo (teclado y puntero).
+
+En móvil (< 640 px) la modal adopta el patrón **bottom sheet**: aparece anclada al borde inferior, ocupa el 100 % del ancho y presenta esquinas superiores redondeadas. En tablet/desktop (≥ 640 px) la modal se centra en pantalla con un ancho máximo de **480 px**.
 
 ---
+
+### Wireframe — Estado: Abierta — Desktop / Tablet (≥ 640 px)
+
+```
+┌──────────────────────────────────────────────────┐  ← Overlay rgba(0,0,0,0.45)
+│                                                  │
+│   ┌──────────────────────────────────────────┐   │  ← Contenedor modal
+│   │  Nueva medición                     [✕] │   │  ← Cabecera sticky
+│   ├──────────────────────────────────────────┤   │    ✕ alineado al extremo derecho
+│   │                                          │   │
+│   │  Sistólica (mmHg) *                      │   │
+│   │  ┌──────────────────────────────────┐    │   │
+│   │  │  120                             │    │   │
+│   │  └──────────────────────────────────┘    │   │
+│   │                                          │   │
+│   │  Diastólica (mmHg) *                     │   │
+│   │  ┌──────────────────────────────────┐    │   │
+│   │  │  80                              │    │   │
+│   │  └──────────────────────────────────┘    │   │
+│   │                                          │   │
+│   │  Pulso (ppm)                             │   │  ← Campo opcional
+│   │  ┌──────────────────────────────────┐    │   │
+│   │  │  72                              │    │   │
+│   │  └──────────────────────────────────┘    │   │
+│   │                                          │   │
+│   │  Fecha y hora *                          │   │
+│   │  ┌──────────────────────────────────┐    │   │
+│   │  │  2026-02-22T10:30                │    │   │
+│   │  └──────────────────────────────────┘    │   │
+│   │                                          │   │
+│   │  ┌──────────────────────────────────┐    │   │
+│   │  │     Guardar medición             │    │   │  ← Botón primario
+│   │  └──────────────────────────────────┘    │   │
+│   └──────────────────────────────────────────┘   │
+│                                                  │
+└──────────────────────────────────────────────────┘
+```
+
+**Dimensiones del contenedor modal (desktop/tablet):**
+
+| Propiedad | Valor |
+|---|---|
+| Ancho máximo | 480 px |
+| Ancho mínimo | 320 px |
+| Padding interior | 24 px |
+| Border-radius | 12 px |
+| Sombra | `0 20px 60px rgba(0,0,0,0.25)` |
+| Posición vertical | centrada con `translate(-50%, -50%)` |
+| Fondo contenedor | `#ffffff` |
+
+---
+
+### Wireframe — Estado: Abierta — Móvil (< 640 px) — Bottom sheet
+
+```
+┌─────────────────────────────────┐
+│                                 │
+│   (dashboard visible pero       │  ← Overlay rgba(0,0,0,0.45)
+│    bloqueado al puntero)        │     El usuario no puede hacer scroll
+│                                 │     ni tocar nada debajo del overlay
+├─────────────────────────────────┤  ← Borde superior redondeado (16 px)
+│          ══════                 │  ← Handle visual: pill gris claro,
+│                                 │     centrado, 40 × 4 px, color #d1d5db
+│  Nueva medición            [✕] │  ← Cabecera; ✕ a la derecha (24×24 px)
+├─────────────────────────────────┤
+│  Sistólica (mmHg) *             │
+│  ┌─────────────────────────┐    │
+│  │  120                    │    │
+│  └─────────────────────────┘    │
+│  Diastólica (mmHg) *            │
+│  ┌─────────────────────────┐    │
+│  │  80                     │    │
+│  └─────────────────────────┘    │
+│  Pulso (ppm)                    │
+│  ┌─────────────────────────┐    │
+│  │  72                     │    │
+│  └─────────────────────────┘    │
+│  Fecha y hora *                 │
+│  ┌─────────────────────────┐    │
+│  │  2026-02-22T10:30       │    │
+│  └─────────────────────────┘    │
+│                                 │
+│  ┌─────────────────────────┐    │  ← Botón primario, ancho completo
+│  │   Guardar medición      │    │
+│  └─────────────────────────┘    │
+└─────────────────────────────────┘
+```
+
+**Dimensiones del bottom sheet (móvil):**
+
+| Propiedad | Valor |
+|---|---|
+| Ancho | 100 % del viewport |
+| Posición | anclado al borde inferior (`bottom: 0`) |
+| Border-radius | 16 px top-left / top-right; 0 bottom |
+| Padding interior | 16 px lateral, 20 px superior/inferior |
+| Handle pill | 40 × 4 px, color `#d1d5db`, centrado, margin-top 8 px |
+| Fondo contenedor | `#ffffff` |
+
+---
+
+### Estado: Cerrando (transición de salida)
+
+La modal no desaparece al instante. Al activarse el cierre (✕, Escape o click en overlay), se reproduce la animación de salida **antes** de retirar el elemento del DOM; el atributo `hidden` o la clase `modal--hidden` se aplica **al finalizar** la transición.
+
+```
+Desktop/Tablet:
+  opacity:   1.0  →  0.0   (200 ms, ease-in)
+  transform: translateY(0)  →  translateY(16px)  (200 ms, ease-in)
+
+Móvil (bottom sheet):
+  transform: translateY(0)  →  translateY(100%)  (240 ms, ease-in)
+  opacity:   1.0  →  0.0   (200 ms, ease-in, delay 40 ms)
+
+Overlay (ambos casos):
+  opacity:   0.45  →  0   (200 ms, ease-in)
+```
+
+> Durante la transición de cierre el botón ✕ queda deshabilitado (`pointer-events: none`) para evitar doble disparo. El foco **no se devuelve** al elemento de origen hasta que la transición finaliza (escuchar `transitionend`).
+
+---
+
+### Estado: Enviando (guardado en curso)
+
+Mientras se ejecuta el guardado en `localStorage`, el formulario muestra el estado de progreso:
+
+```
+│   ┌──────────────────────────────────────────┐   │
+│   │  Nueva medición                     [✕] │   │  ← ✕ sigue visible pero deshabilitado
+│   ├──────────────────────────────────────────┤   │
+│   │  Sistólica (mmHg) *                      │   │
+│   │  ┌──────────────────────────────────┐    │   │
+│   │  │  120                  [bloqueado] │   │   │  ← Inputs deshabilitados
+│   │  └──────────────────────────────────┘    │   │
+│   │  ...                                     │   │
+│   │  ┌──────────────────────────────────┐    │   │
+│   │  │  ⏳ Guardando…        [disabled] │    │   │  ← Botón deshabilitado + texto
+│   │  └──────────────────────────────────┘    │   │
+│   └──────────────────────────────────────────┘   │
+```
+
+- Los cuatro campos de entrada pasan a `disabled`.
+- El botón "Guardar medición" cambia a "Guardando…" y queda `disabled`.
+- El botón ✕ queda `disabled` y con `opacity: 0.4` (no se puede cerrar mientras se guarda).
+- Pulsar `Escape` durante esta fase **no** cierra la modal.
+- La operación sobre `localStorage` es síncrona y típicamente dura < 5 ms; aun así se aplica este estado para robustez visual y evitar dobles envíos.
+
+---
+
+### Estado: Error de validación
+
+Los errores se muestran **inline**, justo debajo del campo afectado. La modal permanece abierta.
+
+```
+│   ┌──────────────────────────────────────────┐   │
+│   │  Nueva medición                     [✕] │   │
+│   ├──────────────────────────────────────────┤   │
+│   │  Sistólica (mmHg) *                      │   │
+│   │  ┌──────────────────────────────────┐    │   │
+│   │  │                                  │    │   │  ← Campo vacío / borde rojo
+│   │  └──────────────────────────────────┘    │   │
+│   │  ⚠ Este campo es obligatorio.            │   │  ← Mensaje error, color #dc2626
+│   │                                          │   │
+│   │  Diastólica (mmHg) *                     │   │
+│   │  ┌──────────────────────────────────┐    │   │
+│   │  │  200                             │    │   │  ← Valor fuera de rango
+│   │  └──────────────────────────────────┘    │   │
+│   │  ⚠ La diastólica no puede ser ≥ sistólica│   │  ← Mensaje error contextual
+│   │                                          │   │
+│   │  ...                                     │   │
+│   │  ┌──────────────────────────────────┐    │   │
+│   │  │     Guardar medición             │    │   │  ← Botón vuelve a estar habilitado
+│   │  └──────────────────────────────────┘    │   │
+│   └──────────────────────────────────────────┘   │
+```
+
+**Reglas de estilo para errores inline:**
+
+| Propiedad | Valor |
+|---|---|
+| Color del texto de error | `#dc2626` (rojo de alerta) |
+| Icono | ⚠ (unicode, no imagen) |
+| Tamaño de fuente del error | 13 px |
+| Borde del campo con error | `2px solid #dc2626` |
+| Fondo del campo con error | `#fef2f2` (rojo muy tenue) |
+| Posición del mensaje | Debajo del input, `margin-top: 4 px` |
+| `role` del mensaje | `role="alert"` para anunciarse por lectores de pantalla |
+
+---
+
+### Animación de apertura
+
+```
+Desktop/Tablet:
+  opacity:   0.0  →  1.0   (180 ms, ease-out)
+  transform: translateY(16px)  →  translateY(0)  (180 ms, ease-out)
+
+Móvil (bottom sheet):
+  transform: translateY(100%)  →  translateY(0)  (260 ms, cubic-bezier(0.32,0.72,0,1))
+  opacity:   0.0  →  1.0   (180 ms, ease-out, delay 20 ms)
+
+Overlay (ambos casos):
+  opacity:   0  →  0.45   (180 ms, ease-out)
+```
+
+> El primer campo (`Sistólica`) recibe el foco **al finalizar** la animación de apertura, no antes, para evitar interferencias con la transición CSS.
+
+---
+
+### Especificaciones visuales del botón de cierre (✕)
+
+```
+┌──────────────────────────────────────────┐
+│  Nueva medición                     [✕] │
+│                                          │
+```
+
+| Propiedad | Valor |
+|---|---|
+| Símbolo | `×` (U+00D7) o icono SVG 16 × 16 px |
+| Tamaño del área táctil | 44 × 44 px (centrada sobre el símbolo) |
+| Color del símbolo | `#6b7280` (gris neutro) |
+| Color en hover | `#111827` (gris oscuro) |
+| Color en disabled | `#d1d5db`, `opacity: 0.4` |
+| Posición | Esquina superior derecha del encabezado, padding 12 px |
+| `aria-label` | `"Cerrar modal"` |
+| Borde | Ninguno; fondo transparente |
+| Border-radius al hacer focus | 8 px (foco visible con `outline`) |
+
+---
+
+### Comportamiento — Tabla de interacciones
+
+| Acción | Estado en curso | Resultado |
+|---|---|---|
+| Pulsar "Nueva medición" | — | Modal se abre con animación; foco a campo Sistólica |
+| Pulsar `Escape` (abierta) | Normal o error | Modal se cierra; foco vuelve al botón "Nueva medición" |
+| Pulsar `Escape` (enviando) | Enviando | Sin efecto (la modal no se cierra) |
+| Pulsar overlay (fuera de la modal) | Normal o error | Modal se cierra; foco vuelve al botón "Nueva medición" |
+| Pulsar overlay (enviando) | Enviando | Sin efecto |
+| Pulsar botón ✕ | Normal o error | Modal se cierra; foco vuelve al botón "Nueva medición" |
+| Pulsar botón ✕ | Enviando | Sin efecto (botón deshabilitado) |
+| `Tab` / `Shift+Tab` dentro de la modal | — | El foco cicla entre los controles internos (focus trap) |
+| Guardar con datos válidos | — | Animación cierre → toast éxito → historial y gráfica actualizados |
+| Guardar con datos inválidos | — | Modal permanece abierta; errores inline en los campos afectados |
+
+---
+
+### Focus trap — Orden de tabulación
+
+El foco queda confinado dentro de la modal mientras está abierta. El orden de tabulación (Tab) es:
+
+1. Campo **Sistólica**
+2. Campo **Diastólica**
+3. Campo **Pulso**
+4. Campo **Fecha y hora**
+5. Botón **Guardar medición**
+6. Botón **✕ Cerrar** → vuelve a 1 (ciclo)
+
+`Shift+Tab` invierte el orden.
+
+---
+
+### Accesibilidad (WCAG AA)
+
+- El elemento raíz de la modal tiene `role="dialog"`, `aria-modal="true"` y `aria-labelledby="modal-title"` (donde `modal-title` es el id del h2 "Nueva medición").
+- **Focus trap** activo durante toda la vida del modal abierto.
+- Al cerrar la modal, el foco retorna al botón "Nueva medición" que la abrió.
+- El overlay tiene `aria-hidden="true"` para los lectores de pantalla (no es un control interactivo).
+- El botón ✕ tiene `aria-label="Cerrar modal"`.
+- Los mensajes de error inline tienen `role="alert"` para ser anunciados por lectores de pantalla sin necesidad de foco explícito.
+- La cabecera de la modal es un `<h2>` con contraste de color mínimo 4.5:1 sobre el fondo blanco.
+- Todos los `<label>` están asociados explícitamente a su `<input>` mediante `for`/`id`.
+- Áreas táctiles mínimas: 48 px de alto para el botón "Guardar medición", 44 × 44 px para el botón ✕.
+- El handle visual del bottom sheet en móvil es puramente decorativo: `aria-hidden="true"`, sin rol interactivo.
+
+---
+
+### Notas de implementación para el Frontend Dev (BK-22)
+
+- El overlay (`<div class="modal-overlay">`) se inserta como hijo directo de `#app`, **fuera** del flujo del historial y de la gráfica, para evitar conflictos de `z-index` con el SVG de D3.
+- El contenedor modal (`<div class="modal" role="dialog" …>`) es hijo del overlay o hermano a `#app`; se recomienda `z-index: 200` para el overlay y `z-index: 201` para la modal.
+- Las transiciones de apertura/cierre se implementan con CSS (`transition: opacity, transform`); la apertura añade la clase `modal--open`; el cierre añade `modal--closing` y, tras `transitionend`, aplica `hidden`.
+- En móvil, la clase `modal--bottom-sheet` se activa con `@media (max-width: 639px)`.
+- El focus trap se implementa capturando el evento `keydown` con `Tab`/`Shift+Tab` dentro de la modal y redirigiendo el foco al primer/último elemento focusable cuando se sale de los extremos.
+- La lista de elementos focusables dentro de la modal: `input:not([disabled])`, `button:not([disabled])`.
+- Al abrir la modal, guardar en una variable la referencia al elemento que tenía el foco previamente (el botón "Nueva medición") y restaurarlo al cerrar.
+- La transición `cubic-bezier(0.32, 0.72, 0, 1)` para el bottom sheet en móvil imita el comportamiento de las sheets nativas de iOS.
+- La operación de guardado es síncrona sobre `localStorage`; el estado "Enviando" se activa antes de llamar al servicio y se desactiva al finalizar (éxito o error).
+
+---
+
+## Layout: Gráfica + Historial en columnas (US-14, BK-21)
+
+> ⚠️ **Pendiente de validación por el Diseñador** (BK-21). Las proporciones y especificaciones exactas deben definirse antes de comenzar BK-23.
+
+### Descripción
+
+En pantallas con viewport ≥ 768 px, el Dashboard muestra la gráfica y el historial en un layout de **dos columnas** para aprovechar el espacio horizontal. El historial puede hacer scroll de forma independiente sin desplazar la gráfica.
+
+En móvil (< 768 px) el layout colapsa a columna única (comportamiento actual del MVP): gráfica encima, historial debajo.
+
+### Wireframe — Columna única (< 768 px) — sin cambios respecto al MVP
+
+```
+┌─────────────────────────────────┐
+│  🩺 Tensia              [fecha] │  ← Header sticky
+├─────────────────────────────────┤
+│  [ + Nueva medición ]           │
+├─────────────────────────────────┤
+│  [Gráfica de evolución - 100%]  │
+├─────────────────────────────────┤
+│  Historial                      │
+│  tarjeta · tarjeta · tarjeta …  │
+└─────────────────────────────────┘
+```
+
+### Wireframe — Dos columnas (≥ 768 px)
+
+```
+┌──────────────────────────────────────────────────────┐
+│  🩺 Tensia                                  [fecha]  │  ← Header sticky
+├──────────────────────────────────────────────────────┤
+│  [ + Nueva medición ]                                │  ← Botón ancho completo
+├──────────────────────┬───────────────────────────────┤
+│                      │  Historial                    │
+│  Evolución  [mmHg]   │─────────────────────────────  │
+│  █ Sist. █ Diast.   │  18 feb 2026 · 10:00          │
+│                      │  120 / 80 mmHg  💓 72 ppm    │
+│  [SVG gráfica]       │─────────────────────────────  │
+│                      │  17 feb 2026 · 08:30          │
+│  (sticky / fija)     │  135 / 88 mmHg  💓 80 ppm    │
+│                      │─────────────────────────────  │
+│                      │  (scroll independiente →)     │
+│                      │  ...más mediciones...         │
+│                      │                               │
+└──────────────────────┴───────────────────────────────┘
+  ← ~55 % ancho →       ← ~45 % ancho, scroll propio →
+```
+
+### Especificaciones de layout (a validar por Diseñador en BK-21)
+
+| Propiedad | Valor propuesto |
+|---|---|
+| Breakpoint activación | ≥ 768 px |
+| Ancho columna gráfica | ~55 % (o `minmax(320px, 55%)`) |
+| Ancho columna historial | ~45 % (resto / `1fr`) |
+| Gap entre columnas | 24 px |
+| Comportamiento gráfica | `position: sticky; top: <alto header> + 8px` |
+| Max-height historial | `calc(100vh - <alto header> - <alto botón> - 32px)` |
+| Scroll historial | `overflow-y: auto` |
+| Comportamiento skeleton (< 2 mediciones) | Ocupa columna izquierda; columna derecha muestra historial normalmente |
+
+### Comportamiento responsivo al cambiar tamaño
+
+- En el breakpoint de 768 px, el CSS activa/desactiva el grid; no hay lógica JS adicional.
+- `ResizeObserver` ya existente en la gráfica gestiona el redibujado al cambiar el ancho de su columna.
+- Al rotar el dispositivo de vertical a horizontal, si el nuevo viewport ≥ 768 px, el layout cambia a dos columnas automáticamente.
+
+### Notas de implementación para el Frontend Dev (BK-23)
+
+- El contenedor de dos columnas se añade en `HomeView.js` como `<div class="dashboard-content">` que envuelve `#chart-mediciones` y `#historial`.
+- El CSS (nuevo parcial `layout.css` o dentro de `main.css`) define el grid:
+  ```css
+  @media (min-width: 768px) {
+    .dashboard-content {
+      display: grid;
+      grid-template-columns: 55% 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    .dashboard-content__chart {
+      position: sticky;
+      top: calc(var(--header-height) + 8px);
+    }
+    .dashboard-content__historial {
+      overflow-y: auto;
+      max-height: calc(100vh - var(--header-height) - var(--btn-nueva-height) - 32px);
+    }
+  }
+  ```
+- Variables CSS `--header-height` y `--btn-nueva-height` deben definirse en `main.css`.
 
 ## Pantalla 3: Registro por foto (OCR)
 

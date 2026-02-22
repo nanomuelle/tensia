@@ -1,6 +1,6 @@
 # Criterios de aceptación — MVP Tensia
 
-_Última revisión: 2026-02-22 — Añadidos CA-08 (gráfica) y CA-09 (skeleton US-11)_
+_Última revisión: 2026-02-22 — Añadidos CA-10 (modal formulario US-13) y CA-11 (layout columnas US-14)_
 
 Cada criterio es verificable de forma objetiva. Un criterio no está "aceptado" hasta que existe un test que lo valida o se ha verificado manualmente con pasos documentados.
 
@@ -16,6 +16,10 @@ Cada criterio es verificable de forma objetiva. Un criterio no está "aceptado" 
 | CA-07 | Rangos clínicos en validaciones     | ✅ | ✅ (TC-12)                    |
 | CA-08 | Gráfica de evolución temporal        | ✅ | Unitario ✅ (chart.test.js)    |
 | CA-09 | Skeleton cuando no hay datos suficientes (US-11) | ✅ | E2E ✅ (TC-13) |
+| CA-10 | Modal del formulario de registro (US-13)        | ⏳ Pendiente | ⏳ |
+| CA-11 | Layout gráfica + historial en columnas (US-14)   | ⏳ Pendiente | ⏳ |
+| CA-10 | Modal del formulario de registro (US-13)        | ⏳ Pendiente | ⏳ |
+| CA-11 | Layout gráfica + historial en columnas (US-14)   | ⏳ Pendiente | ⏳ |
 
 ---
 
