@@ -1,6 +1,6 @@
 # Backlog — Tensia
 
-_Última revisión: 2026-02-22 — Gráficas de evolución incorporadas al MVP_
+_Última revisión: 2026-02-22 — Añadidos BK-20 a BK-23 (modal formulario y layout columnas)_
 
 ---
 
@@ -93,6 +93,51 @@ Descripción: `renderSkeleton()` en `apps/frontend/src/chart.js`: cuando hay < 2
 Prioridad: Alta
 Estado: Hecho
 Referencia: US-11, TC-13
+
+---
+
+## Próximo sprint — Mejoras de UX (post-MVP confirmadas)
+
+**BK-20 — [Diseñador] Diseño: modal del formulario de registro**
+Descripción: Definir y documentar en `docs/design/screens.md` el wireframe detallado de la ventana modal que contiene el formulario de nueva medición: overlay, animación de apertura/cierre, comportamiento bottom-sheet en móvil (< 640 px), posición y estilo del botón de cierre (✕), focus trap y estados (abierta / cerrando / error de validación).
+Prioridad: Alta
+Estado: Pendiente
+Rol: Diseñador UX/UI
+Referencia: US-13
+
+**BK-21 — [Diseñador] Diseño: layout gráfica + historial en columnas (≥ 768 px)**
+Descripción: Definir y documentar en `docs/design/screens.md` el wireframe del layout de dos columnas para pantallas anchas: proporciones de columna (sugerido 55 % gráfica / 45 % historial o 50/50), comportamiento sticky de la gráfica, scroll independiente del historial, breakpoints exactos y degradación a columna única en móvil. Incluir especificaciones de espaciado y alineación entre columnas.
+Prioridad: Alta
+Estado: Pendiente
+Rol: Diseñador UX/UI
+Referencia: US-14
+
+**BK-22 — [Frontend Dev] Implementar modal del formulario de registro**
+Descripción: Convertir el componente `MeasurementForm` para que se monte dentro de una modal. Tareas:
+- Crear `ModalContainer` (o ampliar `MeasurementForm`) con overlay semitransparente, `role="dialog"`, `aria-modal="true"` y `aria-labelledby`.
+- Implementar focus trap (primer/último campo del formulario); cerrar con `Escape`.
+- Cerrar la modal al pulsar el overlay o el botón ✕; no cerrar mientras hay una solicitud en curso.
+- En viewport < 640 px: estilo bottom-sheet (anclado a la parte inferior, 100 % ancho).
+- Al guardar con éxito: cerrar modal + disparar toast + actualizar historial/gráfica vía `appStore`.
+- Añadir/actualizar CSS en `apps/frontend/src/components/MeasurementForm/`.
+- Añadir tests unitarios del ciclo de apertura/cierre y del focus trap.
+Prioridad: Alta
+Estado: Pendiente
+Rol: Frontend Dev
+Referencia: US-13, BK-20
+
+**BK-23 — [Frontend Dev] Implementar layout gráfica + historial en columnas**
+Descripción: Cambiar el layout de `HomeView` para que en pantallas ≥ 768 px la gráfica y el historial aparezcan en columnas (`display: grid` o `flex`). Tareas:
+- Modificar `apps/frontend/src/views/HomeView.js` para envolver gráfica e historial en un contenedor de dos columnas.
+- Añadir media query en CSS (`MeasurementChart.css` o nuevo parcial de layout) para activar el grid ≥ 768 px y mantener columna única < 768 px.
+- Hacer la columna del historial independientemente scrollable (`overflow-y: auto`, `max-height`).
+- Mantener comportamiento responsivo del `ResizeObserver` de la gráfica al cambiar el tamaño de su columna.
+- Verificar que skeleton (< 2 mediciones) no rompe el layout de columnas.
+- Añadir/actualizar tests: E2E o de componente que verifiquen las dos variantes de layout.
+Prioridad: Alta
+Estado: Pendiente
+Rol: Frontend Dev
+Referencia: US-14, BK-21
 
 ---
 

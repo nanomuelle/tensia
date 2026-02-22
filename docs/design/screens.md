@@ -1,6 +1,6 @@
 # Pantallas — Tensia
 
-_Última revisión: 2026-02-22 — Añadido componente Gráfica de evolución (BK-14, ADR-006)_
+_Última revisión: 2026-02-22 — Añadidos: modal formulario (BK-20/US-13) y layout columnas (BK-21/US-14)_
 
 ---
 
@@ -272,11 +272,199 @@ Eje X: se muestran como máximo **10 etiquetas de fecha**, distribuidas uniforme
 
 ---
 
-## Pantalla 2: Formulario de registro manual
+## Pantalla 2: Modal del formulario de registro (US-13, BK-20)
 
-> Pendiente de diseño detallado — se define en la siguiente iteración.
+> ⚠️ **Pendiente de validación por el Diseñador** (BK-20). Las especificaciones de detalle (proporciones, animaciones, colores) deben completarse antes de comenzar BK-22.
+
+### Descripción
+
+El formulario de nueva medición se muestra en una ventana modal que se superpone sobre el contenido del Dashboard. Al activarse, el fondo queda bloqueado con un overlay semitransparente e inaccesible al teclado y al puntero.
+
+En móvil (< 640 px) la modal se comporta como un **bottom sheet**: aparece anclada a la parte inferior de la pantalla y ocupa el ancho completo.
+
+En tablet/desktop (≥ 640 px) la modal se centra en pantalla con un ancho máximo sugerido de 480 px.
+
+### Wireframe — Desktop / Tablet (≥ 640 px)
+
+```
+┌─────────────────────────────────────────────┐  ← Overlay semitransparente
+│                                             │     (fondo bloqueado)
+│   ┌─────────────────────────────────────┐   │
+│   │  Nueva medición               [✕]  │   │  ← Cabecera + botón cerrar
+│   ├─────────────────────────────────────┤   │
+│   │  Sistólica (mmHg) *                 │   │
+│   │  ┌───────────────────────────────┐  │   │
+│   │  │  120                          │  │   │
+│   │  └───────────────────────────────┘  │   │
+│   │  Diastólica (mmHg) *                │   │
+│   │  ┌───────────────────────────────┐  │   │
+│   │  │  80                           │  │   │
+│   │  └───────────────────────────────┘  │   │
+│   │  Pulso (ppm)                        │   │
+│   │  ┌───────────────────────────────┐  │   │
+│   │  │  72                           │  │   │
+│   │  └───────────────────────────────┘  │   │
+│   │  Fecha y hora *                     │   │
+│   │  ┌───────────────────────────────┐  │   │
+│   │  │  2026-02-22T10:30             │  │   │
+│   │  └───────────────────────────────┘  │   │
+│   │                                     │   │
+│   │  [ Guardar medición ]               │   │  ← Botón primario
+│   └─────────────────────────────────────┘   │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+### Wireframe — Móvil (< 640 px) — Bottom sheet
+
+```
+┌─────────────────────────────────┐
+│                                 │  ← Overlay semitransparente
+│  (dashboard visible y bloqueado)│
+│                                 │
+├─────────────────────────────────┤  ← Borde superior redondeado
+│  ────────                       │  ← Handle visual (pill)
+│  Nueva medición            [✕] │
+├─────────────────────────────────┤
+│  Sistólica (mmHg) *             │
+│  ┌─────────────────────────┐    │
+│  │  120                    │    │
+│  └─────────────────────────┘    │
+│  Diastólica (mmHg) *            │
+│  ┌─────────────────────────┐    │
+│  │  80                     │    │
+│  └─────────────────────────┘    │
+│  Pulso (ppm)                    │
+│  ┌─────────────────────────┐    │
+│  │  72                     │    │
+│  └─────────────────────────┘    │
+│  Fecha y hora *                 │
+│  ┌─────────────────────────┐    │
+│  │  2026-02-22T10:30       │    │
+│  └─────────────────────────┘    │
+│                                 │
+│  [ Guardar medición ]           │  ← Botón primario, ancho completo
+└─────────────────────────────────┘
+```
+
+### Comportamiento
+
+| Acción | Resultado |
+|---|---|
+| Pulsar "Nueva medición" en el Dashboard | La modal se abre; el foco va al primer campo (Sistólica). |
+| Pulsar `Escape` | La modal se cierra sin guardar; el foco vuelve al botón "Nueva medición". |
+| Pulsar el overlay (fuera de la modal) | La modal se cierra sin guardar. |
+| Pulsar el botón ✕ | La modal se cierra sin guardar. |
+| Guardar con datos válidos | Modal se cierra, historial y gráfica se actualizan, se muestra toast de éxito. |
+| Guardar con datos inválidos | La modal permanece abierta; se muestran errores inline en los campos afectados. |
+
+### Accesibilidad
+
+- `role="dialog"`, `aria-modal="true"`, `aria-labelledby` → ID del título "Nueva medición".
+- **Focus trap**: el foco queda confinado dentro de la modal mientras está abierta (Tab/Shift+Tab ciclan entre los controles internos).
+- Al cerrar la modal, el foco vuelve al elemento que la abrió (botón "Nueva medición").
+- El overlay tiene `aria-hidden="true"` para los lectores de pantalla.
+- El botón ✕ tiene `aria-label="Cerrar modal"`.
+
+### Notas de implementación para el Frontend Dev (BK-22)
+
+- El componente `MeasurementForm` (o `ModalContainer` que lo envuelve) gestiona su propia visibilidad como estado interno o controlado desde `HomeView`.
+- El overlay se crea con un `<div class="modal-overlay">` a nivel de `#app` (no dentro del flujo del historial) para evitar problemas de `z-index` con la gráfica SVG.
+- La animación de apertura/cierre puede ser solo `opacity` + `transform: translateY` con `transition` CSS; no requiere librerías.
+- En móvil, la clase CSS `.modal--bottom-sheet` activa el estilo de panel inferior mediante media query `@media (max-width: 639px)`.
 
 ---
+
+## Layout: Gráfica + Historial en columnas (US-14, BK-21)
+
+> ⚠️ **Pendiente de validación por el Diseñador** (BK-21). Las proporciones y especificaciones exactas deben definirse antes de comenzar BK-23.
+
+### Descripción
+
+En pantallas con viewport ≥ 768 px, el Dashboard muestra la gráfica y el historial en un layout de **dos columnas** para aprovechar el espacio horizontal. El historial puede hacer scroll de forma independiente sin desplazar la gráfica.
+
+En móvil (< 768 px) el layout colapsa a columna única (comportamiento actual del MVP): gráfica encima, historial debajo.
+
+### Wireframe — Columna única (< 768 px) — sin cambios respecto al MVP
+
+```
+┌─────────────────────────────────┐
+│  🩺 Tensia              [fecha] │  ← Header sticky
+├─────────────────────────────────┤
+│  [ + Nueva medición ]           │
+├─────────────────────────────────┤
+│  [Gráfica de evolución - 100%]  │
+├─────────────────────────────────┤
+│  Historial                      │
+│  tarjeta · tarjeta · tarjeta …  │
+└─────────────────────────────────┘
+```
+
+### Wireframe — Dos columnas (≥ 768 px)
+
+```
+┌──────────────────────────────────────────────────────┐
+│  🩺 Tensia                                  [fecha]  │  ← Header sticky
+├──────────────────────────────────────────────────────┤
+│  [ + Nueva medición ]                                │  ← Botón ancho completo
+├──────────────────────┬───────────────────────────────┤
+│                      │  Historial                    │
+│  Evolución  [mmHg]   │─────────────────────────────  │
+│  █ Sist. █ Diast.   │  18 feb 2026 · 10:00          │
+│                      │  120 / 80 mmHg  💓 72 ppm    │
+│  [SVG gráfica]       │─────────────────────────────  │
+│                      │  17 feb 2026 · 08:30          │
+│  (sticky / fija)     │  135 / 88 mmHg  💓 80 ppm    │
+│                      │─────────────────────────────  │
+│                      │  (scroll independiente →)     │
+│                      │  ...más mediciones...         │
+│                      │                               │
+└──────────────────────┴───────────────────────────────┘
+  ← ~55 % ancho →       ← ~45 % ancho, scroll propio →
+```
+
+### Especificaciones de layout (a validar por Diseñador en BK-21)
+
+| Propiedad | Valor propuesto |
+|---|---|
+| Breakpoint activación | ≥ 768 px |
+| Ancho columna gráfica | ~55 % (o `minmax(320px, 55%)`) |
+| Ancho columna historial | ~45 % (resto / `1fr`) |
+| Gap entre columnas | 24 px |
+| Comportamiento gráfica | `position: sticky; top: <alto header> + 8px` |
+| Max-height historial | `calc(100vh - <alto header> - <alto botón> - 32px)` |
+| Scroll historial | `overflow-y: auto` |
+| Comportamiento skeleton (< 2 mediciones) | Ocupa columna izquierda; columna derecha muestra historial normalmente |
+
+### Comportamiento responsivo al cambiar tamaño
+
+- En el breakpoint de 768 px, el CSS activa/desactiva el grid; no hay lógica JS adicional.
+- `ResizeObserver` ya existente en la gráfica gestiona el redibujado al cambiar el ancho de su columna.
+- Al rotar el dispositivo de vertical a horizontal, si el nuevo viewport ≥ 768 px, el layout cambia a dos columnas automáticamente.
+
+### Notas de implementación para el Frontend Dev (BK-23)
+
+- El contenedor de dos columnas se añade en `HomeView.js` como `<div class="dashboard-content">` que envuelve `#chart-mediciones` y `#historial`.
+- El CSS (nuevo parcial `layout.css` o dentro de `main.css`) define el grid:
+  ```css
+  @media (min-width: 768px) {
+    .dashboard-content {
+      display: grid;
+      grid-template-columns: 55% 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    .dashboard-content__chart {
+      position: sticky;
+      top: calc(var(--header-height) + 8px);
+    }
+    .dashboard-content__historial {
+      overflow-y: auto;
+      max-height: calc(100vh - var(--header-height) - var(--btn-nueva-height) - 32px);
+    }
+  }
+  ```
+- Variables CSS `--header-height` y `--btn-nueva-height` deben definirse en `main.css`.
 
 ## Pantalla 3: Registro por foto (OCR)
 
