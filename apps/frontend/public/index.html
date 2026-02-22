@@ -238,7 +238,7 @@
 
     <script type="module" src="src/app.js"></script>
 
-    <!-- Registro del Service Worker y lógica del aviso iOS -->
+    <!-- Registro del Service Worker -->
     <script>
       // Registro del SW (solo si el navegador lo soporta)
       if ('serviceWorker' in navigator) {
@@ -246,17 +246,6 @@
           console.warn('[Tensia] No se pudo registrar el Service Worker:', err);
         });
       }
-
-      // Aviso informativo en Safari/iOS (política ITP: datos borrados tras 7 días de inactividad)
-      const esIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
-      const esSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      if (esIOS || esSafari) {
-        const aviso = document.getElementById('aviso-ios');
-        if (aviso) aviso.hidden = false;
-      }
-      document.getElementById('btn-cerrar-aviso-ios')?.addEventListener('click', () => {
-        document.getElementById('aviso-ios').hidden = true;
-      });
     </script>
   </body>
 </html>

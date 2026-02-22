@@ -11,6 +11,7 @@ import { renderChart } from './chart.js';
 import { formatearFecha, fechaLocalActual } from './shared/formatters.js';
 import { on, Events } from './shared/eventBus.js';
 import { MIN_MEDICIONES_GRAFICA } from './shared/constants.js';
+import { createIosWarning } from './components/IosWarning/IosWarning.js';
 
 // Servicio con adaptador inyectado (anónimo → localStorage)
 const service = createMeasurementService(adapter);
@@ -301,5 +302,6 @@ on(Events.MEASUREMENT_SAVED, () => cargarMediciones());
 // =========================================================
 // Arranque
 // =========================================================
+createIosWarning(document.getElementById('aviso-ios')).mount();
 cargarMediciones();
 
