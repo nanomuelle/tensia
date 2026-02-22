@@ -1,6 +1,6 @@
 # API Contract
 
-_Última revisión: 2026-02-19 — Reescrito para reflejar ADR-005_
+_Última revisión: 2026-02-22 — Actualizado para reflejar refactorización del frontend_
 
 ## Contexto
 
@@ -58,7 +58,7 @@ El contrato detallado de estos endpoints se documentará en este fichero cuando 
 
 ## Reglas de validación de mediciones (dominio del cliente)
 
-La validación reside en `apps/frontend/src/domain/measurement.js` y `apps/frontend/src/validators.js`.
+La validación reside en `apps/frontend/src/domain/measurement.js` y `apps/frontend/src/shared/validators.js`.
 
 | Campo | Obligatorio | Tipo | Rango válido | Regla adicional |
 |---|:---:|---|---|---|
