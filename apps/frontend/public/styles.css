@@ -449,3 +449,6 @@ body {
   flex-shrink: 0;
   padding: 0 0.25rem;
 }
+
+/* Componente Toast */
+@import './src/components/Toast/Toast.css';

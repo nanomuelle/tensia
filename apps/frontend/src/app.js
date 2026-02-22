@@ -12,6 +12,7 @@ import { formatearFecha, fechaLocalActual } from './shared/formatters.js';
 import { on, Events } from './shared/eventBus.js';
 import { MIN_MEDICIONES_GRAFICA } from './shared/constants.js';
 import { createIosWarning } from './components/IosWarning/IosWarning.js';
+import { createToast } from './components/Toast/Toast.js';
 
 // Servicio con adaptador inyectado (anónimo → localStorage)
 const service = createMeasurementService(adapter);
@@ -266,6 +267,7 @@ async function enviarFormulario(evento) {
     // La actualización de lista y gráfica se dispara mediante el evento
     // 'medicion-guardada' despachado por el servicio (US-12).
     cerrarFormulario();
+    toast.show('Medición guardada', 'success');
   } catch (error) {
     // Error de validación de dominio u otro error
     errorFormulario.textContent = error.message;
@@ -302,6 +304,8 @@ on(Events.MEASUREMENT_SAVED, () => cargarMediciones());
 // =========================================================
 // Arranque
 // =========================================================
+const toast = createToast(document.getElementById('toast-container'));
+toast.mount();
 createIosWarning(document.getElementById('aviso-ios')).mount();
 cargarMediciones();
 
