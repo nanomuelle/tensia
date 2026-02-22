@@ -1,6 +1,6 @@
 # Backlog — Tensia
 
-_Última revisión: 2026-02-22 — BK-22 completado (modal formulario implementado); BK-21 completado (diseño layout columnas); BK-23 refinado y listo para desarrollo_
+_Última revisión: 2026-02-22 — BK-22 completado (modal formulario implementado); BK-21 completado (diseño layout columnas); BK-23 completado (layout dos columnas implementado)_
 
 ---
 
@@ -341,7 +341,7 @@ Crear un fichero de spec con al menos los siguientes casos (usar Playwright con 
 - [ ] No hay regresiones: todos los tests existentes siguen pasando.
 
 Prioridad: Alta
-Estado: Pendiente
+Estado: Hecho — `HomeLayout.css` en `apps/frontend/public/styles/components/`; variables CSS `--header-height` y `--btn-nueva-height` añadidas a `:root` en `main.css`; `HomeView.js` actualizado con `div.dashboard-content#dashboard-content` y toggle de clase `dashboard-content--columnas` en la suscripción al store; 10 tests unitarios en `HomeView.test.js`; 6 casos E2E en `layout-columnas.spec.js`; suite completa 257 tests pasando (sin regresiones).
 Rol: Frontend Dev
 Referencia: US-14, BK-21
 
