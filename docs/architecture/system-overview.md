@@ -1,44 +1,48 @@
 # System Overview
 
-_Revisado: 2026-02-23_
+_Revisado: 2026-02-24 (ADR-008 — arquitectura serverless)_
 
 ---
 
-## Arquitectura actual (MVP)
+## Arquitectura actual (MVP — serverless desde ADR-008)
 
 ```
-┌─────────────────────────────────────────────┐
-│   PWA  (Svelte 5 + Vite + Service Worker)   │
-│                                             │
-│  main.js → App.svelte → Router → HomeView   │
-│                                             │
-│  measurementService ◄── localStorageAdapter │
-│         │                (localStorage)     │
-│  domain/measurement.js  (validaciones)      │
-└────────────────────┬────────────────────────┘
-                     │ HTTP (solo ficheros estáticos)
-                     ▼
-            Backend (Node.js/Express)
-            └─ express.static → dist/
+ GitHub Pages (hosting estático)
+ └─ dist/  ←  vite build
+      │
+      PWA (Svelte 5 + Vite + Service Worker)
+      │
+      │  main.js → App.svelte → Router → HomeView
+      │
+      │  measurementService ◄── localStorageAdapter
+      │           │                (localStorage)
+      │  domain/measurement.js  (validaciones)
 ```
 
-Los datos viven exclusivamente en el cliente (`localStorage`). El backend no gestiona datos.
+Los datos viven exclusivamente en el cliente (`localStorage`). No hay servidor de producción (ADR-008).
 
 ---
 
 ## Arquitectura post-MVP
 
 ```
-PWA (Svelte 5)
-  ├─ anónimo      → localStorageAdapter
-  └─ Google login → googleDriveAdapter
-                         │
-                         │ HTTP
-                         ▼
-                   Backend (Node.js/Express)
-                   ├─ Proxy OAuth (custodia client_secret)
-                   └─ Endpoint OCR/AI
+GitHub Pages (hosting estático)
+  └─ dist/  ←  vite build
+       │
+       PWA (Svelte 5)
+         ├─ anónimo      → localStorageAdapter
+         └─ Google login → googleDriveAdapter
+              │
+              │ HTTPS directo (sin proxy)
+              ├─ Google Identity Services  (auth PKCE client-side)
+              └─ Google Drive API          (persistencia)
+
+Post-MVP OCR:
+  Serverless function (Vercel / Netlify)
+    └─ Endpoint OCR/AI  (custodia API key del proveedor AI)
 ```
+
+No hay servidor Express en producción. `apps/backend/` existe únicamente como utilidad de dev/tests.
 
 ---
 
@@ -103,6 +107,7 @@ apps/frontend/
 | PWA | `vite-plugin-pwa` (Service Worker con precaching) |
 | Gráfica | D3.js modular (`d3-scale`, `d3-axis`, `d3-shape`, `d3-selection`) |
 | Persistencia MVP | `localStorage` del navegador (`localStorageAdapter`) |
-| Backend | Node.js + Express (solo sirve `dist/` en el MVP) |
+| Hosting | GitHub Pages (provisional) — sirve `dist/` construido por Vite |
+| Backend (dev/tests) | Node.js + Express — **solo** entorno local y tests de integración |
 | Tests unitarios / integración | Vitest + `@testing-library/svelte` |
 | Tests E2E | Playwright |
