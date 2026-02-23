@@ -301,3 +301,21 @@ Prioridad: Alta
 Estado: Hecho — `HomeLayout.css` en `apps/frontend/public/styles/components/`; variables CSS `--header-height` y `--btn-nueva-height` añadidas a `:root` en `main.css`; `HomeView.js` actualizado con `div.dashboard-content#dashboard-content` y toggle de clase `dashboard-content--columnas` en la suscripción al store; 10 tests unitarios en `HomeView.test.js`; 6 casos E2E en `layout-columnas.spec.js`; suite completa 257 tests pasando (sin regresiones).
 Rol: Frontend Dev
 Referencia: US-14, BK-21
+
+---
+
+## Épica: Migración a Svelte 5 + Vite — Completados
+
+**BK-24 — Fase 0: Integrar Vite como build tool**
+Descripción: Sustituir `scripts/build.js` por `vite build`. `vite.config.js` creado en la raíz con `root: 'apps/frontend'`, `outDir: '../../dist'` y `vite-plugin-pwa` (Workbox). `index.html` movido de `apps/frontend/public/` a `apps/frontend/`. `sw.js` manual eliminado de `public/` (reemplazado por el SW generado por Workbox). `importmap` de D3 CDN eliminado (D3 se resuelve desde `node_modules`). Scripts de `package.json` actualizados: `dev → vite`, `build → vite build`, `preview → vite preview`. Variable de entorno en `deploy-pages.yml` cambiada a `VITE_BASE_PATH`. Todos los tests Jest (196) siguen en verde.
+Prioridad: Alta
+Estado: Hecho (2026-02-23)
+Referencia técnica: `docs/architecture/svelte-migration-plan.md` §§ 3.2, 3.3, 4 (Fase 0)
+
+---
+
+**BK-25 — Fase 1: Migrar componentes hoja a Svelte**
+Descripción: Los 4 componentes hoja reescritos como Single File Components de Svelte 5 Runes: `Toast.svelte`, `IosWarning.svelte`, `MeasurementList.svelte`, `MeasurementChart.svelte`. `MeasurementList.svelte` elimina el riesgo XSS al sustituir `innerHTML` por `{#each}`. `app.js` actualizado para montar `Toast` e `IosWarning` con la API programática `mount()` de Svelte. `HomeView.js` actualizado para montar `MeasurementList` y `MeasurementChart` como islas Svelte mediante el adaptador `src/lib/svelteMount.js` (wrap de `mount`/`unmount` de svelte para facilitar el mock en tests). Vitest configurado (`vitest.config.js`, `vitest.setup.js`) con `@testing-library/svelte`, `jsdom` y `resolve.conditions: ['browser']`. Tests de los 4 componentes reescritos a Vitest (47 tests). `HomeView.test.js` migrado a Vitest (10 tests). Jest excluye los 5 archivos migrados a Vitest. Suite completa: 47 tests Vitest + 196 tests Jest, todos pasando, sin regresiones.
+Prioridad: Alta
+Estado: Hecho (2026-02-23)
+Referencia técnica: `docs/architecture/svelte-migration-plan.md` § 3.3 (Fase 1)

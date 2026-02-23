@@ -1,6 +1,6 @@
 # Backlog — Tensia · Pendiente
 
-_Última revisión: 2026-02-23._
+_Última revisión: 2026-02-23. BK-24 y BK-25 completados._
 
 > Los ítems ya implementados están en [backlog-done.md](backlog-done.md).
 
@@ -19,7 +19,7 @@ Descripción: Sustituir `scripts/build.js` por `vite build` sin migrar ningún c
 Prioridad: Alta
 Estimación: 1-2 jornadas
 Dependencias: ninguna
-Estado: Pendiente
+Estado: ✅ Hecho (2026-02-23) — ver [backlog-done.md](backlog-done.md)
 Tipo: Tarea técnica (enabler)
 Referencia técnica: `docs/architecture/svelte-migration-plan.md` §§ 3.2, 3.3, 4 (Fase 0)
 
@@ -234,7 +234,7 @@ Para cada componente se deben reescribir también sus tests: de Jest + jsdom a V
 Prioridad: Alta
 Estimación: 3-4 jornadas
 Dependencias: BK-24
-Estado: Pendiente
+Estado: ✅ Hecho (2026-02-23) — ver [backlog-done.md](backlog-done.md)
 Tipo: Tarea técnica (enabler)
 Referencia técnica: `docs/architecture/svelte-migration-plan.md` § 3.3 (Fase 1)
 
