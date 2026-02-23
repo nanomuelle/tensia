@@ -319,3 +319,27 @@ Descripción: Los 4 componentes hoja reescritos como Single File Components de S
 Prioridad: Alta
 Estado: Hecho (2026-02-23)
 Referencia técnica: `docs/architecture/svelte-migration-plan.md` § 3.3 (Fase 1)
+
+---
+
+**BK-26 — Fase 2: Migrar MeasurementForm y Modal a Svelte**
+Descripción: `MeasurementForm.svelte` y `Modal.svelte` reescritos como SFCs con Svelte 5 Runes. Nuevo `RegistroMedicionModal.svelte` como componente de composición que encapsula la integración Modal + MeasurementForm, montable desde `HomeView.js` con la API programática de Svelte 5 (`mount()`). Ningún componente usa `innerHTML` con datos de usuario; riesgo XSS estructural eliminado completamente. `HomeView.js` actualizado para usar `mount(RegistroMedicionModal, ...)` en lugar de `createModal`/`createMeasurementForm`. Tests de `MeasurementForm`, `Modal` y `RegistroMedicionModal` migrados a Vitest + `@testing-library/svelte`.
+Prioridad: Alta
+Estado: Hecho (2026-02-23)
+Referencia técnica: `docs/architecture/svelte-migration-plan.md` § 3.3 (Fase 2)
+
+---
+
+**BK-27 — Fase 3: Migrar vistas, store y router a Svelte**
+Descripción: `appStore.svelte.js` creado con stores Svelte (`writable`: `mediciones`, `cargando`, `error`) y acción `cargarMediciones`. `HomeView.svelte` creado; suscribe reactivamente con `$mediciones`/`$cargando`/`$error` sin `store.subscribe()` explícito. `router.js` adaptado al contrato `{ component, props }` con `mount()`/`unmount()` de Svelte. `App.svelte` y `main.js` creados como nuevo punto de entrada. Ficheros eliminados: `app.js`, `lib/svelteMount.js`, `views/HomeView.js`, `store/appStore.js`. Cero Vanilla JS en la capa de UI. Tests de `appStore`, `router` y `HomeView` migrados a Vitest.
+Prioridad: Alta
+Estado: Hecho (2026-02-23)
+Referencia técnica: `docs/architecture/svelte-migration-plan.md` § 3.3 (Fase 3)
+
+---
+
+**BK-28 — Fase 4: Consolidar tests y limpiar dependencias**
+Descripción: Vitest como runner único. Los 9 ficheros de test bajo Jest migrados a Vitest (`import` desde `vitest`, `vi.fn()`/`vi.spyOn()`, anotación `@vitest-environment node` en 5 ficheros de entorno Node). `vitest.config.js` actualizado con patrón glob único `apps/**/tests/**/*.test.{js,svelte.js}` y cobertura v8 con umbral 70 % incluyendo backend. Scripts actualizados: `test → vitest run`, `test:watch → vitest`, `test:coverage → vitest run --coverage`. Bloque `"jest"` eliminado de `package.json`. `jest` y `jest-environment-jsdom` desinstalados. `nodemon` desinstalado. `scripts/build.js` eliminado. `copilot-instructions.md` y `README.md` actualizados con el stack definitivo (Vitest).
+Prioridad: Alta
+Estado: Hecho (2026-02-23)
+Tipo: Tarea técnica (limpieza)

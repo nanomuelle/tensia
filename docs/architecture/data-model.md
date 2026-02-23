@@ -44,14 +44,16 @@ posibles para una persona en condición de autorrealizar una medición doméstic
 
 ## Reglas de validación aplicadas
 
-| Regla                                  | Backend (dominio) | Frontend (UI)  |
-|----------------------------------------|:-----------------:|:--------------:|
-| `systolic` requerido                   | ✅                | ✅             |
-| `diastolic` requerido                  | ✅                | ✅             |
-| `measuredAt` requerido                 | ✅                | ✅             |
-| Valores enteros positivos              | ✅                | ✅             |
-| `systolic` en rango [50, 300]          | ✅                | ✅             |
-| `diastolic` en rango [30, 200]         | ✅                | ✅             |
-| `pulse` en rango [20, 300] (si hay)    | ✅                | ✅             |
-| `systolic` > `diastolic`              | ✅                | ✅             |
-| `measuredAt` formato ISO 8601 válido   | ✅                | ✅             |
+Validación implementada en el cliente: `domain/measurement.js` (negocio) y `shared/validators.js` (presentación).
+
+| Regla | Implementado |
+|---|:---:|
+| `systolic` requerido | ✅ |
+| `diastolic` requerido | ✅ |
+| `measuredAt` requerido | ✅ |
+| Valores enteros positivos | ✅ |
+| `systolic` en rango [50, 300] | ✅ |
+| `diastolic` en rango [30, 200] | ✅ |
+| `pulse` en rango [20, 300] (si hay) | ✅ |
+| `systolic` > `diastolic` | ✅ |
+| `measuredAt` formato ISO 8601 válido | ✅ |
