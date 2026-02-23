@@ -28,7 +28,7 @@ _Última revisión: 2026-02-24. Stack definitivo: Svelte 5 + Vite + Vitest. Pró
 | BK | Descripción | Estimación | Estado |
 |---|---|---|---|
 | BK-38 | ADR-008: documentar decisión serverless | 0,5 j. | ✅ Completado |
-| BK-39 | Activar GitHub Pages (fix `manifest.json` + configurar repo) | 0,5 j. | Pendiente |
+| BK-39 | Activar GitHub Pages (fix `manifest.json` + configurar repo) | 0,5 j. | ✅ Completado |
 | BK-40 | Google Identity Services client-side (reemplaza BK-30) | 1-2 j. | Pendiente |
 | BK-41 | Eliminar Express de producción / aislar `apps/backend/` a dev | 1 j. | Pendiente |
 | BK-42 | Actualizar scripts npm, CI/CD y documentación | 0,5 j. | Pendiente |

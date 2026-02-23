@@ -52,7 +52,7 @@ Análisis del repositorio antes de iniciar la épica. Permite saber qué está y
 | BK | Descripción | Estimación | Estado |
 |---|---|---|---|
 | BK-38 | ADR-008: documentar decisión de arquitectura serverless | 0,5 j. | ✅ Completado |
-| BK-39 | Activar GitHub Pages como hosting provisional | 0,5 j. | Pendiente |
+| BK-39 | Activar GitHub Pages como hosting provisional | 0,5 j. | ✅ Completado |
 | BK-40 | Reemplazar proxy OAuth por Google Identity Services (GIS) client-side | 1-2 j. | Pendiente |
 | BK-41 | Eliminar servidor Express de producción / aislar `apps/backend/` a dev | 1 j. | Pendiente |
 | BK-42 | Actualizar scripts npm, CI/CD y documentación sin dependencia del servidor | 0,5 j. | Pendiente |
@@ -87,17 +87,17 @@ Análisis del repositorio antes de iniciar la épica. Permite saber qué está y
 **Prioridad:** Alta  
 **Estimación:** 0,5 jornadas (incluye validación E2E de la URL desplegada)  
 **Dependencias:** —  
-**Estado:** Pendiente  
+**Estado:** ✅ Completado (código 2026-02-24 — pendiente activación manual de GitHub Pages en Settings)  
 **Tipo:** Infraestructura / configuración
 
 **Criterios de aceptación:**
-- [ ] `manifest.json` tiene `"start_url": "./"`.
-- [ ] El repositorio tiene Pages configurado con "Source: GitHub Actions".
+- [x] `manifest.json` tiene `"start_url": "./"` y `"scope": "./"`. *(2026-02-24)*
+- [x] `vite.config.js` — `base: process.env.VITE_BASE_PATH ?? '/'` ya correctamente configurado; `manifest: false` delega `start_url`/`scope` al `manifest.json` manual. *(2026-02-24)*
+- [ ] El repositorio tiene Pages configurado con "Source: GitHub Actions". *(acción manual en GitHub Settings → Pages)*
 - [ ] El workflow `deploy-pages.yml` se ejecuta en push a `main` sin errores (ya está completo; no requiere modificaciones).
 - [ ] La app es accesible en `https://nanomuelle.github.io/tensia/`.
 - [ ] El Service Worker generado por `vite-plugin-pwa` se registra correctamente en la URL de GitHub Pages (sin errores de scope en DevTools).
 - [ ] La instalación como PWA en Android/Chrome funciona desde la URL de GitHub Pages (icono de instalación visible).
-- [ ] `vite.config.js` — la opción `base` de Vite y la opción `scope`/`start_url` del plugin PWA reflejan `VITE_BASE_PATH` correctamente.
 
 ---
 
