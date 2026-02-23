@@ -294,19 +294,130 @@ npm install --save-dev @testing-library/svelte vitest jsdom
 ---
 
 **BK-26 — Fase 2: Migrar MeasurementForm y Modal a Svelte**
-Descripción: Reescribir `MeasurementForm` y `Modal` como `.svelte`. Tras esta fase, ningún componente usa `innerHTML` con datos externos; el riesgo XSS queda eliminado de la UI. `MeasurementForm.svelte` usa `bind:value`; `Modal.svelte` gestiona focus trap, animaciones y ciclo de vida con `onMount`/`onDestroy` y `<slot />`.
+
+**Descripción:**
+Reescribir `MeasurementForm` y `Modal` como Single File Components (`.svelte`) con Svelte 5 Runes. Tras esta fase, ningún componente usa `innerHTML` para construir estructura de UI; el riesgo XSS estructural queda eliminado completamente. `MeasurementForm.svelte` enlaza campos con `bind:value` y gestiona errores con `$state`; `Modal.svelte` mantiene focus trap, animaciones y accesibilidad usando `onMount`/`onDestroy` y `<slot />`. La composición Modal + MeasurementForm se extrae a un componente dedicado `RegistroMedicionModal.svelte` para evitar acoplamiento de la API de snippets de Svelte 5 con el código Vanilla JS de `HomeView.js`.
+
 Prioridad: Alta
 Estimación: 2-3 jornadas
 Dependencias: BK-25
 Estado: Pendiente
 Tipo: Tarea técnica (enabler)
+Referencia técnica: `docs/architecture/svelte-migration-plan.md` § 3.3 (Fase 2)
 
-Criterios de aceptación:
-- [ ] `MeasurementForm.svelte` valida campos igual que la versión actual.
-- [ ] `Modal.svelte` mantiene focus trap, animaciones y accesibilidad (`aria-modal`).
-- [ ] Sin `innerHTML` con datos de usuario en ningún componente.
-- [ ] Tests de `MeasurementForm` y `Modal` en verde con Vitest.
-- [ ] Suite E2E completa en verde.
+---
+
+#### Subtareas técnicas
+
+**1. `MeasurementForm.svelte`** (316 líneas actuales en `MeasurementForm.js`)
+
+- Props: `service: object`, `toast: object`, `onSuccess?: () => void`, `onCerrar?: () => void`.
+- Estado interno con `$state`: `systolic`, `diastolic`, `pulse`, `measuredAt` (valores de los campos); `errores` (objeto con claves por campo); `enviando: boolean`.
+- `bind:value` en cada `<input>` en lugar de `querySelector` + lectura de `value`.
+- La validación sigue delegada en `validarCamposMedicion(campos)` y `prepararDatosMedicion(campos)` de `shared/validators.js` — sin cambios en esa capa.
+- Los mensajes de error por campo se muestran con `{#if errores.systolic}` en lugar de `setErrorCampo()` + manipulación directa del DOM.
+- `abrir()` exportada (función pública): rellena `measuredAt` con `fechaLocalActual()` y limpia el formulario. El foco lo gestiona `Modal.svelte` (`transitionend` → primer campo).
+- `cerrar()` se reemplaza por llamada al callback `onCerrar` desde el handler de submit o de cancelar.
+- El bloque `<form novalidate>` pasa de ser `innerHTML` a marcado Svelte declarativo.
+- Los estilos de `MeasurementForm.css` (actualmente un placeholder; los estilos reales están en `public/styles/components/`) pasan a `<style>` scoped dentro del SFC. Las clases BEM (`.campo`, `.campo__input`, `.campo__error`, etc.) se conservan.
+- La prop `enviando` refleja el estado `btnGuardar.disabled` actual: `<button disabled={enviando}>`.
+
+**2. `Modal.svelte`** (254 líneas actuales en `Modal.js`)
+
+- Props: `title: string`, `locked?: boolean = false`, `onClose?: () => void`.
+- API pública exportada (funciones `$bindable` o accedidas via `bind:this` + `export function`): `open()`, `close()`, `lock()`, `unlock()`.
+- `<slot />` reemplaza el patrón `contentFactory(contenedorEl)` del `.js` actual.
+- Focus trap (`Tab`/`Shift+Tab`) implementado en `onMount` con `addEventListener('keydown', ...)` y limpiado en `onDestroy`.
+- Animaciones de apertura/cierre mantenidas: clases `modal-overlay--open`, `modal--open`, `modal--closing` gestionadas con `$state` interno + `transitionend`.
+- Devolución del foco al `openerEl` al cerrarse, igual que en la implementación actual.
+- Cierre por `Escape`, click en overlay y botón ✕ ya cubiertos en el `.js`; se mantiene la misma lógica con `$derived` para `_locked`.
+- `aria-modal`, `role="dialog"`, `aria-labelledby` conservados en el marcado Svelte.
+- Los estilos de `Modal.css` pasan a `<style>` scoped del SFC. Las clases `.modal`, `.modal-overlay`, `.modal__btn-cerrar`, etc., se conservan para no romper las transiciones CSS actuales.
+- El helper `_escaparHTML` se elimina: Svelte escapa por defecto en `{title}`.
+
+**3. `RegistroMedicionModal.svelte`** (componente nuevo en `components/Modal/`)
+
+Componente de composición que encapsula la integración `Modal + MeasurementForm`:
+
+```svelte
+<!-- components/Modal/RegistroMedicionModal.svelte -->
+<script>
+  import { onMount } from 'svelte';
+  import Modal from './Modal.svelte';
+  import MeasurementForm from '../MeasurementForm/MeasurementForm.svelte';
+
+  let { service, toast, onClose } = $props();
+
+  let modal;
+  let form;
+
+  export function open()  { modal?.open(); }
+  export function close() { modal?.close(); }
+
+  onMount(() => { modal?.open(); });
+</script>
+
+<Modal bind:this={modal} title="Nueva medición" {onClose}>
+  <MeasurementForm
+    bind:this={form}
+    {service} {toast}
+    onSuccess={() => modal?.close()}
+    onCerrar={() => modal?.close()}
+  />
+</Modal>
+```
+
+Este componente permite que `HomeView.js` (aún Vanilla JS) lo monte con la API programática de Svelte 5 sin necesidad de API de snippets (`createRawSnippet`):
+
+```js
+// HomeView.js (fragmento actualizado)
+import { mount, unmount } from 'svelte';
+import RegistroMedicionModal from '../components/Modal/RegistroMedicionModal.svelte';
+
+function _abrirModalNuevaMedicion() {
+  const target = document.getElementById('app') || document.body;
+  modalActiva = mount(RegistroMedicionModal, {
+    target,
+    props: {
+      service,
+      toast,
+      onClose: () => { modalActiva = null; },
+    },
+  });
+}
+```
+
+Al cerrar, `HomeView.js` llama a `unmount(modalActiva)` si es necesario (o el propio componente se desmonta al finalizar la animación de cierre).
+
+**4. Actualizar `HomeView.js`**
+
+- Sustituir `createModal(...)` + `createMeasurementForm(...)` por `mount(RegistroMedicionModal, { target, props })`.
+- Eliminar los imports de `createModal` y `createMeasurementForm`.
+- En `unmount()` de `HomeView`, llamar a `unmount(modalActiva)` en lugar de `modalActiva.close()`.
+
+**5. Migrar tests de los dos componentes**
+
+Tests actuales en `apps/frontend/tests/components/`:
+- `MeasurementForm.test.js` (269 líneas, Jest): reescribir con Vitest + `@testing-library/svelte`.
+- `Modal.test.js` (478 líneas, Jest): reescribir con Vitest + `@testing-library/svelte`.
+- Añadir tests básicos para `RegistroMedicionModal.svelte`.
+
+Puntos de cobertura mínimos:
+- `MeasurementForm`: renderizado de campos, validación con errores inline, submit exitoso invoca `service.create()` + `onSuccess`, submit bloqueado durante `enviando`.
+- `Modal`: apertura/cierre, foco en primer elemento focusable tras apertura, Escape cierra, click en overlay cierra, `lock()` impide cierre.
+
+---
+
+#### Criterios de aceptación
+
+- [ ] `MeasurementForm.svelte` existe en `components/MeasurementForm/`; valida los 4 campos igual que la versión actual (mismas reglas de `validators.js`).
+- [ ] `Modal.svelte` mantiene focus trap, animaciones de apertura/cierre y accesibilidad (`aria-modal`, `role="dialog"`, devolución de foco).
+- [ ] `RegistroMedicionModal.svelte` compone `Modal` + `MeasurementForm` y es montable desde `HomeView.js` con `mount()`.
+- [ ] `HomeView.js` no importa `createModal` ni `createMeasurementForm`; usa `mount(RegistroMedicionModal, ...)`.
+- [ ] Ningún componente (en los 6 migrados hasta esta fase) usa `innerHTML` con datos de usuario o datos externos.
+- [ ] Tests de `MeasurementForm`, `Modal` y `RegistroMedicionModal` pasan con Vitest; cobertura de los componentes migrados ≥ 70 %.
+- [ ] `npm test` y `npm run test:e2e` en verde sin regresiones.
+- [ ] Los ficheros `.js` originales (`MeasurementForm.js`, `Modal.js`) pueden coexistir temporalmente pero no se usan en el flujo de producción (se eliminan en BK-28).
 
 > ⚠️ **Prerrequisito para OCR/AI (BK-32):** esta fase debe estar completa antes de integrar datos externos de OCR.
 

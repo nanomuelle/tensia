@@ -6,9 +6,10 @@
  * mount() genera todo el HTML interno del contenedor, vacía <main> en
  * index.html y lo rellena al montarse. Expone mount() y unmount() para el router.
  *
- * BK-25: MeasurementList y MeasurementChart son ahora componentes Svelte 5
- * montados como islas mediante la API programática mount(). HomeView sigue
- * siendo Vanilla JS hasta BK-27.
+ * BK-25: MeasurementList y MeasurementChart son componentes Svelte 5 montados
+ * como islas con la API programática mount().
+ * BK-26: RegistroMedicionModal (Modal + MeasurementForm) también se monta con
+ * svelteMount(). HomeView sigue siendo Vanilla JS hasta BK-27.
  *
  * @param {HTMLElement} containerEl - Elemento contenedor vacío de la vista (<main>).
  * @param {{
@@ -22,8 +23,7 @@
 import { svelteMount, svelteUnmount } from '../lib/svelteMount.js';
 import MeasurementList from '../components/MeasurementList/MeasurementList.svelte';
 import MeasurementChart from '../components/MeasurementChart/MeasurementChart.svelte';
-import { createMeasurementForm } from '../components/MeasurementForm/MeasurementForm.js';
-import { createModal } from '../components/Modal/Modal.js';
+import RegistroMedicionModal from '../components/Modal/RegistroMedicionModal.svelte';
 
 export function createHomeView(containerEl, { store, service, toast }) {
   // Instancias internas de componentes persistentes (se crean en mount)
@@ -40,55 +40,23 @@ export function createHomeView(containerEl, { store, service, toast }) {
   // -------------------------------------------------------
 
   /**
-   * Crea y abre la modal de registro de nueva medición.
-   * Se usa un proxy de servicio para interceptar create() y activar
-   * el estado locked de la modal mientras la operación está en curso.
+   * Monta RegistroMedicionModal como isla Svelte y la abre automáticamente.
+   * Al cerrarse, actualiza el store para reflejar posibles nuevas mediciones.
    */
   function _abrirModalNuevaMedicion() {
-    modalActiva = createModal({
-      title: 'Nueva medición',
-
-      onClose: () => {
-        modalActiva = null;
-      },
-
-      contentFactory: (contenedorEl) => {
-        // Proxy del servicio que envuelve create() con lock/unlock de la modal,
-        // siguiendo el patrón de composición de HomeView (ADR-005, BK-22)
-        const servicioConLock = {
-          ...service,
-          async create(datos) {
-            modalActiva?.lock();
-            try {
-              return await service.create(datos);
-            } finally {
-              modalActiva?.unlock();
-            }
-          },
-        };
-
-        const formulario = createMeasurementForm(contenedorEl, {
-          service: servicioConLock,
-          toast,
-          onSuccess: () => {
-            // Primero cerrar la modal, luego actualizar el store
-            modalActiva?.close();
-            store.cargarMediciones();
-          },
-          onCerrar: () => {
-            modalActiva?.close();
-          },
-        });
-
-        formulario.mount();
-        // abrir() rellena la fecha actual; el foco lo gestiona la Modal (transitionend)
-        formulario.abrir();
-
-        return { unmount: formulario.unmount };
+    const target = document.getElementById('app') || document.body;
+    modalActiva = svelteMount(RegistroMedicionModal, {
+      target,
+      props: {
+        service,
+        toast,
+        onClose: () => {
+          svelteUnmount(modalActiva);
+          modalActiva = null;
+          store.cargarMediciones();
+        },
       },
     });
-
-    modalActiva.open();
   }
 
   // -------------------------------------------------------
@@ -174,9 +142,9 @@ export function createHomeView(containerEl, { store, service, toast }) {
   }
 
   function unmount() {
-    // Cerrar la modal si estuviera abierta al desmontar la vista
+    // Desmontar la modal si estuviera abierta al desmontar la vista
     if (modalActiva) {
-      modalActiva.close();
+      svelteUnmount(modalActiva);
       modalActiva = null;
     }
 
