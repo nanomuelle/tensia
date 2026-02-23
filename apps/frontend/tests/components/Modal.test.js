@@ -17,13 +17,13 @@
  */
 
 import {
-  jest,
+  vi,
   describe,
   test,
   expect,
   beforeEach,
   afterEach,
-} from '@jest/globals';
+} from 'vitest';
 import { createModal } from '../../src/components/Modal/Modal.js';
 
 // Polyfill de TransitionEvent para jsdom (no lo incluye de forma nativa)
@@ -45,7 +45,7 @@ if (typeof globalThis.TransitionEvent === 'undefined') {
  * El componente Modal usa un doble rAF para lanzar la animación.
  */
 function flushRaf() {
-  jest.runAllTimers();
+  vi.runAllTimers();
 }
 
 /**
@@ -105,16 +105,16 @@ let unmountSpy;
 
 beforeEach(() => {
   // Fake timers para controlar requestAnimationFrame
-  jest.useFakeTimers();
+  vi.useFakeTimers();
 
   openerEl   = configurarDOM();
-  unmountSpy = jest.fn();
+  unmountSpy = vi.fn();
 });
 
 afterEach(() => {
   // Limpiar el DOM para el siguiente test
   document.body.innerHTML = '';
-  jest.useRealTimers();
+  vi.useRealTimers();
 });
 
 // =========================================================
@@ -171,7 +171,7 @@ describe('createModal — open()', () => {
   });
 
   test('invoca contentFactory con el contenedor de contenido', () => {
-    const factorySpy = jest.fn().mockReturnValue({ unmount: unmountSpy });
+    const factorySpy = vi.fn().mockReturnValue({ unmount: unmountSpy });
     const modal = createModal({
       title: 'Test',
       contentFactory: factorySpy,
@@ -259,7 +259,7 @@ describe('createModal — close()', () => {
   });
 
   test('invoca el callback onClose al cerrar', () => {
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     const modal = createModal({
       title: 'Test',
       contentFactory: contentFactoryStub(unmountSpy),

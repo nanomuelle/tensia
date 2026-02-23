@@ -51,10 +51,7 @@ jobs:
       - name: Build del sitio estático
         run: npm run build
         env:
-          BASE_PATH: ${{ steps.pages.outputs.base_path }}
-          # SHA corto del commit: versiona el CACHE_NAME del SW para invalidar
-          # la caché del navegador automáticamente en cada despliegue.
-          BUILD_ID: ${{ github.sha }}
+          VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}
 
       - name: Subir artefacto de Pages
         uses: actions/upload-pages-artifact@v3

@@ -13,8 +13,9 @@
 export const SELECTORS = {
   // Acción principal
   btnNuevaMedicion: '#btn-nueva-medicion',
-  // Formulario
-  formulario: '#formulario-registro',
+  // Formulario (ahora dentro del Modal — BK-22)
+  // El contenedor del modal no tiene id; el elemento del formulario es #form-medicion
+  formulario: '#form-medicion',
   inputSistolica: '#input-systolic',
   inputDiastolica: '#input-diastolic',
   inputPulso: '#input-pulse',

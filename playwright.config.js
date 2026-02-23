@@ -46,9 +46,9 @@ export default defineConfig({
   ],
 
   // Arranque automático del servidor antes de los tests.
-  // El backend dev debe implementar el soporte de SERVE_STATIC=true en app.js.
+  // Con BK-24 (Vite), se sirve el build de dist/ mediante vite preview en :3000.
   webServer: {
-    command: 'SERVE_STATIC=true DATA_FILE=data/measurements.e2e.json node apps/backend/src/index.js',
+    command: 'vite preview --port 3000',
     url: 'http://localhost:3000',
     // Reusar el servidor si ya está en marcha (útil en desarrollo local)
     reuseExistingServer: !process.env.CI,

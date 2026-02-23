@@ -6,7 +6,7 @@
  * @jest-environment jsdom
  */
 
-import { jest, describe, test, expect, beforeEach, beforeAll, afterAll } from '@jest/globals';
+import { vi, describe, test, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import { createMeasurementService } from '../../src/services/measurementService.js';
 import { Events } from '../../src/shared/eventBus.js';
 
@@ -18,7 +18,7 @@ let uuidCounter = 0;
 
 beforeAll(() => {
   if (!globalThis.crypto) globalThis.crypto = {};
-  globalThis.crypto.randomUUID = jest.fn(() => `test-uuid-${++uuidCounter}`);
+  globalThis.crypto.randomUUID = vi.fn(() => `test-uuid-${++uuidCounter}`);
 });
 
 afterAll(() => {
@@ -40,8 +40,8 @@ beforeEach(() => {
 function crearAdaptadorMock(medicionesIniciales = []) {
   let almacen = [...medicionesIniciales];
   return {
-    getAll: jest.fn(async () => [...almacen]),
-    save: jest.fn(async (mediciones) => { almacen = [...mediciones]; }),
+    getAll: vi.fn(async () => [...almacen]),
+    save: vi.fn(async (mediciones) => { almacen = [...mediciones]; }),
     _getAlmacen: () => almacen,
   };
 }
@@ -213,7 +213,7 @@ describe('measurementService.create — evento measurement:saved (US-12)', () =>
     const adapter = crearAdaptadorMock([]);
     const service = createMeasurementService(adapter);
 
-    const listener = jest.fn();
+    const listener = vi.fn();
     window.addEventListener(Events.MEASUREMENT_SAVED, listener, { once: true });
 
     await expect(service.create({ systolic: -1 })).rejects.toThrow();

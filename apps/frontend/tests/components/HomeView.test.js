@@ -1,231 +1,311 @@
 /**
- * Tests unitarios: HomeView — layout de dos columnas (BK-23 / US-14)
+ * Tests unitarios: HomeView.svelte (Vitest + @testing-library/svelte — BK-27)
  *
- * Verifica que la clase `dashboard-content--columnas` se añade y retira
- * correctamente sobre `.dashboard-content` en respuesta al estado del store:
+ * Verifica los comportamientos clave de la vista del dashboard:
+ *   1. Renderiza el botón "Nueva medición".
+ *   2. Llama a cargarMediciones(service) en onMount.
+ *   3. Muestra RegistroMedicionModal al pulsar el botón.
+ *   4. Al llamar onClose (vía cierre modal), oculta la modal y recarga el store.
+ *   5. Aplica/retira la clase --columnas en respuesta al store de mediciones.
+ *   6. Visibilidad de la sección de gráfica según estado del store.
  *
- * 1. Con 0 mediciones → clase ausente (columna única)
- * 2. Con ≥ 1 medición → clase presente (dos columnas en ≥ 768 px)
- * 3. Al pasar de ≥ 1 a 0 mediciones → clase retirada
+ * Módulos mockeados:
+ *   - appStore.svelte.js  → stores minimales + cargarMediciones vi.fn
+ *   - chart.js            → renderChart vi.fn (evita errores D3 en jsdom)
  *
- * Referencia: docs/product/backlog.md#BK-23
- *             docs/design/screens.md#layout-gráfica--historial-en-columnas
- *
- * @jest-environment jsdom
+ * Referencia: docs/product/backlog.md → BK-27, Subtarea 2
  */
 
-import { jest, describe, test, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
+import { tick } from 'svelte';
 
-// ─── Mocks de módulos (deben declararse antes del import dinámico) ────────────
-
-// Mock de MeasurementList
-jest.unstable_mockModule(
-  '../../src/components/MeasurementList/MeasurementList.js',
-  () => ({
-    createMeasurementList: jest.fn(() => ({
-      mount: jest.fn(),
-      unmount: jest.fn(),
-      mostrarCargando: jest.fn(),
-      mostrarError: jest.fn(),
-      mostrarVacio: jest.fn(),
-      mostrarLista: jest.fn(),
-    })),
-  }),
-);
-
-// Mock de MeasurementChart
-jest.unstable_mockModule(
-  '../../src/components/MeasurementChart/MeasurementChart.js',
-  () => ({
-    createMeasurementChart: jest.fn(() => ({
-      mount: jest.fn(),
-      unmount: jest.fn(),
-      update: jest.fn(),
-    })),
-  }),
-);
-
-// Mock de MeasurementForm
-jest.unstable_mockModule(
-  '../../src/components/MeasurementForm/MeasurementForm.js',
-  () => ({
-    createMeasurementForm: jest.fn(() => ({
-      mount: jest.fn(),
-      unmount: jest.fn(),
-      abrir: jest.fn(),
-    })),
-  }),
-);
-
-// Mock de Modal
-jest.unstable_mockModule(
-  '../../src/components/Modal/Modal.js',
-  () => ({
-    createModal: jest.fn(() => ({
-      open: jest.fn(),
-      close: jest.fn(),
-      lock: jest.fn(),
-      unlock: jest.fn(),
-    })),
-  }),
-);
-
-// ─── Imports (tras los mocks) ─────────────────────────────────────────────────
-
-const { createHomeView } = await import('../../src/views/HomeView.js');
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Crea un mock del store que expone el callback de suscripción
- * para dispararlo manualmente en los tests.
- */
-function crearStoreMock() {
-  let callbackSuscripcion = null;
-
-  const store = {
-    subscribe: jest.fn((cb) => {
-      callbackSuscripcion = cb;
-      // Devuelve función de desuscripción
-      return jest.fn();
-    }),
-    cargarMediciones: jest.fn(),
-  };
-
-  /**
-   * Simula un cambio de estado en el store notificando al suscriptor.
-   * @param {object} estado
-   */
-  function emitirEstado(estado) {
-    if (callbackSuscripcion) {
-      callbackSuscripcion(estado);
+// ---------------------------------------------------------------------------
+// Polyfill TransitionEvent (jsdom no lo incluye de forma nativa)
+// ---------------------------------------------------------------------------
+if (typeof globalThis.TransitionEvent === 'undefined') {
+  globalThis.TransitionEvent = class TransitionEvent extends Event {
+    constructor(type, init = {}) {
+      super(type, init);
+      this.propertyName = init.propertyName ?? '';
     }
-  }
-
-  return { store, emitirEstado };
+  };
 }
 
+// Polyfill ResizeObserver  (jsdom no lo implementa)
+globalThis.ResizeObserver = class {
+  observe()    {}
+  unobserve()  {}
+  disconnect() {}
+};
+
+// ---------------------------------------------------------------------------
+// Mock: chart.js (evita dependencias D3 en jsdom)
+// ---------------------------------------------------------------------------
+vi.mock('../../src/chart.js', () => ({ renderChart: vi.fn() }));
+
+// ---------------------------------------------------------------------------
+// Mock: appStore.svelte.js
+// Los stores se crean con vi.hoisted() para que estén disponibles dentro de
+// vi.mock(), el cual es hoistado al inicio del fichero por Vitest.
+// ---------------------------------------------------------------------------
+
 /**
- * Medición mínima válida de ejemplo.
+ * Implementación mínima de store Svelte compatible con el contrato
+ * subscribe/set y con el operador $store de Svelte 5.
  */
+const { medicionesStore, cargandoStore, errorStore, mockCargarMediciones } =
+  vi.hoisted(() => {
+    function crearStore(valorInicial) {
+      let valor = valorInicial;
+      const subs = new Set();
+      return {
+        subscribe(fn) {
+          subs.add(fn);
+          fn(valor);           // llamada síncrona con el valor actual (contrato Svelte)
+          return () => subs.delete(fn);
+        },
+        set(v) {
+          valor = v;
+          subs.forEach((fn) => fn(valor));
+        },
+      };
+    }
+
+    // vi.fn() está disponible en vi.hoisted()
+    return {
+      medicionesStore:       crearStore([]),
+      cargandoStore:         crearStore(false),
+      errorStore:            crearStore(null),
+      mockCargarMediciones:  vi.fn(),
+    };
+  });
+
+vi.mock('../../src/store/appStore.svelte.js', () => ({
+  mediciones:       medicionesStore,
+  cargando:         cargandoStore,
+  error:            errorStore,
+  cargarMediciones: mockCargarMediciones,
+}));
+
+// ---------------------------------------------------------------------------
+// Import del componente bajo prueba (siempre después de los mocks)
+// ---------------------------------------------------------------------------
+import HomeView from '../../src/views/HomeView.svelte';
+
+// ---------------------------------------------------------------------------
+// Fixtures y helpers
+// ---------------------------------------------------------------------------
+
 function crearMedicion(id = 'uuid-1') {
   return {
     id,
-    systolic: 120,
-    diastolic: 80,
-    pulse: 72,
+    systolic:   120,
+    diastolic:  80,
+    pulse:      72,
     measuredAt: '2026-02-18T10:00:00.000Z',
-    source: 'manual',
+    source:     'manual',
   };
 }
 
-// ─── Setup compartido ─────────────────────────────────────────────────────────
+const mockService = { create: vi.fn(), listAll: vi.fn() };
+const mockToast   = { show: vi.fn(), mostrar: vi.fn() };
 
-let containerEl;
-let storeMock;
-let emitirEstado;
-let vista;
+function resetearStores() {
+  medicionesStore.set([]);
+  cargandoStore.set(false);
+  errorStore.set(null);
+}
+
+/** Dispara transitionend en .modal para completar la animación de cierre. */
+async function completarAnimacionCierre() {
+  const modalEl = document.querySelector('.modal');
+  if (!modalEl) return;
+  modalEl.dispatchEvent(
+    new TransitionEvent('transitionend', { bubbles: true, propertyName: 'transform' }),
+  );
+  await tick();
+}
+
+// ---------------------------------------------------------------------------
+// Setup compartido
+// ---------------------------------------------------------------------------
 
 beforeEach(() => {
-  document.body.innerHTML = '<main id="app"></main>';
-  containerEl = document.getElementById('app');
-
-  const mockSetup = crearStoreMock();
-  storeMock  = mockSetup.store;
-  emitirEstado = mockSetup.emitirEstado;
-
-  vista = createHomeView(containerEl, {
-    store: storeMock,
-    service: {},
-    toast: { mostrar: jest.fn() },
-  });
-
-  vista.mount();
+  resetearStores();
+  mockCargarMediciones.mockClear();
 });
 
 afterEach(() => {
-  vista.unmount();
-  document.body.innerHTML = '';
+  cleanup();
 });
 
-// ─── Helper de acceso al contenedor de layout ─────────────────────────────────
+// ---------------------------------------------------------------------------
+// Estructura inicial
+// ---------------------------------------------------------------------------
 
-function getDashboardContent() {
-  return containerEl.querySelector('#dashboard-content');
-}
-
-// ─── Tests ───────────────────────────────────────────────────────────────────
-
-describe('mount() — estructura del layout', () => {
-  test('genera el contenedor .dashboard-content con id dashboard-content', () => {
-    const el = getDashboardContent();
-    expect(el).not.toBeNull();
-    expect(el.classList.contains('dashboard-content')).toBe(true);
+describe('Estructura inicial', () => {
+  test('renderiza el botón "Nueva medición"', () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+    expect(screen.getByRole('button', { name: /nueva medición/i })).toBeInTheDocument();
   });
 
-  test('la sección de gráfica está dentro de .dashboard-content', () => {
-    const seccionGrafica = containerEl.querySelector('#dashboard-content #seccion-grafica');
-    expect(seccionGrafica).not.toBeNull();
+  test('renderiza el contenedor del dashboard (#dashboard-content)', () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+    expect(document.getElementById('dashboard-content')).toBeInTheDocument();
   });
 
-  test('la sección de historial está dentro de .dashboard-content', () => {
-    const historialRoot = containerEl.querySelector('#dashboard-content #historial-root');
-    expect(historialRoot).not.toBeNull();
+  test('renderiza la sección del historial (#historial-root)', () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+    expect(document.getElementById('historial-root')).toBeInTheDocument();
   });
 });
 
-describe('layout de columnas — toggle de clase', () => {
-  test('con 0 mediciones: .dashboard-content no tiene la clase --columnas', () => {
-    emitirEstado({ cargando: false, error: null, mediciones: [] });
-    expect(getDashboardContent().classList.contains('dashboard-content--columnas')).toBe(false);
-  });
+// ---------------------------------------------------------------------------
+// onMount — carga inicial
+// ---------------------------------------------------------------------------
 
-  test('con 1 medición: .dashboard-content tiene la clase --columnas', () => {
-    emitirEstado({
-      cargando: false,
-      error: null,
-      mediciones: [crearMedicion('uuid-1')],
-    });
-    expect(getDashboardContent().classList.contains('dashboard-content--columnas')).toBe(true);
-  });
-
-  test('con 2 mediciones: .dashboard-content tiene la clase --columnas', () => {
-    emitirEstado({
-      cargando: false,
-      error: null,
-      mediciones: [crearMedicion('uuid-1'), crearMedicion('uuid-2')],
-    });
-    expect(getDashboardContent().classList.contains('dashboard-content--columnas')).toBe(true);
-  });
-
-  test('al pasar de ≥ 1 medición a 0: la clase --columnas se retira', () => {
-    // Primero con 1 medición → clase presente
-    emitirEstado({
-      cargando: false,
-      error: null,
-      mediciones: [crearMedicion('uuid-1')],
-    });
-    expect(getDashboardContent().classList.contains('dashboard-content--columnas')).toBe(true);
-
-    // Luego con 0 mediciones → clase retirada
-    emitirEstado({ cargando: false, error: null, mediciones: [] });
-    expect(getDashboardContent().classList.contains('dashboard-content--columnas')).toBe(false);
-  });
-
-  test('con estado cargando (mediciones vacías): clase --columnas ausente', () => {
-    emitirEstado({ cargando: true, error: null, mediciones: [] });
-    expect(getDashboardContent().classList.contains('dashboard-content--columnas')).toBe(false);
-  });
-
-  test('con estado error (mediciones vacías): clase --columnas ausente', () => {
-    emitirEstado({ cargando: false, error: 'Error al leer', mediciones: [] });
-    expect(getDashboardContent().classList.contains('dashboard-content--columnas')).toBe(false);
+describe('onMount — carga inicial', () => {
+  test('llama a cargarMediciones con el service al montar', async () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+    await tick();
+    expect(mockCargarMediciones).toHaveBeenCalledTimes(1);
+    expect(mockCargarMediciones).toHaveBeenCalledWith(mockService);
   });
 });
 
-describe('unmount()', () => {
-  test('limpia el contenedor (innerHTML vacío)', () => {
-    vista.unmount();
-    expect(containerEl.innerHTML).toBe('');
+// ---------------------------------------------------------------------------
+// Modal de nueva medición
+// ---------------------------------------------------------------------------
+
+describe('Modal de nueva medición', () => {
+  test('no muestra la modal (role="dialog") al cargar', async () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+    await tick();
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  test('muestra la modal al pulsar el botón', async () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+
+    fireEvent.click(screen.getByRole('button', { name: /nueva medición/i }));
+    await tick(); // Svelte monta RegistroMedicionModal
+    await tick(); // onMount de RegistroMedicionModal llama modal.open() → _visible = true
+    await tick(); // Svelte actualiza el DOM con el overlay
+
+    expect(document.querySelector('[role="dialog"]')).toBeInTheDocument();
+  });
+
+  test('cierra la modal al completar la animación de cierre', async () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+
+    // Abrir
+    fireEvent.click(screen.getByRole('button', { name: /nueva medición/i }));
+    await tick(); await tick(); await tick();
+    expect(document.querySelector('[role="dialog"]')).toBeInTheDocument();
+
+    // Cerrar via botón ✕
+    const btnCerrar = document.querySelector('[aria-label="Cerrar modal"]');
+    expect(btnCerrar).not.toBeNull();
+    fireEvent.click(btnCerrar);
+    await completarAnimacionCierre();
+
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  test('llama a cargarMediciones de nuevo al cerrar la modal (onClose)', async () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+    await tick();
+
+    const llamadasAntes = mockCargarMediciones.mock.calls.length;
+
+    // Abrir y cerrar
+    fireEvent.click(screen.getByRole('button', { name: /nueva medición/i }));
+    await tick(); await tick(); await tick();
+    fireEvent.click(document.querySelector('[aria-label="Cerrar modal"]'));
+    await completarAnimacionCierre();
+
+    expect(mockCargarMediciones.mock.calls.length).toBeGreaterThan(llamadasAntes);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Layout de dos columnas — toggle de clase
+// ---------------------------------------------------------------------------
+
+describe('Layout de columnas — toggle de clase', () => {
+  test('con 0 mediciones: clase --columnas ausente', async () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+    await tick();
+    expect(document.getElementById('dashboard-content')
+      .classList.contains('dashboard-content--columnas')).toBe(false);
+  });
+
+  test('con ≥ 1 medición: clase --columnas presente', async () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+    medicionesStore.set([crearMedicion()]);
+    await tick();
+    expect(document.getElementById('dashboard-content')
+      .classList.contains('dashboard-content--columnas')).toBe(true);
+  });
+
+  test('al pasar de ≥ 1 medición a 0: clase --columnas retirada', async () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+
+    medicionesStore.set([crearMedicion()]);
+    await tick();
+    expect(document.getElementById('dashboard-content')
+      .classList.contains('dashboard-content--columnas')).toBe(true);
+
+    medicionesStore.set([]);
+    await tick();
+    expect(document.getElementById('dashboard-content')
+      .classList.contains('dashboard-content--columnas')).toBe(false);
+  });
+
+  test('en estado cargando con mediciones vacías: clase --columnas ausente', async () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+    cargandoStore.set(true);
+    medicionesStore.set([]);
+    await tick();
+    expect(document.getElementById('dashboard-content')
+      .classList.contains('dashboard-content--columnas')).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Sección de gráfica — visibilidad
+// ---------------------------------------------------------------------------
+
+describe('Sección de gráfica — visibilidad', () => {
+  test('oculta cuando cargando=true', async () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+    cargandoStore.set(true);
+    await tick();
+    expect(document.getElementById('seccion-grafica').hidden).toBe(true);
+  });
+
+  test('oculta cuando hay error', async () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+    errorStore.set('Error al leer');
+    await tick();
+    expect(document.getElementById('seccion-grafica').hidden).toBe(true);
+  });
+
+  test('visible cuando mediciones está vacío (muestra el skeleton)', async () => {
+    // Con 0 mediciones la sección es visible; MeasurementChart muestra el skeleton
+    // internamente. Comportamiento definido en US-11 y confirmado por los tests E2E.
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+    await tick();
+    expect(document.getElementById('seccion-grafica').hidden).toBe(false);
+  });
+
+  test('visible cuando hay mediciones sin error ni carga', async () => {
+    render(HomeView, { props: { service: mockService, toast: mockToast } });
+    medicionesStore.set([crearMedicion(), crearMedicion('uuid-2')]);
+    cargandoStore.set(false);
+    errorStore.set(null);
+    await tick();
+    expect(document.getElementById('seccion-grafica').hidden).toBe(false);
   });
 });

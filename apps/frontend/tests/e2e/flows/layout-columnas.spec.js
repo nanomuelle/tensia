@@ -149,8 +149,13 @@ test.describe('L-05 — viewport 800×600, transición 2→0 mediciones', () => 
     const el = page.locator(DASHBOARD_CONTENT);
     await expect(el).toHaveClass(new RegExp(CLASE_COLUMNAS));
 
-    // Vaciar localStorage y recargar → 0 mediciones → clase ausente
-    await page.evaluate(() => localStorage.removeItem('bp_measurements'));
+    // Vaciar localStorage y recargar → 0 mediciones → clase ausente.
+    // NOTA: page.addInitScript() persiste en cada recarga, por lo que el script
+    // original volvería a sembrar los datos. Se registra un segundo script que
+    // elimina la clave; al ejecutarse ambos en orden, el resultado es sin datos.
+    await page.addInitScript(() => {
+      localStorage.removeItem('bp_measurements');
+    });
     await page.reload();
 
     await expect(page.locator(DASHBOARD_CONTENT)).not.toHaveClass(new RegExp(CLASE_COLUMNAS));

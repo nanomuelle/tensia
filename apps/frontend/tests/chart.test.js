@@ -5,7 +5,7 @@
  * @jest-environment jsdom
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { renderChart } from '../src/chart.js';
 
 // ---------------------------------------------------------------------------

@@ -38,7 +38,7 @@ npm start
 
 ### `npm run dev`
 
-Arranca la aplicación en **modo desarrollo** con recarga automática ante cambios (nodemon). Al igual que `start`, sirve el frontend y abre el navegador.
+Arranca la aplicación en **modo desarrollo** con Vite (recarga automática ante cambios). Al igual que `start`, sirve el frontend y abre el navegador.
 
 ```bash
 npm run dev
@@ -46,10 +46,18 @@ npm run dev
 
 ### `npm test`
 
-Ejecuta todos los tests unitarios e de integración con Jest.
+Ejecuta todos los tests unitarios e integración con Vitest (runner único).
 
 ```bash
 npm test
+```
+
+### `npm run test:watch`
+
+Ejecuta los tests en modo interactivo. Re-ejecuta automáticamente los tests afectados al guardar cambios.
+
+```bash
+npm run test:watch
 ```
 
 ### `npm run test:coverage`

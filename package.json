@@ -4,11 +4,13 @@
   "description": "Aplicación personal de registro y consulta de mediciones de tensión arterial",
   "type": "module",
   "scripts": {
-    "start": "SERVE_STATIC=true OPEN_BROWSER=true node apps/backend/src/index.js",
-    "dev": "SERVE_STATIC=true OPEN_BROWSER=true nodemon apps/backend/src/index.js",
-    "build": "node scripts/build.js",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest",
-    "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
+    "start": "node apps/backend/src/index.js",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test"
   },
   "repository": {
@@ -29,41 +31,19 @@
     "d3-shape": "^3.2.0",
     "dotenv": "^17.3.1",
     "express": "^4.22.1",
+    "svelte": "^5.53.2",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^30.2.0",
-    "nodemon": "^3.1.11",
-    "supertest": "^7.2.2"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "testMatch": [
-      "**/tests/**/*.test.js"
-    ],
-    "transform": {},
-    "collectCoverageFrom": [
-      "apps/backend/src/**/*.js",
-      "!apps/backend/src/index.js",
-      "!apps/backend/src/api/app.js",
-      "apps/frontend/src/chart.js",
-      "apps/frontend/src/router.js",
-      "apps/frontend/src/domain/measurement.js",
-      "apps/frontend/src/infra/httpAdapter.js",
-      "apps/frontend/src/infra/localStorageAdapter.js",
-      "apps/frontend/src/services/measurementService.js",
-      "apps/frontend/src/shared/eventBus.js",
-      "apps/frontend/src/shared/formatters.js",
-      "apps/frontend/src/shared/validators.js",
-      "apps/frontend/src/store/appStore.js",
-      "apps/frontend/src/components/**/*.js"
-    ],
-    "coverageThreshold": {
-      "global": {
-        "lines": 70
-      }
-    }
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/svelte": "^5.3.1",
+    "@vitest/coverage-v8": "^4.0.18",
+    "jsdom": "^28.1.0",
+    "supertest": "^7.2.2",
+    "vite": "^7.3.1",
+    "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^4.0.18"
   }
 }

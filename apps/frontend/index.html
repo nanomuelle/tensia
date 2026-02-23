@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tensia</title>
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- Meta tags para instalación en iOS (Safari no usa el manifest para esto) -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Tensia" />
+    <meta name="theme-color" content="#2563eb" />
+
+    <link rel="stylesheet" href="styles/main.css" />
+
+    <!-- D3 resuelto desde node_modules por Vite (BK-24) -->
+  </head>
+  <body>
+    <!-- Header fijo -->
+    <header class="header">
+      <span class="header__logo" aria-hidden="true">🩺</span>
+      <h1 class="header__title">Tensia</h1>
+    </header>
+
+    <!-- App.svelte monta Toast, IosWarning y el router en este body (BK-27) -->
+    <!-- El router genera el contenido de <main id="app"> -->
+
+    <script type="module" src="src/main.js"></script>
+
+    <!-- vite-plugin-pwa inyecta el registro del Service Worker automáticamente (BK-24) -->
+  </body>
+</html>

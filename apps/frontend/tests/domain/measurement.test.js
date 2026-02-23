@@ -1,9 +1,10 @@
+// @vitest-environment node
 /**
  * Tests unitarios: capa de dominio (frontend) — validateMeasurement.
  * Módulo puro, entorno node es suficiente.
  */
 
-import { describe, test, expect } from '@jest/globals';
+import { describe, test, expect } from 'vitest';
 import { validateMeasurement, MEASUREMENT_LIMITS } from '../../src/domain/measurement.js';
 
 // Datos base válidos reutilizables
