@@ -1,6 +1,6 @@
-# User Stories — Tensia MVP
+# User Stories — Tensia
 
-_Última revisión: 2026-02-22 — Añadidas US-13 (modal formulario) y US-14 (layout columnas gráfica/historial)_
+_Última revisión: 2026-02-23 — backlog consolidado en épicas E-01/E-02/E-03; añadidas US-15 (Login Google) y US-16 (Persistencia en la nube)_
 
 ---
 
@@ -15,8 +15,8 @@ para llevar un control personal de mis mediciones sin depender de ningún dispos
 ### Criterios de aceptación
 
 - Dado el formulario abierto, cuando el usuario introduce sistólica, diastólica y fecha válidas y pulsa "Guardar", entonces la medición aparece al inicio del historial sin recargar la página.
-- Dado el formulario abierto, cuando el usuario no rellena la sistólica, entonces aparece un error inline en ese campo y no se llama al backend.
-- Dado el formulario abierto, cuando la sistólica es menor o igual que la diastólica, entonces aparece un error inline y no se llama al backend.
+- Dado el formulario abierto, cuando el usuario no rellena la sistólica, entonces aparece un error inline en ese campo y la medición no se guarda.
+- Dado el formulario abierto, cuando la sistólica es menor o igual que la diastólica, entonces aparece un error inline y la medición no se guarda.
 - Dado que se ha guardado una medición, cuando el usuario recarga la página, entonces la medición sigue visible.
 - El campo pulso es opcional; si se rellena, debe ser un entero positivo.
 
@@ -24,7 +24,7 @@ para llevar un control personal de mis mediciones sin depender de ningún dispos
 
 ## US-02 — Registro de medición por foto (OCR)
 
-**Estado:** ⏸ Post-MVP — no iniciar sin confirmación
+**Estado:** ⏸ Post-MVP — Épica E-02 (BK-32, BK-33, BK-34)
 
 Como usuario,
 quiero subir una foto de mi tensiómetro,
@@ -35,6 +35,23 @@ para que la app extraiga los valores automáticamente y no tenga que introducirl
 - Dado un botón "Subir foto", cuando el usuario selecciona una imagen de un tensiómetro, entonces la app extrae sistólica, diastólica y pulso y los muestra en campos editables.
 - Dado los valores extraídos, cuando el usuario los corrige y pulsa "Guardar", entonces la medición se registra con `source: "photo"`.
 - Dado una imagen ilegible, cuando el OCR no puede extraer valores, entonces se muestra un mensaje de error y el usuario puede introducir los datos manualmente.
+
+---
+
+## US-03 — Consulta del historial de mediciones
+
+**Estado:** ✅ Implementado y testado
+
+Como usuario,
+quiero ver el listado completo de mis mediciones ordenado de más reciente a más antiguo,
+para revisar mi evolución y detectar tendencias sin necesidad de herramientas externas.
+
+### Criterios de aceptación
+
+- Dado que existen mediciones guardadas, cuando la app carga, entonces el historial muestra todas las mediciones con fecha formateada, sistólica/diastólica en mmHg y pulso (si existe).
+- Las mediciones están ordenadas por fecha descendente (la más reciente primero).
+- Dado que no hay mediciones, cuando la app carga, entonces se muestra el mensaje "Sin mediciones todavía" y el botón "Nueva medición".
+- Dado que `localStorage` no está disponible (almacenamiento bloqueado), cuando la app intenta cargar el historial, entonces se muestra un banner de error con la opción de reintentar.
 
 ---
 
@@ -55,23 +72,6 @@ para identificar tendencias y detectar si mis valores mejoran o empeoran.
 - La gráfica incluye una leyenda que identifica sistólica y diastólica.
 - La gráfica es legible en pantallas de alta densidad (retina).
 - Dado que el número de mediciones es elevado, cuando se renderizan las etiquetas del eje X, entonces se muestran como máximo 10 fechas para evitar solapamiento.
-
----
-
-## US-03 — Consulta del historial de mediciones
-
-**Estado:** ✅ Implementado y testado
-
-Como usuario,
-quiero ver el listado completo de mis mediciones ordenado de más reciente a más antiguo,
-para revisar mi evolución y detectar tendencias sin necesidad de herramientas externas.
-
-### Criterios de aceptación
-
-- Dado que existen mediciones guardadas, cuando la app carga, entonces el historial muestra todas las mediciones con fecha formateada, sistólica/diastólica en mmHg y pulso (si existe).
-- Las mediciones están ordenadas por fecha descendente (la más reciente primero).
-- Dado que no hay mediciones, cuando la app carga, entonces se muestra el mensaje "Sin mediciones todavía" y el botón "Nueva medición".
-- Dado que `localStorage` no está disponible (almacenamiento bloqueado), cuando la app intenta cargar el historial, entonces se muestra un banner de error con la opción de reintentar.
 
 ---
 
@@ -123,7 +123,7 @@ para ver reflejados inmediatamente mis últimos cambios sin tener que recargar l
 
 ## US-13 — Formulario de registro en modal
 
-**Estado:** Pendiente
+**Estado:** ✅ Implementado y testado
 
 Como usuario,
 quiero que el formulario de nueva medición se abra en una ventana modal sobre el resto de la app,
@@ -144,7 +144,7 @@ para no perder el contexto del historial y la gráfica mientras registro una med
 
 ## US-14 — Layout gráfica + historial en columnas
 
-**Estado:** Pendiente
+**Estado:** ✅ Implementado y testado
 
 Como usuario con pantalla ancha,
 quiero ver la gráfica de evolución al lado del historial de mediciones,
@@ -158,3 +158,41 @@ para comparar visualmente la tendencia con los valores concretos sin tener que h
 - El historial es scrollable de forma independiente en el layout de dos columnas (la gráfica permanece fija/sticky en su columna mientras el usuario hace scroll en el historial).
 - La gráfica mantiene su comportamiento responsivo interno (`ResizeObserver`) al cambiar el tamaño de su columna.
 - Dado que se añade una nueva medición, la gráfica y el historial se actualizan sin recargar la página, conservando el layout de columnas.
+
+---
+
+## US-15 — Login con Google
+
+**Estado:** ⏸ Post-MVP — Épica E-01 (BK-29, BK-30)
+
+Como usuario,
+quiero poder iniciar sesión con mi cuenta de Google,
+para que la app conozca mi identidad y pueda ofrecerme funcionalidades vinculadas a mi cuenta (como la sincronización de datos entre dispositivos).
+
+### Criterios de aceptación
+
+- Dado que el usuario no ha iniciado sesión, cuando accede a la app, entonces puede usarla de forma completamente anónima sin ninguna restricción.
+- Dado un botón "Iniciar sesión con Google", cuando el usuario lo pulsa, entonces se inicia el flujo OAuth 2.0 PKCE y se le redirige a la pantalla de consentimiento de Google (scopes: `openid`, `profile`).
+- Dado que el usuario completa el consentimiento, cuando regresa a la app, entonces la cabecera muestra su **nombre** de Google (y foto de perfil si está disponible).
+- Dado que el usuario está autenticado, cuando pulsa "Cerrar sesión", entonces la sesión se elimina de `sessionStorage` y la UI vuelve al estado anónimo.
+- El token de acceso se almacena en `sessionStorage`, no en `localStorage`.
+- El `client_secret` de la aplicación nunca llega al cliente; el intercambio de código por token se realiza a través del proxy backend (`POST /auth/token`).
+- En esta fase el adaptador de persistencia **no cambia**: el usuario autenticado sigue usando `localStorageAdapter`. El cambio de adaptador se aborda en US-16.
+
+---
+
+## US-16 — Persistencia de datos con cuenta Google
+
+**Estado:** ⏸ Post-MVP — Épica E-03 (pendiente de assessment BK-35; implementación en BK-31)
+
+Como usuario autenticado con Google,
+quiero que mis mediciones se guarden en un almacén vinculado a mi cuenta,
+para acceder a mi historial desde cualquier dispositivo y no depender exclusivamente del almacenamiento local del navegador.
+
+### Criterios de aceptación
+
+- Dado que el usuario inicia sesión con Google y ya tiene mediciones en `localStorage`, cuando completa el login, entonces la app propone importarlas al nuevo almacén en la nube.
+- Dado que el usuario está autenticado, cuando registra una nueva medición, entonces se guarda automáticamente en el almacén en la nube sin acción adicional.
+- Dado que el usuario accede desde un segundo dispositivo con la misma cuenta de Google, cuando carga la app, entonces ve las mismas mediciones que registró en el primer dispositivo.
+- Dado que el usuario cierra sesión, cuando recarga la app, entonces los datos de la nube no son accesibles sin autenticación.
+- El mecanismo de almacenamiento concreto (p. ej. Google Drive API `appdata`, backend propio) se determinará en el assessment BK-35; este criterio es independiente de la implementación elegida.

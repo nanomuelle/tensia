@@ -1,28 +1,26 @@
 # Flujo UX — Tensia
 
-_Última revisión: 2026-02-22 — Actualizado para ADR-005 (sin HTTP para datos), gráfica de evolución (BK-14), modal del formulario (BK-20) y layout dos columnas (BK-21)_
+_Última revisión: 2026-02-23_
 
 ---
 
-## Flujo principal: Consultar historial y gráfica
+## Flujo principal: Cargar el historial
 
 ```
 [Usuario abre la app]
         │
         ▼
-[Dashboard — estado: cargando]
-(lectura síncrona de localStorage)
+[Dashboard — lectura de localStorage]
         │
-        ├── 0 mediciones ──▶ [Dashboard — estado: vacío]
-        │                      (mensaje "Sin mediciones todavía")
-        │                      (gráfica NO se muestra)
+        ├── 0 mediciones ──▶ [Estado vacío: mensaje + columna única]
         │
-        ├── 1 medición ───▶ [Dashboard — 1 tarjeta en historial]
-        │                      (gráfica NO se muestra; 1 punto no forma línea)
+        ├── 1 medición ───▶ [Lista con 1 tarjeta + skeleton de gráfica]
+        │                    (layout dos columnas si viewport ≥ 768 px)
         │
-        ├── ≥ 2 mediciones ▶ [Dashboard — historial + GRÁFICA visible]
+        ├── ≥ 2 mediciones ▶ [Lista + gráfica de líneas]
+        │                    (layout dos columnas si viewport ≥ 768 px)
         │
-        └── Error localStorage ▶ [Dashboard — banner error + Reintentar]
+        └── Error localStorage ▶ [Banner error + botón Reintentar]
 ```
 
 ---
@@ -32,169 +30,95 @@ _Última revisión: 2026-02-22 — Actualizado para ADR-005 (sin HTTP para datos
 ```
 [Dashboard]
         │
-  [+ Nueva medición]       ← el botón es el "opener" (recibe el foco al cerrar)
+  [+ Nueva medición]
         │
         ▼
-[Animación de apertura — overlay + modal aparecen]
-(180 ms ease-out en desktop; 260 ms cubic-bezier en bottom-sheet móvil)
+[Modal se abre con animación]
+[Foco va al campo Sistólica]
+[Focus trap activo]
         │
-        ▼
-[Modal de registro — abierta]
-  (foco va al campo Sistólica al terminar la animación)
-  (focus trap activo: Tab/Shift+Tab ciclan dentro de la modal)
-        │
-        ├── [Rellenar: sistólica, diastólica, pulso?, fecha]
-        │
-        ├── [Guardar]
+        ├── [Rellenar campos + Guardar]
         │       │
-        │       ├── Validación KO ▶ [Errores inline bajo cada campo afectado]
-        │       │                    (modal permanece abierta; rol="alert")
+        │       ├── Validación KO ──▶ [Errores inline, modal permanece abierta]
         │       │
         │       └── Validación OK
         │               │
-        │               ▼
-        │       [Estado: Enviando — inputs y botón deshabilitados]
+        │         [Estado Enviando: inputs + botón disabled]
         │               │
-        │               ▼
-        │       [Escritura síncrona en localStorage]
+        │         [Escritura en localStorage]
         │               │
-        │               ├── Éxito ──▶ [Animación de cierre de la modal]
-        │               │             (foco vuelve al botón "Nueva medición")
-        │               │             [Dashboard actualizado]
-        │               │               (nueva tarjeta al inicio del historial)
-        │               │               (gráfica se redibuja si ≥ 2 mediciones)
-        │               │             [Toast de éxito — visible ~3 s]
+        │               ├── Éxito ──▶ [Modal se cierra]
+        │               │             [Foco vuelve al botón "Nueva medición"]
+        │               │             [Historial y gráfica se actualizan]
+        │               │             [Toast de éxito ~3 s]
         │               │
         │               └── Error ──▶ [Inputs y botón vuelven a habilitarse]
-        │                             [Mensaje de error inline en el formulario]
+        │                             [Mensaje de error en el formulario]
         │
-        ├── [✕ / Escape / click en overlay]   ← no disponible mientras se guarda
-        │       │
-        │       ▼
-        │   [Animación de cierre de la modal]
-        │   (foco vuelve al botón "Nueva medición" al terminar la animación)
-        │   [Dashboard sin cambios]
-        │
-        └── [Tab hasta Guardar → Shift+Tab → cicla al campo Sistólica]
+        └── [✕ / Escape / click en overlay]  (no disponible mientras se guarda)
+                │
+                ▼
+            [Modal se cierra con animación]
+            [Foco vuelve al botón "Nueva medición"]
+            [Dashboard sin cambios]
 ```
 
 ---
 
-## Flujo: Aparición y actualización de la gráfica
+## Flujo: Gráfica de evolución
 
 ```
-[Dashboard se carga con N mediciones]
+[Dashboard se carga o se añade una medición]
         │
-        ├── N < 2 ▶ [Sección "Evolución" oculta (no existe en DOM)]
+        ├── N < 2 ──▶ [MeasurementChart muestra skeleton "Sin datos suficientes"]
         │
-        └── N ≥ 2 ▶ [Sección "Evolución" visible]
-                         │
-                         [renderChart(container, mediciones)]
-                         │
-                         [SVG insertado en #chart-mediciones]
-
-[Usuario guarda nueva medición]
-        │
-        ▼
-[Total mediciones pasa a N+1]
-        │
-        ├── N+1 = 2 ▶ [Gráfica aparece por primera vez]
-        └── N+1 > 2 ▶ [Gráfica se redibuja con el nuevo punto]
+        └── N ≥ 2 ──▶ [SVG con líneas sistólica y diastólica]
 
 [Usuario rota pantalla o redimensiona ventana]
         │
         ▼
-[ResizeObserver detecta cambio en #chart-mediciones]
+[ResizeObserver detecta cambio en el contenedor]
         │
         ▼
-[renderChart() se llama de nuevo — SVG se regenera al nuevo ancho]
+[renderChart() redibuja el SVG al nuevo ancho]
 ```
 
 ---
 
-## Flujo: Apertura y cierre de la modal
+## Flujo: Layout responsivo
 
 ```
-[Botón "Nueva medición" en Dashboard]
+[Dashboard con ≥ 1 medición]
         │
-        ▼
-[Overlay + modal aparecen con animación de apertura]
-[Focus trap se activa]
-[Foco va al campo Sistólica]
+        ├── Viewport < 768 px ──▶ [Columna única: skeleton/gráfica encima, historial debajo]
         │
-        ├── [Escape] ────────────────────────────────┐
-        ├── [Click en overlay] ─────────────────────┤
-        ├── [Botón ✕] ──────────────────────────────┤
-        │                                            ▼
-        │                     [Animación de cierre (200-240 ms)]
-        │                     [Focus trap se desactiva]
-        │                     [Foco vuelve al botón "Nueva medición"]
-        │
-        └── [Guardar con éxito] ────────────────────▶ (igual que arriba)
+        └── Viewport ≥ 768 px ──▶ [Dos columnas]
+                                    Izquierda (55 %): gráfica o skeleton — sticky
+                                    Derecha (45 %): historial — scroll independiente
+
+[0 mediciones] ──▶ [Columna única siempre, mensaje vacío a ancho completo]
 ```
 
 ---
 
-## Flujo: Layout responsivo — dos columnas (≥ 768 px)
+## Tabla de estados por acción
 
-```
-[Dashboard se carga con viewport ≥ 768 px y ≥ 1 medición]
-        │
-        ▼
-[CSS activa display:grid — columna izquierda: gráfica / columna derecha: historial]
-        │
-        ├── 0 mediciones ──▶ [Columna única (clase dashboard-content--vacio)]
-        │                      Mensaje "Sin mediciones todavía" — ancho completo
-        │
-        ├── 1 medición ───▶ [Dos columnas activadas]
-        │                      Columna izquierda: skeleton "Sin datos suficientes"
-        │                      Columna derecha: historial con 1 tarjeta
-        │
-        └── ≥ 2 mediciones ▶ [Dos columnas activadas]
-                               Columna izquierda: gráfica SVG (sticky)
-                               Columna derecha: historial scrollable
-
-[Usuario hace scroll del historial]
-        │
-        ▼
-[La gráfica queda fija gracias a position:sticky]
-[El historial desplaza de forma independiente]
-
-[Usuario redimensiona ventana o rota dispositivo]
-        │
-        ├── Viewport pasa a < 768 px ──▶ [CSS desactiva el grid — columna única inmediata]
-        │
-        └── Viewport permanece ≥ 768 px ▶ [ResizeObserver redibuja SVG al nuevo ancho]
-                                           [Layout mantiene las dos columnas]
-
-[Usuario guarda nueva medición desde modal]
-        │
-        ├── Total pasa a 1 medición ──▶ [Dos columnas se activan (si viewport ≥ 768 px)]
-        │                               [Skeleton en columna izquierda]
-        │
-        └── Total pasa a ≥ 2 mediciones ▶ [Gráfica aparece/se redibuja en columna izquierda]
-```
-
----
-
-## Estados de la UI por acción
-
-| Acción | Estado intermedio | Estado final OK | Estado final KO |
+| Acción | Estado intermedio | OK | KO |
 |---|---|---|---|
-| Cargar historial | "Cargando…" (síncrono, muy breve) | Lista + gráfica (si ≥ 2) | Banner error + Reintentar |
-| Abrir modal | Animación apertura (180-260 ms) | Modal abierta, foco en Sistólica | — |
-| Cerrar modal (✕ / Escape / overlay) | Animación cierre (200-240 ms) | Dashboard sin cambios, foco en botón | — |
-| Guardar medición — validación KO | — | Modal permanece abierta, errores inline | — |
-| Guardar medición — validación OK | Enviando (inputs + botón disabled) | Modal cerrada, lista + gráfica actualizadas, toast éxito | Mensaje error inline, inputs + botón re-enabled |
-| Reintentar carga | "Cargando…" | Lista + gráfica (si ≥ 2) | Banner error |
-| Rotar pantalla | — | Gráfica redibujada al nuevo ancho | — |
+| Cargar historial | "Cargando…" (síncrono, muy breve) | Lista + gráfica | Banner error + Reintentar |
+| Abrir modal | Animación apertura | Modal abierta, foco en Sistólica | — |
+| Cerrar modal (✕ / Escape / overlay) | Animación cierre | Dashboard sin cambios, foco en botón | — |
+| Guardar — validación KO | — | Modal abierta con errores inline | — |
+| Guardar — validación OK | Enviando (inputs + botón disabled) | Modal cerrada, lista actualizada, toast éxito | Error inline, inputs re-habilitados |
+| Reintentar carga | "Cargando…" | Lista + gráfica | Banner error |
+| Rotar / redimensionar pantalla | — | Gráfica redibujada, layout adaptado | — |
 
 ---
 
 ## Principios de navegación del MVP
 
-- **Una sola página**: no hay routing. El formulario de registro se muestra/oculta sobre el dashboard.
-- **Sin llamadas HTTP para datos**: la carga y guardado son operaciones síncronas de `localStorage` (ADR-005).
-- **Sin confirmación de borrado**: el MVP no incluye borrar mediciones.
-- **Sin detalle de medición**: no hay pantalla de detalle; toda la info cabe en la tarjeta de la lista.
-- **Retorno automático**: tras guardar con éxito, el formulario se cierra y la lista + gráfica se refrescan solas.
+- **Una sola vista**: router hash-based (`#/`). No hay navegación entre páginas en el MVP.
+- **Sin HTTP para datos**: carga y guardado son operaciones síncronas sobre `localStorage`.
+- **Sin borrado de mediciones**: no existe flujo de borrado en el MVP.
+- **Sin detalle de medición**: toda la información cabe en la tarjeta del historial.
+- **Retorno automático**: tras guardar con éxito, la modal se cierra y la UI se actualiza sola (store reactivo de Svelte).
