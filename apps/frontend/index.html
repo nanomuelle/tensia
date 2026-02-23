@@ -20,15 +20,9 @@
     <!-- D3 resuelto desde node_modules por Vite (BK-24) -->
   </head>
   <body>
-    <!-- Aviso informativo Safari/iOS: localStorage puede borrarse tras 7 días de inactividad (ITP) -->
-    <!-- El contenido lo genera IosWarning.mount() (Paso 14a) -->
-    <div
-      id="aviso-ios"
-      class="aviso-ios"
-      role="alert"
-      aria-live="polite"
-      hidden
-    ></div>
+    <!-- Aviso informativo Safari/iOS (ITP 7 días). -->
+    <!-- IosWarning.svelte renderiza su propio contenido aquí (BK-25). -->
+    <div id="aviso-ios"></div>
     <!-- Header fijo -->
     <header class="header">
       <span class="header__logo" aria-hidden="true">🩺</span>

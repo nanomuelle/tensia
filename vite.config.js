@@ -1,5 +1,6 @@
-// vite.config.js — BK-24 (Fase 0: Vite como build tool, sin Svelte aún)
+// vite.config.js — BK-25 (Fase 1: plugin Svelte activado)
 import { defineConfig } from 'vite';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
@@ -10,6 +11,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   plugins: [
+    svelte(),
     VitePWA({
       registerType: 'autoUpdate',
       // manifest.json manual: lo gestionamos nosotros (en public/)

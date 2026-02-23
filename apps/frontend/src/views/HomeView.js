@@ -6,8 +6,9 @@
  * mount() genera todo el HTML interno del contenedor, vacía <main> en
  * index.html y lo rellena al montarse. Expone mount() y unmount() para el router.
  *
- * El formulario de registro NO se monta inline; se presenta dentro de un componente
- * Modal genérico que se instancia al pulsar "Nueva medición" (BK-22 / US-13).
+ * BK-25: MeasurementList y MeasurementChart son ahora componentes Svelte 5
+ * montados como islas mediante la API programática mount(). HomeView sigue
+ * siendo Vanilla JS hasta BK-27.
  *
  * @param {HTMLElement} containerEl - Elemento contenedor vacío de la vista (<main>).
  * @param {{
@@ -18,8 +19,9 @@
  * @returns {{ mount: Function, unmount: Function }}
  */
 
-import { createMeasurementList } from '../components/MeasurementList/MeasurementList.js';
-import { createMeasurementChart } from '../components/MeasurementChart/MeasurementChart.js';
+import { svelteMount, svelteUnmount } from '../lib/svelteMount.js';
+import MeasurementList from '../components/MeasurementList/MeasurementList.svelte';
+import MeasurementChart from '../components/MeasurementChart/MeasurementChart.svelte';
 import { createMeasurementForm } from '../components/MeasurementForm/MeasurementForm.js';
 import { createModal } from '../components/Modal/Modal.js';
 
@@ -115,19 +117,15 @@ export function createHomeView(containerEl, { store, service, toast }) {
 
     const btnNuevaMedicion = containerEl.querySelector('#btn-nueva-medicion');
 
-    // Crear instancias de componentes con referencias a los contenedores recién creados
-    historial = createMeasurementList(
-      containerEl.querySelector('#historial-root'),
-      { onReintentar: () => store.cargarMediciones() },
-    );
+    // Crear instancias de componentes Svelte como islas dentro de los contenedores recién creados
+    historial = svelteMount(MeasurementList, {
+      target: containerEl.querySelector('#historial-root'),
+      props:  { onReintentar: () => store.cargarMediciones() },
+    });
 
-    grafica = createMeasurementChart(
-      containerEl.querySelector('#seccion-grafica'),
-    );
-
-    // Montar los componentes (cada uno genera su propio HTML interno)
-    historial.mount();
-    grafica.mount();
+    grafica = svelteMount(MeasurementChart, {
+      target: containerEl.querySelector('#seccion-grafica'),
+    });
 
     // Suscribir los componentes al store
     unsubscribeStore = store.subscribe((state) => {
@@ -143,15 +141,21 @@ export function createHomeView(containerEl, { store, service, toast }) {
 
       if (state.cargando) {
         historial.mostrarCargando();
+        // La sección de gráfica permanece oculta mientras carga
       } else if (state.error) {
         historial.mostrarError();
         const seccionGrafica = containerEl.querySelector('#seccion-grafica');
         if (seccionGrafica) seccionGrafica.hidden = true;
-      } else if (!state.mediciones.length) {
-        historial.mostrarVacio();
-        grafica.update(state.mediciones);
       } else {
-        historial.mostrarLista(state.mediciones);
+        // Estado vacío o con datos: mostrar sección de gráfica (skeleton o real)
+        const seccionGrafica = containerEl.querySelector('#seccion-grafica');
+        if (seccionGrafica) seccionGrafica.hidden = false;
+
+        if (!state.mediciones.length) {
+          historial.mostrarVacio();
+        } else {
+          historial.mostrarLista(state.mediciones);
+        }
         grafica.update(state.mediciones);
       }
     });
@@ -184,12 +188,9 @@ export function createHomeView(containerEl, { store, service, toast }) {
     cleanupBtnNueva?.();
     cleanupBtnNueva = null;
 
-    // Desmontar componentes
-    historial?.unmount();
-    grafica?.unmount();
-
-    historial = null;
-    grafica   = null;
+    // Desmontar islas Svelte (MeasurementList y MeasurementChart)
+    if (historial) { svelteUnmount(historial); historial = null; }
+    if (grafica)   { svelteUnmount(grafica);   grafica   = null; }
 
     // Limpiar el HTML del contenedor
     if (containerEl) containerEl.innerHTML = '';

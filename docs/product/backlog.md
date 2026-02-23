@@ -222,18 +222,74 @@ npm run test:e2e
 ---
 
 **BK-25 — Fase 1: Migrar componentes hoja a Svelte**
-Descripción: Reescribir `Toast`, `IosWarning`, `MeasurementList` y `MeasurementChart` como Single File Components `.svelte`. Reescribir sus tests con Vitest + @testing-library/svelte. Los componentes se montan desde `HomeView.js` (aún Vanilla JS) usando la API programática de Svelte 5 (`mount(Component, { target, props })`).
+
+**Descripción:**
+Reescribir los 4 componentes sin dependencias de otros componentes propios como Single File Components (`.svelte`) con Svelte 5 Runes.
+Orden de migración: `Toast` → `IosWarning` → `MeasurementList` → `MeasurementChart`.
+
+Los componentes dejan de usar el patrón `createX(el, opts)` + `mount()` / `unmount()` de Vanilla JS. El ciclo de vida pasa a `onMount` / `onDestroy` de Svelte. En esta fase `HomeView.js` sigue siendo Vanilla JS y monta los nuevos `.svelte` mediante la API programática de Svelte 5: `mount(Component, { target, props })`.
+
+Para cada componente se deben reescribir también sus tests: de Jest + jsdom a Vitest + `@testing-library/svelte`.
+
 Prioridad: Alta
 Estimación: 3-4 jornadas
 Dependencias: BK-24
 Estado: Pendiente
 Tipo: Tarea técnica (enabler)
+Referencia técnica: `docs/architecture/svelte-migration-plan.md` § 3.3 (Fase 1)
 
-Criterios de aceptación:
-- [ ] Los 4 componentes funcionan como `.svelte` montados desde `HomeView.js` (aún Vanilla JS).
-- [ ] Ninguno de los 4 componentes usa `innerHTML` con datos externos.
-- [ ] Tests de los 4 componentes en verde con Vitest; cobertura ≥ 70 %.
-- [ ] Sin regresiones en tests E2E (Playwright).
+---
+
+#### Subtareas técnicas
+
+**1. Instalar dependencias de test (si no están ya en BK-24)**
+```bash
+npm install --save-dev @testing-library/svelte vitest jsdom
+```
+
+**2. `Toast.svelte`** (80 líneas actuales en `Toast.js`)
+- Estado interno: `mensaje`, `visible`, `tipo` → `$state` de Svelte 5.
+- Exponer `show(msg, tipo = 'success')` como función pública del componente.
+- Autoocultarse tras 3 s con `setTimeout` dentro de `show`.
+- Los estilos de `Toast.css` pasan a `<style>` scoped del SFC.
+- El subscriptor de `eventBus` ('toast:show') puede mantenerse en un `onMount` o eliminarse si `HomeView` llama directamente a `show`.
+
+**3. `IosWarning.svelte`** (60 líneas actuales en `IosWarning.js`)
+- Prop `show: boolean`; la lógica de detección de Safari/iOS (`navigator.userAgent`) se mantiene en el componente o se extrae a `shared/`.
+- `{#if show}` reemplaza al `classList.toggle` manual.
+- Los estilos de `IosWarning.css` pasan a `<style>` scoped.
+
+**4. `MeasurementList.svelte`** (161 líneas actuales en `MeasurementList.js`)
+- Eliminar el `innerHTML` con plantilla de filas (**riesgo XSS eliminado en esta fase**).
+- Prop `measurements: Measurement[]`; usar `{#each measurements as m}` para renderizar la tabla.
+- Emitir evento `eliminar` al padre mediante `createEventDispatcher()` o callback prop.
+- Los estilos actuales del componente pasan a `<style>` scoped.
+
+**5. `MeasurementChart.svelte`** (93 líneas actuales en `MeasurementChart.js`)
+- Prop `measurements: Measurement[]`.
+- Renderizado D3 dentro de `onMount` (acceso a DOM) y actualizado con `$effect` cuando el prop cambia.
+- La lógica D3 de `chart.js` puede permanecer separada; el componente la invoca pasando el elemento SVG/contenedor.
+- Los estilos del gráfico pasan a `<style>` scoped o a `MeasurementChart.css` (CSS global si D3 necesita selectores no scoped).
+
+**6. Actualizar `HomeView.js`**
+- Sustituir cada `createX(el, opts)` + `.mount()` por `import { mount } from 'svelte'; mount(XComponent, { target: el, props: {...} })`.
+- Los 4 componentes se montan como islas Svelte dentro de la vista Vanilla JS.
+
+**7. Migrar tests de los 4 componentes**
+- Ficheros actuales en `apps/frontend/tests/components/` (Jest): `Toast.test.js`, `IosWarning.test.js`, `MeasurementList.test.js`, `MeasurementChart.test.js`.
+- Reescribir con Vitest + `@testing-library/svelte`: `render`, `screen`, `fireEvent`, `waitFor`.
+- Eliminar las importaciones de Jest globals; usar `import { describe, it, expect } from 'vitest'`.
+
+---
+
+#### Criterios de aceptación
+
+- [ ] `Toast.svelte`, `IosWarning.svelte`, `MeasurementList.svelte` y `MeasurementChart.svelte` existen en sus respectivos directorios de `components/`.
+- [ ] `HomeView.js` monta los 4 componentes mediante la API programática de Svelte 5 (`mount`).
+- [ ] `MeasurementList.svelte` y cualquier otro componente migrado no usan `innerHTML` con datos de usuario.
+- [ ] Los 4 archivos `.js` originales pueden coexistir temporalmente (se eliminan en BK-28), pero no se usan en el flujo de producción.
+- [ ] Tests de los 4 componentes pasan con Vitest; cobertura de los componentes migrados ≥ 70 %.
+- [ ] `npm test` (Vitest, coexistencia con Jest si aún no se migró todo) y `npm run test:e2e` (Playwright) en verde sin regresiones.
 
 ---
 

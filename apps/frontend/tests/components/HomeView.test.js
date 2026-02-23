@@ -8,71 +8,66 @@
  * 2. Con ≥ 1 medición → clase presente (dos columnas en ≥ 768 px)
  * 3. Al pasar de ≥ 1 a 0 mediciones → clase retirada
  *
+ * Migrado de Jest a Vitest en BK-25 (HomeView.js ahora importa .svelte).
  * Referencia: docs/product/backlog.md#BK-23
  *             docs/design/screens.md#layout-gráfica--historial-en-columnas
- *
- * @jest-environment jsdom
  */
 
-import { jest, describe, test, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// ─── Mocks de módulos (deben declararse antes del import dinámico) ────────────
+// ─── Mocks de módulos Svelte que HomeView monta como islas ───────────────────
 
-// Mock de MeasurementList
-jest.unstable_mockModule(
-  '../../src/components/MeasurementList/MeasurementList.js',
-  () => ({
-    createMeasurementList: jest.fn(() => ({
-      mount: jest.fn(),
-      unmount: jest.fn(),
-      mostrarCargando: jest.fn(),
-      mostrarError: jest.fn(),
-      mostrarVacio: jest.fn(),
-      mostrarLista: jest.fn(),
-    })),
-  }),
-);
+// API pública que HomeView usa de MeasurementList
+const listaMock = {
+  mostrarCargando: vi.fn(),
+  mostrarError: vi.fn(),
+  mostrarVacio: vi.fn(),
+  mostrarLista: vi.fn(),
+};
 
-// Mock de MeasurementChart
-jest.unstable_mockModule(
-  '../../src/components/MeasurementChart/MeasurementChart.js',
-  () => ({
-    createMeasurementChart: jest.fn(() => ({
-      mount: jest.fn(),
-      unmount: jest.fn(),
-      update: jest.fn(),
-    })),
-  }),
-);
+// API pública que HomeView usa de MeasurementChart
+const graficaMock = {
+  update: vi.fn(),
+};
 
-// Mock de MeasurementForm
-jest.unstable_mockModule(
-  '../../src/components/MeasurementForm/MeasurementForm.js',
-  () => ({
-    createMeasurementForm: jest.fn(() => ({
-      mount: jest.fn(),
-      unmount: jest.fn(),
-      abrir: jest.fn(),
-    })),
-  }),
-);
+vi.mock('../../src/components/MeasurementList/MeasurementList.svelte', () => ({
+  default: function MeasurementList() {},
+}));
 
-// Mock de Modal
-jest.unstable_mockModule(
-  '../../src/components/Modal/Modal.js',
-  () => ({
-    createModal: jest.fn(() => ({
-      open: jest.fn(),
-      close: jest.fn(),
-      lock: jest.fn(),
-      unlock: jest.fn(),
-    })),
-  }),
-);
+vi.mock('../../src/components/MeasurementChart/MeasurementChart.svelte', () => ({
+  default: function MeasurementChart() {},
+}));
+
+// Mockear el adaptador delgado svelteMount.js (no el módulo 'svelte' completo).
+// Esto evita que el mock afecte a las APIs internas que usa jsdom/parse5.
+vi.mock('../../src/lib/svelteMount.js', () => ({
+  svelteMount:   vi.fn(),
+  svelteUnmount: vi.fn(),
+}));
+
+// Mock de MeasurementForm (Vanilla JS, no migrado aún)
+vi.mock('../../src/components/MeasurementForm/MeasurementForm.js', () => ({
+  createMeasurementForm: vi.fn(() => ({
+    mount: vi.fn(),
+    unmount: vi.fn(),
+    abrir: vi.fn(),
+  })),
+}));
+
+// Mock de Modal (Vanilla JS, no migrado aún)
+vi.mock('../../src/components/Modal/Modal.js', () => ({
+  createModal: vi.fn(() => ({
+    open: vi.fn(),
+    close: vi.fn(),
+    lock: vi.fn(),
+    unlock: vi.fn(),
+  })),
+}));
 
 // ─── Imports (tras los mocks) ─────────────────────────────────────────────────
 
-const { createHomeView } = await import('../../src/views/HomeView.js');
+import { svelteMount as svelteMountMock } from '../../src/lib/svelteMount.js';
+import { createHomeView } from '../../src/views/HomeView.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -84,18 +79,13 @@ function crearStoreMock() {
   let callbackSuscripcion = null;
 
   const store = {
-    subscribe: jest.fn((cb) => {
+    subscribe: vi.fn((cb) => {
       callbackSuscripcion = cb;
-      // Devuelve función de desuscripción
-      return jest.fn();
+      return vi.fn(); // función de desuscripción
     }),
-    cargarMediciones: jest.fn(),
+    cargarMediciones: vi.fn(),
   };
 
-  /**
-   * Simula un cambio de estado en el store notificando al suscriptor.
-   * @param {object} estado
-   */
   function emitirEstado(estado) {
     if (callbackSuscripcion) {
       callbackSuscripcion(estado);
@@ -105,9 +95,6 @@ function crearStoreMock() {
   return { store, emitirEstado };
 }
 
-/**
- * Medición mínima válida de ejemplo.
- */
 function crearMedicion(id = 'uuid-1') {
   return {
     id,
@@ -127,17 +114,25 @@ let emitirEstado;
 let vista;
 
 beforeEach(() => {
+  // Configurar mount() para que devuelva el mock correcto según el componente
+  svelteMountMock.mockImplementation((Component, _opts) => {
+    const name = Component?.name ?? '';
+    if (name === 'MeasurementList') return listaMock;
+    if (name === 'MeasurementChart') return graficaMock;
+    return {};
+  });
+
   document.body.innerHTML = '<main id="app"></main>';
   containerEl = document.getElementById('app');
 
   const mockSetup = crearStoreMock();
-  storeMock  = mockSetup.store;
+  storeMock    = mockSetup.store;
   emitirEstado = mockSetup.emitirEstado;
 
   vista = createHomeView(containerEl, {
-    store: storeMock,
+    store:   storeMock,
     service: {},
-    toast: { mostrar: jest.fn() },
+    toast:   { mostrar: vi.fn(), show: vi.fn() },
   });
 
   vista.mount();
@@ -199,7 +194,6 @@ describe('layout de columnas — toggle de clase', () => {
   });
 
   test('al pasar de ≥ 1 medición a 0: la clase --columnas se retira', () => {
-    // Primero con 1 medición → clase presente
     emitirEstado({
       cargando: false,
       error: null,
@@ -207,7 +201,6 @@ describe('layout de columnas — toggle de clase', () => {
     });
     expect(getDashboardContent().classList.contains('dashboard-content--columnas')).toBe(true);
 
-    // Luego con 0 mediciones → clase retirada
     emitirEstado({ cargando: false, error: null, mediciones: [] });
     expect(getDashboardContent().classList.contains('dashboard-content--columnas')).toBe(false);
   });

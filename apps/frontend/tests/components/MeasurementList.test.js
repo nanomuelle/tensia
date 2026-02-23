@@ -1,15 +1,16 @@
 /**
- * Tests unitarios del componente MeasurementList.
+ * Tests unitarios: componente MeasurementList.svelte (Vitest + @testing-library/svelte)
+ * Verifica los estados del historial: cargando, error, vacio, lista.
+ * Migrado de Jest en BK-25.
  *
- * Verifica que mount() genera el HTML correcto y que los métodos
- * de estado (mostrarCargando, mostrarError, mostrarVacio, mostrarLista)
- * muestran y ocultan los elementos adecuados.
- *
- * @jest-environment jsdom
+ * Nota: en la versión Svelte cada estado se renderiza de forma exclusiva con {#if},
+ * por lo que se verifica presencia/ausencia en DOM en lugar del atributo hidden.
  */
 
-import { describe, test, expect, beforeEach, jest } from '@jest/globals';
-import { createMeasurementList } from '../../src/components/MeasurementList/MeasurementList.js';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/svelte';
+import { tick } from 'svelte';
+import MeasurementList from '../../src/components/MeasurementList/MeasurementList.svelte';
 
 // ---------------------------------------------------------------------------
 // Fixture de mediciones de ejemplo
@@ -34,42 +35,20 @@ const medicionesEjemplo = [
 ];
 
 // ---------------------------------------------------------------------------
-// Setup compartido
+// Estado inicial (cargando)
 // ---------------------------------------------------------------------------
 
-let rootEl;
-let lista;
-
-beforeEach(() => {
-  document.body.innerHTML = '<section id="historial-root"></section>';
-  rootEl = document.getElementById('historial-root');
-  lista  = createMeasurementList(rootEl);
-  lista.mount();
-});
-
-// ---------------------------------------------------------------------------
-// mount() — estructura del DOM
-// ---------------------------------------------------------------------------
-
-describe('mount() — estructura del DOM', () => {
-  test('genera el contenedor de estado cargando', () => {
-    expect(document.getElementById('estado-cargando')).not.toBeNull();
+describe('estado inicial — cargando', () => {
+  test('muestra el indicador de carga al renderizar', () => {
+    render(MeasurementList);
+    expect(document.getElementById('estado-cargando')).toBeInTheDocument();
   });
 
-  test('genera el contenedor de estado error', () => {
-    expect(document.getElementById('estado-error')).not.toBeNull();
-  });
-
-  test('genera el contenedor de estado vacío', () => {
-    expect(document.getElementById('estado-vacio')).not.toBeNull();
-  });
-
-  test('genera la lista de mediciones', () => {
-    expect(document.getElementById('lista-mediciones')).not.toBeNull();
-  });
-
-  test('botón reintentar aparece dentro del estado error', () => {
-    expect(document.getElementById('btn-reintentar')).not.toBeNull();
+  test('no muestra otros estados en el estado inicial', () => {
+    render(MeasurementList);
+    expect(document.getElementById('estado-error')).toBeNull();
+    expect(document.getElementById('estado-vacio')).toBeNull();
+    expect(document.getElementById('lista-mediciones')).toBeNull();
   });
 });
 
@@ -78,16 +57,22 @@ describe('mount() — estructura del DOM', () => {
 // ---------------------------------------------------------------------------
 
 describe('mostrarCargando()', () => {
-  test('muestra el estado cargando', () => {
-    lista.mostrarCargando();
-    expect(document.getElementById('estado-cargando').hidden).toBe(false);
+  test('muestra el estado cargando', async () => {
+    const { component } = render(MeasurementList);
+    component.mostrarCargando();
+    await tick();
+    expect(document.getElementById('estado-cargando')).toBeInTheDocument();
   });
 
-  test('oculta los demás estados', () => {
-    lista.mostrarCargando();
-    expect(document.getElementById('estado-error').hidden).toBe(true);
-    expect(document.getElementById('estado-vacio').hidden).toBe(true);
-    expect(document.getElementById('lista-mediciones').hidden).toBe(true);
+  test('oculta los demás estados (solo cargando en DOM)', async () => {
+    const { component } = render(MeasurementList);
+    component.mostrarLista(medicionesEjemplo); // primero mostrar lista
+    await tick();
+    component.mostrarCargando();              // volver a cargando
+    await tick();
+    expect(document.getElementById('estado-error')).toBeNull();
+    expect(document.getElementById('estado-vacio')).toBeNull();
+    expect(document.getElementById('lista-mediciones')).toBeNull();
   });
 });
 
@@ -96,16 +81,20 @@ describe('mostrarCargando()', () => {
 // ---------------------------------------------------------------------------
 
 describe('mostrarError()', () => {
-  test('muestra el estado error', () => {
-    lista.mostrarError();
-    expect(document.getElementById('estado-error').hidden).toBe(false);
+  test('muestra el estado error', async () => {
+    const { component } = render(MeasurementList);
+    component.mostrarError();
+    await tick();
+    expect(document.getElementById('estado-error')).toBeInTheDocument();
   });
 
-  test('oculta los demás estados', () => {
-    lista.mostrarError();
-    expect(document.getElementById('estado-cargando').hidden).toBe(true);
-    expect(document.getElementById('estado-vacio').hidden).toBe(true);
-    expect(document.getElementById('lista-mediciones').hidden).toBe(true);
+  test('oculta los demás estados (solo error en DOM)', async () => {
+    const { component } = render(MeasurementList);
+    component.mostrarError();
+    await tick();
+    expect(document.getElementById('estado-cargando')).toBeNull();
+    expect(document.getElementById('estado-vacio')).toBeNull();
+    expect(document.getElementById('lista-mediciones')).toBeNull();
   });
 });
 
@@ -114,16 +103,20 @@ describe('mostrarError()', () => {
 // ---------------------------------------------------------------------------
 
 describe('mostrarVacio()', () => {
-  test('muestra el estado vacío', () => {
-    lista.mostrarVacio();
-    expect(document.getElementById('estado-vacio').hidden).toBe(false);
+  test('muestra el estado vacío', async () => {
+    const { component } = render(MeasurementList);
+    component.mostrarVacio();
+    await tick();
+    expect(document.getElementById('estado-vacio')).toBeInTheDocument();
   });
 
-  test('oculta los demás estados', () => {
-    lista.mostrarVacio();
-    expect(document.getElementById('estado-cargando').hidden).toBe(true);
-    expect(document.getElementById('estado-error').hidden).toBe(true);
-    expect(document.getElementById('lista-mediciones').hidden).toBe(true);
+  test('oculta los demás estados (solo vacio en DOM)', async () => {
+    const { component } = render(MeasurementList);
+    component.mostrarVacio();
+    await tick();
+    expect(document.getElementById('estado-cargando')).toBeNull();
+    expect(document.getElementById('estado-error')).toBeNull();
+    expect(document.getElementById('lista-mediciones')).toBeNull();
   });
 });
 
@@ -132,41 +125,54 @@ describe('mostrarVacio()', () => {
 // ---------------------------------------------------------------------------
 
 describe('mostrarLista()', () => {
-  test('muestra la lista de mediciones', () => {
-    lista.mostrarLista(medicionesEjemplo);
-    expect(document.getElementById('lista-mediciones').hidden).toBe(false);
+  test('muestra la lista de mediciones', async () => {
+    const { component } = render(MeasurementList);
+    component.mostrarLista(medicionesEjemplo);
+    await tick();
+    expect(document.getElementById('lista-mediciones')).toBeInTheDocument();
   });
 
-  test('renderiza tantos elementos <li> como mediciones', () => {
-    lista.mostrarLista(medicionesEjemplo);
+  test('renderiza tantos elementos <li> como mediciones', async () => {
+    const { component } = render(MeasurementList);
+    component.mostrarLista(medicionesEjemplo);
+    await tick();
     const items = document.querySelectorAll('#lista-mediciones li');
     expect(items.length).toBe(medicionesEjemplo.length);
   });
 
-  test('incluye los valores de tensión de la primera medición', () => {
-    lista.mostrarLista(medicionesEjemplo);
+  test('incluye los valores de tensión de la primera medición', async () => {
+    const { component } = render(MeasurementList);
+    component.mostrarLista(medicionesEjemplo);
+    await tick();
     const texto = document.getElementById('lista-mediciones').textContent;
     expect(texto).toContain('130');
     expect(texto).toContain('85');
   });
 
-  test('muestra el pulso cuando está presente', () => {
-    lista.mostrarLista(medicionesEjemplo);
+  test('muestra el pulso cuando está presente', async () => {
+    const { component } = render(MeasurementList);
+    component.mostrarLista(medicionesEjemplo);
+    await tick();
     const texto = document.getElementById('lista-mediciones').textContent;
     expect(texto).toContain('72');
+    expect(texto).toContain('ppm');
   });
 
-  test('no muestra pulso cuando el campo es undefined', () => {
-    lista.mostrarLista([medicionesEjemplo[1]]); // sin pulse
+  test('no muestra el pulso cuando el campo es undefined', async () => {
+    const { component } = render(MeasurementList);
+    component.mostrarLista([medicionesEjemplo[1]]); // sin pulse
+    await tick();
     const tarjeta = document.querySelector('#lista-mediciones li');
     expect(tarjeta.textContent).not.toContain('ppm');
   });
 
-  test('oculta los demás estados', () => {
-    lista.mostrarLista(medicionesEjemplo);
-    expect(document.getElementById('estado-cargando').hidden).toBe(true);
-    expect(document.getElementById('estado-error').hidden).toBe(true);
-    expect(document.getElementById('estado-vacio').hidden).toBe(true);
+  test('oculta los demás estados (solo lista en DOM)', async () => {
+    const { component } = render(MeasurementList);
+    component.mostrarLista(medicionesEjemplo);
+    await tick();
+    expect(document.getElementById('estado-cargando')).toBeNull();
+    expect(document.getElementById('estado-error')).toBeNull();
+    expect(document.getElementById('estado-vacio')).toBeNull();
   });
 });
 
@@ -175,31 +181,15 @@ describe('mostrarLista()', () => {
 // ---------------------------------------------------------------------------
 
 describe('onReintentar callback', () => {
-  test('llama a onReintentar al pulsar el botón reintentar', () => {
-    const onReintentar = jest.fn();
+  test('llama a onReintentar al pulsar el botón reintentar', async () => {
+    const onReintentar = vi.fn();
+    const { component } = render(MeasurementList, { props: { onReintentar } });
+    component.mostrarError();
+    await tick();
 
-    document.body.innerHTML = '<section id="historial-root-2"></section>';
-    const el = document.getElementById('historial-root-2');
-    const listaConCb = createMeasurementList(el, { onReintentar });
-    listaConCb.mount();
-    listaConCb.mostrarError();
-
-    document.getElementById('btn-reintentar').click();
+    const btn = document.getElementById('btn-reintentar');
+    await fireEvent.click(btn);
 
     expect(onReintentar).toHaveBeenCalledTimes(1);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// unmount()
-// ---------------------------------------------------------------------------
-
-describe('unmount()', () => {
-  test('no lanza error al llamar métodos de estado tras unmount()', () => {
-    lista.unmount();
-    expect(() => lista.mostrarCargando()).not.toThrow();
-    expect(() => lista.mostrarError()).not.toThrow();
-    expect(() => lista.mostrarVacio()).not.toThrow();
-    expect(() => lista.mostrarLista([])).not.toThrow();
   });
 });

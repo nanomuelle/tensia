@@ -1,32 +1,24 @@
 /**
- * Tests unitarios del componente MeasurementChart.
- *
- * Verifica que:
- * - mount() genera la estructura HTML interna correcta.
- * - update() muestra la sección y delega en renderChart (chart.js).
- * - update() con menos del mínimo de mediciones llama igualmente a renderChart
- *   (que mostrará el skeleton).
- * - unmount() desconecta el ResizeObserver.
- *
- * chart.js se mockea porque testea la lógica del componente, no el render D3
- * (que tiene su propio suite en chart.test.js).
- *
- * @jest-environment jsdom
+ * Tests unitarios: componente MeasurementChart.svelte (Vitest + @testing-library/svelte)
+ * Verifica la estructura del DOM, el delegado en renderChart y el ciclo de vida.
+ * chart.js se mockea para aislar las dependencias D3.
+ * Migrado de Jest en BK-25.
  */
 
-import { describe, test, expect, beforeEach, jest } from '@jest/globals';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { render, screen } from '@testing-library/svelte';
+import { tick } from 'svelte';
 
 // ---------------------------------------------------------------------------
 // Mock de chart.js (evita dependencias D3 en esta suite)
 // ---------------------------------------------------------------------------
 
-jest.unstable_mockModule('../../src/chart.js', () => ({
-  renderChart: jest.fn(),
+vi.mock('../../src/chart.js', () => ({
+  renderChart: vi.fn(),
 }));
 
-// Los imports dinámicos se resuelven tras el mock
-const { renderChart }          = await import('../../src/chart.js');
-const { createMeasurementChart } = await import('../../src/components/MeasurementChart/MeasurementChart.js');
+import { renderChart } from '../../src/chart.js';
+import MeasurementChart from '../../src/components/MeasurementChart/MeasurementChart.svelte';
 
 // ---------------------------------------------------------------------------
 // Datos de ejemplo
@@ -47,85 +39,74 @@ function fixturesMediciones(n = 3) {
 // Setup compartido
 // ---------------------------------------------------------------------------
 
-let seccionEl;
-let chart;
-
 beforeEach(() => {
   renderChart.mockClear();
-  document.body.innerHTML = '<section id="seccion-grafica" hidden></section>';
-  seccionEl = document.getElementById('seccion-grafica');
-  chart = createMeasurementChart(seccionEl);
-  chart.mount();
 });
 
 // ---------------------------------------------------------------------------
-// mount() — estructura interna
+// Estructura del DOM
 // ---------------------------------------------------------------------------
 
-describe('mount() — estructura del DOM', () => {
-  test('genera el header de la gráfica con título', () => {
-    expect(seccionEl.querySelector('.grafica-header')).not.toBeNull();
-    expect(seccionEl.querySelector('.grafica__titulo').textContent).toContain('Evolución');
+describe('MeasurementChart — estructura del DOM', () => {
+  test('renderiza el header con el título "Evolución"', () => {
+    render(MeasurementChart);
+    expect(screen.getByText('Evolución')).toBeInTheDocument();
   });
 
-  test('genera la leyenda con pills de sistólica y diastólica', () => {
-    expect(seccionEl.querySelector('.leyenda-pill--sistolica')).not.toBeNull();
-    expect(seccionEl.querySelector('.leyenda-pill--diastolica')).not.toBeNull();
+  test('renderiza la leyenda con pills de sistólica y diastólica', () => {
+    render(MeasurementChart);
+    expect(document.querySelector('.leyenda-pill--sistolica')).toBeInTheDocument();
+    expect(document.querySelector('.leyenda-pill--diastolica')).toBeInTheDocument();
   });
 
-  test('genera el contenedor D3 (#chart-mediciones)', () => {
-    expect(seccionEl.querySelector('#chart-mediciones')).not.toBeNull();
+  test('renderiza el contenedor D3 (#chart-mediciones)', () => {
+    render(MeasurementChart);
+    expect(document.getElementById('chart-mediciones')).toBeInTheDocument();
   });
 });
 
 // ---------------------------------------------------------------------------
-// update() — comportamiento con datos suficientes
+// update() — datos suficientes (≥ 2 mediciones)
 // ---------------------------------------------------------------------------
 
 describe('update() — con datos suficientes (≥ 2 mediciones)', () => {
-  test('muestra la sección (quita hidden)', () => {
-    chart.update(fixturesMediciones(3));
-    expect(seccionEl.hidden).toBe(false);
-  });
+  test('llama a renderChart con el contenedor y las mediciones', async () => {
+    const { component } = render(MeasurementChart);
+    await tick(); // asegurar que bind:this esté asignado
 
-  test('llama a renderChart con el contenedor y las mediciones', () => {
     const mediciones = fixturesMediciones(3);
-    chart.update(mediciones);
+    component.update(mediciones);
+
     expect(renderChart).toHaveBeenCalledTimes(1);
     expect(renderChart).toHaveBeenCalledWith(
-      seccionEl.querySelector('#chart-mediciones'),
+      document.getElementById('chart-mediciones'),
       mediciones,
     );
   });
 });
 
 // ---------------------------------------------------------------------------
-// update() — comportamiento con datos insuficientes (skeleton)
+// update() — datos insuficientes (< 2 mediciones → skeleton)
 // ---------------------------------------------------------------------------
 
 describe('update() — con datos insuficientes (< 2 mediciones)', () => {
-  test('muestra la sección aunque no haya datos suficientes', () => {
-    chart.update([]);
-    expect(seccionEl.hidden).toBe(false);
-  });
+  test('llama igualmente a renderChart (que mostrará el skeleton)', async () => {
+    const { component } = render(MeasurementChart);
+    await tick();
 
-  test('llama a renderChart (que mostrará el skeleton interno)', () => {
-    chart.update([fixturesMediciones(1)[0]]);
+    component.update([fixturesMediciones(1)[0]]);
     expect(renderChart).toHaveBeenCalledTimes(1);
   });
-});
 
-// ---------------------------------------------------------------------------
-// unmount()
-// ---------------------------------------------------------------------------
+  test('llama a renderChart con array vacío', async () => {
+    const { component } = render(MeasurementChart);
+    await tick();
 
-describe('unmount()', () => {
-  test('no lanza error sin haber llamado a update() antes', () => {
-    expect(() => chart.unmount()).not.toThrow();
-  });
-
-  test('no lanza error al llamar update() después de unmount()', () => {
-    chart.unmount();
-    expect(() => chart.update(fixturesMediciones(3))).not.toThrow();
+    component.update([]);
+    expect(renderChart).toHaveBeenCalledTimes(1);
+    expect(renderChart).toHaveBeenCalledWith(
+      document.getElementById('chart-mediciones'),
+      [],
+    );
   });
 });
