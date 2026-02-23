@@ -424,21 +424,251 @@ Puntos de cobertura mínimos:
 ---
 
 **BK-27 — Fase 3: Migrar vistas, store y router a Svelte**
-Descripción: Reescribir `appStore` como Svelte store (`writable`/`derived`), `HomeView` como `HomeView.svelte`, adaptar `router.js` para montar componentes Svelte, y crear `App.svelte` + `main.js` como nuevo punto de entrada. Eliminar el último código Vanilla JS de UI.
+
+**Descripción:**
+Reescribir `appStore` como módulo de stores Svelte (`writable` + acciones), `HomeView.js` como `HomeView.svelte`, adaptar `router.js` para montar componentes Svelte en lugar de fábricas Vanilla JS, y crear `App.svelte` + `main.js` como nuevo punto de entrada. Al terminar esta fase, `app.js` y `lib/svelteMount.js` se eliminan y no queda código Vanilla JS en la capa de UI.
+
+**Estado del código al inicio de BK-27 (resultado de BK-26):**
+- `app.js` instancia `service`, `store` (pub/sub custom), `toast` y `iosWarning` como componentes Svelte, y arranca el router.
+- `router.js` usa fábricas `(el) => createHomeView(el, deps)` que devuelven `{ mount, unmount }`.
+- `HomeView.js` monta los 6 componentes Svelte con `svelteMount` / `svelteUnmount` y se suscribe manualmente a `store.subscribe()`.
+- `appStore.js` es un pub/sub custom; los componentes no pueden importar stores Svelte reactivos directamente.
+- `lib/svelteMount.js` es un adaptador delgado sobre `import { mount, unmount } from 'svelte'`; existe solo para facilitar el mock en tests.
+
 Prioridad: Alta
 Estimación: 2-3 jornadas
 Dependencias: BK-26
 Estado: Pendiente
 Tipo: Tarea técnica (enabler)
+Referencia técnica: `docs/architecture/svelte-migration-plan.md` § 3.3 (Fase 3)
 
-Criterios de aceptación:
-- [ ] `main.js` monta `<App />` en `#app`; cero Vanilla JS en la capa de UI.
-- [ ] El store reactivo Svelte sustituye a `createAppStore` sin cambiar el comportamiento observable.
-- [ ] El router hash-based funciona para la ruta `#/` y está preparado para rutas protegidas.
-- [ ] Tests del store en verde con Vitest.
-- [ ] Suite E2E completa en verde.
+---
 
-> ⚠️ **Prerrequisito para OAuth (BK-29):** esta fase debe estar completa para soportar rutas protegidas.
+#### Subtareas técnicas
+
+**1. Reescribir `appStore.js` como módulo de stores Svelte**
+
+Crear `apps/frontend/src/store/appStore.svelte.js` y exportar stores individuales más la acción `cargarMediciones`. El servicio se sigue recibiendo por inyección para preservar la testabilidad; se inicializa en `main.js` y se pasa al módulo del store antes del primer uso.
+
+```js
+// store/appStore.svelte.js
+import { writable } from 'svelte/store';
+
+export const mediciones = writable([]);
+export const cargando   = writable(false);
+export const error      = writable(null);
+
+/** @param {object} service - instancia de measurementService */
+export function cargarMediciones(service) {
+  cargando.set(true);
+  error.set(null);
+  service.listAll()
+    .then((datos) => mediciones.set(datos))
+    .catch((e)    => error.set(e.message))
+    .finally(()   => cargando.set(false));
+}
+```
+
+> Alternativa preferida si se quiere evitar pasar `service` en cada llamada: inicializar el módulo una sola vez con `init(service)` que guarda la referencia internamente y expone `cargarMediciones()` sin argumentos. Decidir el patrón antes de implementar.
+
+`appStore.js` original se puede dejar como fichero de compatibilidad temporal (re-exporta los stores) o eliminar directamente; se elimina definitivamente en BK-28.
+
+**2. Crear `HomeView.svelte`**
+
+Reescribir `HomeView.js` como componente Svelte 5 que:
+- Importa `mediciones`, `cargando`, `error` y `cargarMediciones` del nuevo store.
+- Recibe `service` y `toast` como props (pasados desde `App.svelte`).
+- Llama a `cargarMediciones()` en `onMount`.
+- Usa `$mediciones`, `$cargando`, `$error` reactivamente (sin `store.subscribe()`).
+- Monta `MeasurementList`, `MeasurementChart` y `RegistroMedicionModal` como subcomponentes Svelte declarativos (sin `svelteMount`/`svelteUnmount`).
+- Gestiona la apertura de la modal con una variable `$state` interna (`let modalAbierta = $state(false)`).
+
+Estructura de `HomeView.svelte`:
+
+```svelte
+<script>
+  import { onMount } from 'svelte';
+  import { mediciones, cargando, error, cargarMediciones } from '../store/appStore.svelte.js';
+  import MeasurementList    from '../components/MeasurementList/MeasurementList.svelte';
+  import MeasurementChart   from '../components/MeasurementChart/MeasurementChart.svelte';
+  import RegistroMedicionModal from '../components/Modal/RegistroMedicionModal.svelte';
+
+  let { service, toast } = $props();
+
+  let modalAbierta = $state(false);
+
+  onMount(() => cargarMediciones(service));
+
+  function abrirModal()  { modalAbierta = true; }
+  function cerrarModal() { modalAbierta = false; cargarMediciones(service); }
+</script>
+
+<section class="nueva-medicion">
+  <button class="btn btn--primario" onclick={abrirModal}>+ Nueva medición</button>
+</section>
+
+<div class="dashboard-content" class:dashboard-content--columnas={$mediciones.length >= 1}>
+  <section class="grafica-seccion" hidden={$cargando || !!$error || !$mediciones.length}>
+    <MeasurementChart measurements={$mediciones} />
+  </section>
+  <section class="historial">
+    <MeasurementList
+      measurements={$mediciones}
+      {cargando}={$cargando}
+      {error}={$error}
+      onReintentar={() => cargarMediciones(service)}
+    />
+  </section>
+</div>
+
+{#if modalAbierta}
+  <RegistroMedicionModal {service} {toast} onClose={cerrarModal} />
+{/if}
+```
+
+> El `hidden` y la lógica de `mostrarCargando()` / `mostrarError()` / `mostrarVacio()` / `mostrarLista()` que hoy vive en `HomeView.js` se absorberán en `MeasurementList.svelte` mediante sus props `measurements`, `cargando` y `error`.
+> Puede requerir ajustar la API de `MeasurementList.svelte` (BK-25) para aceptar `cargando` y `error` como props en lugar de funciones imperativas.
+
+**3. Adaptar `router.js`**
+
+Cambiar el contrato del mapa de rutas: de `'/': (el) => VanillaViewFactory` a `'/': { component: HomeViewSvelte, props: (deps) => ({...}) }`.
+
+El router usará `mount(Component, { target, props })` / `unmount(instance)` directamente (ya no necesita el shim `svelteMount.js`):
+
+```js
+// router.js (fragmento del nuevo contrato)
+import { mount, unmount } from 'svelte';
+
+export function createRouter(routes, containerEl) {
+  let vistaActual = null;
+
+  function navigate(hash = window.location.hash || '#/') {
+    const ruta = hash.replace(/^#/, '') || '/';
+    const entry = routes[ruta] ?? routes['/'];
+    if (!entry) return;
+
+    if (vistaActual) { unmount(vistaActual); vistaActual = null; }
+
+    const props = typeof entry.props === 'function' ? entry.props() : (entry.props ?? {});
+    vistaActual = mount(entry.component, { target: containerEl, props });
+  }
+
+  function start() {
+    window.addEventListener('hashchange', () => navigate(window.location.hash));
+    navigate();
+  }
+
+  return { start, navigate };
+}
+```
+
+Mapa de rutas en `App.svelte` (o `main.js`):
+
+```js
+const routes = {
+  '/': { component: HomeView, props: () => ({ service, toast }) },
+};
+```
+
+> El nuevo contrato del router está preparado para rutas protegidas post-BK-29: se puede añadir `guard: () => boolean` a cada entrada.
+
+**4. Crear `App.svelte`**
+
+Componente raíz que:
+- Monta `Toast` e `IosWarning` (actualmente en `app.js`).
+- Instancia el router y llama a `router.start()` en `onMount`.
+- Expone `toast` a las vistas hijas.
+
+```svelte
+<!-- App.svelte -->
+<script>
+  import { onMount } from 'svelte';
+  import Toast      from './components/Toast/Toast.svelte';
+  import IosWarning from './components/IosWarning/IosWarning.svelte';
+  import HomeView   from './views/HomeView.svelte';
+  import { createRouter } from './router.js';
+
+  let { service } = $props();
+
+  let toast;
+
+  onMount(() => {
+    const routes = {
+      '/': { component: HomeView, props: () => ({ service, toast }) },
+    };
+    createRouter(routes, document.querySelector('main')).start();
+  });
+</script>
+
+<Toast bind:this={toast} />
+<IosWarning />
+<main id="app"></main>
+```
+
+> El `#aviso-ios` de `index.html` se puede simplificar o integrar en `IosWarning.svelte` directamente.
+
+**5. Crear `main.js` y actualizar `index.html`**
+
+`main.js` es el único punto de entrada; instancia el `service` e invoca `mount(<App />)`:
+
+```js
+// src/main.js
+import { mount } from 'svelte';
+import * as adapter from './infra/localStorageAdapter.js';
+import { createMeasurementService } from './services/measurementService.js';
+import App from './App.svelte';
+
+const service = createMeasurementService(adapter);
+mount(App, { target: document.body, props: { service } });
+```
+
+En `index.html` cambiar el `src`:
+
+```diff
+-<script type="module" src="src/app.js"></script>
++<script type="module" src="src/main.js"></script>
+```
+
+También se puede eliminar el `<div id="aviso-ios">` si `IosWarning.svelte` ya no depende de ese punto de montaje externo.
+
+**6. Eliminar ficheros Vanilla JS obsoletos de UI**
+
+- `apps/frontend/src/app.js` — reemplazado por `main.js` + `App.svelte`.
+- `apps/frontend/src/lib/svelteMount.js` — ya no se necesita; el router y las vistas usan `mount`/`unmount` directamente.
+- `apps/frontend/src/views/HomeView.js` — reemplazado por `HomeView.svelte`.
+- `apps/frontend/src/store/appStore.js` — reemplazado por `appStore.svelte.js`.
+
+> Los ficheros `.js` de componentes (BK-25 y BK-26) ya se eliminaron en sus respectivas fases.
+
+**7. Migrar tests**
+
+| Fichero test actual | Runner actual | Acción en BK-27 |
+|---|---|---|
+| `tests/store/appStore.test.js` | Jest | Reescribir con Vitest; adaptar a la nueva API de stores Svelte (`subscribe`, `get`) |
+| `tests/router.test.js` | Jest | Reescribir con Vitest; adaptar mocks al nuevo contrato `{ component, props }` |
+| `tests/components/HomeView.test.js` | Vitest | Reescribir con `@testing-library/svelte`; mockear `appStore.svelte.js` y subcomponentes |
+
+Puntos de cobertura mínimos por fichero:
+
+- **`appStore.svelte.js`**: estado inicial; `cargarMediciones` — transición éxito (mediciones actualizadas, `cargando` false); transición error (`error` con mensaje, `cargando` false).
+- **`router.js`**: navega a ruta existente; fallback a `/` en ruta desconocida; llama a `unmount` del componente anterior al navegar; reacciona a `hashchange`.
+- **`HomeView.svelte`**: renderiza el botón "Nueva medición"; llama a `cargarMediciones` en `onMount`; muestra `RegistroMedicionModal` al hacer clic en el botón; propaga `onClose` al cerrar la modal.
+
+---
+
+#### Criterios de aceptación
+
+- [ ] `src/main.js` monta `<App />` en `document.body`; `src/app.js` eliminado.
+- [ ] `App.svelte` monta `Toast` e `IosWarning` y arranca el router; no contiene lógica de negocio ni manipulación de DOM manual.
+- [ ] `HomeView.svelte` existe en `src/views/`; suscribe reactivamente al store sin llamar a `store.subscribe()` explícitamente.
+- [ ] `appStore.svelte.js` exporta stores Svelte (`mediciones`, `cargando`, `error`) y la acción `cargarMediciones`; `appStore.js` eliminado.
+- [ ] `router.js` usa `mount()`/`unmount()` de Svelte; su contrato de rutas accepta `{ component, props }`.
+- [ ] `lib/svelteMount.js` eliminado; ningún fichero lo importa.
+- [ ] Cero código Vanilla JS en la capa de UI (vistas y punto de entrada). Solo queda JS puro en `domain/`, `services/`, `infra/` y `shared/`.
+- [ ] Tests de `appStore`, `router` y `HomeView` pasan con Vitest; cobertura de los módulos migrados ≥ 70 %.
+- [ ] `npm test` (Vitest, coexistencia con Jest mientras no se complete BK-28) y `npm run test:e2e` (Playwright) en verde sin regresiones.
+
+> ⚠️ **Prerrequisito para OAuth (BK-29):** esta fase debe estar completa para soportar rutas protegidas en el router Svelte.
 
 ---
 

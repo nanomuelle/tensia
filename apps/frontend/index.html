@@ -20,20 +20,16 @@
     <!-- D3 resuelto desde node_modules por Vite (BK-24) -->
   </head>
   <body>
-    <!-- Aviso informativo Safari/iOS (ITP 7 días). -->
-    <!-- IosWarning.svelte renderiza su propio contenido aquí (BK-25). -->
-    <div id="aviso-ios"></div>
     <!-- Header fijo -->
     <header class="header">
       <span class="header__logo" aria-hidden="true">🩺</span>
       <h1 class="header__title">Tensia</h1>
     </header>
 
-    <!-- HomeView.mount() genera todo el contenido de <main> (Paso 14f) -->
-    <!-- Toast.mount() crea su propio contenedor y lo añade a <body> (Paso 14b) -->
-    <main class="main"></main>
+    <!-- App.svelte monta Toast, IosWarning y el router en este body (BK-27) -->
+    <!-- El router genera el contenido de <main id="app"> -->
 
-    <script type="module" src="src/app.js"></script>
+    <script type="module" src="src/main.js"></script>
 
     <!-- vite-plugin-pwa inyecta el registro del Service Worker automáticamente (BK-24) -->
   </body>

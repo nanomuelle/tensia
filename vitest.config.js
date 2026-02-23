@@ -22,6 +22,9 @@ export default defineConfig({
       'apps/frontend/tests/components/MeasurementList.test.js',
       'apps/frontend/tests/components/MeasurementChart.test.js',
       'apps/frontend/tests/components/HomeView.test.js',
+      // BK-27: store Svelte y router
+      'apps/frontend/tests/store/appStore.svelte.test.js',
+      'apps/frontend/tests/router.test.js',
     ],
   },
 });

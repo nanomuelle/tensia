@@ -13,38 +13,76 @@
 <script>
   import { formatearFecha } from '../../shared/formatters.js';
 
-  /** Callback opcional al pulsar "Reintentar" en el estado de error. */
-  let { onReintentar = undefined } = $props();
-
   /**
-   * Estado actual del historial.
-   * @type {'cargando'|'error'|'vacio'|'lista'}
+   * Props.
+   * Las props declarativas permiten el uso reactivo desde HomeView.svelte (BK-27).
+   * La API imperativa (mostrarX) se mantiene para compatibilidad con HomeView.js
+   * hasta su eliminación en BK-28.
    */
-  let estado = $state('cargando');
-
-  /** Array de mediciones a rendering cuando estado === 'lista'. */
-  let mediciones = $state([]);
+  let {
+    onReintentar   = undefined,
+    // Props declarativas (HomeView.svelte)
+    measurements:  measurementsProp = undefined,
+    cargando:      cargandoProp     = undefined,
+    error:         errorProp        = undefined,
+  } = $props();
 
   // -------------------------------------------------------
-  // API pública — mantiene el mismo contrato que la versión Vanilla JS
+  // Estado interno (API imperativa — HomeView.js)
+  // -------------------------------------------------------
+
+  /** @type {'cargando'|'error'|'vacio'|'lista'} */
+  let _estadoImpl      = $state('cargando');
+  let _medicionesImpl  = $state([]);
+
+  // -------------------------------------------------------
+  // API reactiva derivada
+  // Si se pasan props declarativas, éstas tienen prioridad; en caso contrario
+  // se usa el estado imperativo interno para compatibilidad con HomeView.js.
+  // -------------------------------------------------------
+
+  const _usarDeclarativo = $derived(
+    measurementsProp !== undefined ||
+    cargandoProp     !== undefined ||
+    errorProp        !== undefined
+  );
+
+  /** Estado efectivo del componente. */
+  const estado = $derived(
+    _usarDeclarativo
+      ? (cargandoProp
+          ? 'cargando'
+          : errorProp
+            ? 'error'
+            : (measurementsProp?.length ? 'lista' : 'vacio'))
+      : _estadoImpl
+  );
+
+  /** Mediciones efectivas a renderizar. */
+  const mediciones = $derived(
+    _usarDeclarativo ? (measurementsProp ?? []) : _medicionesImpl
+  );
+
+  // -------------------------------------------------------
+  // API pública imperativa (backward compat con HomeView.js — se elimina en BK-28)
   // -------------------------------------------------------
 
   /** Muestra el indicador de carga. */
-  export function mostrarCargando() { estado = 'cargando'; }
+  export function mostrarCargando() { _estadoImpl = 'cargando'; }
 
   /** Muestra el mensaje de error con botón de reintento. */
-  export function mostrarError() { estado = 'error'; }
+  export function mostrarError() { _estadoImpl = 'error'; }
 
   /** Muestra el estado vacío (sin mediciones todavía). */
-  export function mostrarVacio() { estado = 'vacio'; }
+  export function mostrarVacio() { _estadoImpl = 'vacio'; }
 
   /**
    * Renderiza la lista de mediciones.
    * @param {Array} m - Array de mediciones a mostrar.
    */
   export function mostrarLista(m) {
-    mediciones = m;
-    estado = 'lista';
+    _medicionesImpl = m;
+    _estadoImpl     = 'lista';
   }
 </script>
 

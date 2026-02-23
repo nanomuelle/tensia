@@ -17,6 +17,14 @@
   import { renderChart } from '../../chart.js';
   import { MIN_MEDICIONES_GRAFICA } from '../../shared/constants.js';
 
+  /**
+   * Props.
+   * La prop declarativa permite el uso reactivo desde HomeView.svelte (BK-27).
+   * La función pública update() se mantiene para compatibilidad con HomeView.js
+   * hasta su eliminación en BK-28.
+   */
+  let { measurements: measurementsProp = undefined } = $props();
+
   /** Referencia al div contenedor de D3 (bind:this). */
   let containerEl;
 
@@ -25,6 +33,21 @@
 
   /** Instancia del ResizeObserver activa. */
   let resizeObserver = null;
+
+  // -------------------------------------------------------
+  // API declarativa — HomeView.svelte (BK-27)
+  // Cuando se pasa la prop `measurements`, redibujar al cambiar.
+  // -------------------------------------------------------
+
+  $effect(() => {
+    if (measurementsProp !== undefined) {
+      update(measurementsProp);
+    }
+  });
+
+  // -------------------------------------------------------
+  // API pública imperativa (backward compat con HomeView.js — se elimina en BK-28)
+  // -------------------------------------------------------
 
   /**
    * Actualiza la gráfica con las nuevas mediciones.

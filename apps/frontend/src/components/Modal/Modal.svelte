@@ -108,14 +108,25 @@
 
   /** Tras la transición de apertura: mueve el foco al primer elemento focusable. */
   function _onOpenTransitionEnd(evento) {
+    // Ignorar eventos que burbujean desde elementos hijos; solo reaccionar
+    // al transitionend del propio contenedor de la modal.
+    if (evento.target !== containerEl) return;
     if (evento.propertyName !== 'transform' && evento.propertyName !== 'opacity') return;
+    // Eliminar el listener manualmente (no usamos once:true para que los
+    // eventos de hijos no lo consuman antes de que llegue el del contenedor).
+    containerEl.removeEventListener('transitionend', _onOpenTransitionEnd);
     const focusables = _getFocusables();
     if (focusables.length) focusables[0].focus();
   }
 
   /** Tras la transición de cierre: limpia el estado, devuelve el foco y llama onClose. */
   function _onCloseTransitionEnd(evento) {
+    // Ignorar eventos que burbujean desde elementos hijos (inputs, botones…).
+    if (evento.target !== containerEl) return;
     if (evento.propertyName !== 'transform' && evento.propertyName !== 'opacity') return;
+    // Guardar referencia antes de que Svelte desmonte el elemento tras _visible=false.
+    const el = containerEl;
+    el.removeEventListener('transitionend', _onCloseTransitionEnd);
 
     _visible        = false;
     _overlayClosing = false;
@@ -152,7 +163,9 @@
         _overlayOpen = true;
         _modalOpen   = true;
         if (containerEl) {
-          containerEl.addEventListener('transitionend', _onOpenTransitionEnd, { once: true });
+          // Sin once:true: eliminamos el listener manualmente dentro del handler
+          // para que eventos de hijos (que burbujean) no lo consuman.
+          containerEl.addEventListener('transitionend', _onOpenTransitionEnd);
         }
       });
     });
@@ -171,7 +184,9 @@
     _modalClosing   = true;
 
     if (containerEl) {
-      containerEl.addEventListener('transitionend', _onCloseTransitionEnd, { once: true });
+      // Sin once:true: eliminamos el listener manualmente dentro del handler
+      // para que eventos de hijos (que burbujean) no lo consuman.
+      containerEl.addEventListener('transitionend', _onCloseTransitionEnd);
     }
   }
 

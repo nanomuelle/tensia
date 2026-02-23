@@ -12,6 +12,7 @@
     - abrir()    — rellena la fecha actual, limpia el formulario y enfoca el primer campo.
 -->
 <script>
+  import { onMount } from 'svelte';
   import { validarCamposMedicion, prepararDatosMedicion } from '../../shared/validators.js';
   import { fechaLocalActual } from '../../shared/formatters.js';
 
@@ -22,7 +23,13 @@
   let systolic   = $state('');
   let diastolic  = $state('');
   let pulse      = $state('');
+  // measuredAt se inicializa vacío y se rellena en onMount con la fecha local
+  // actual, garantizando que el campo siempre tenga un valor válido al abrir.
   let measuredAt = $state('');
+
+  onMount(() => {
+    measuredAt = fechaLocalActual();
+  });
   let errores    = $state({});
   let enviando   = $state(false);
   let errorGlobal = $state('');
