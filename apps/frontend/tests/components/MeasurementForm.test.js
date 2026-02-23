@@ -15,15 +15,15 @@
  * @jest-environment jsdom
  */
 
-import { jest, describe, test, expect, beforeAll, beforeEach } from '@jest/globals';
+import { vi, describe, test, expect, beforeAll, beforeEach } from 'vitest';
 import { createMeasurementForm } from '../../src/components/MeasurementForm/MeasurementForm.js';
 
 // =========================================================
 // Mock del servicio (inyectado por DI en el componente)
 // =========================================================
 
-const mockServiceCreate = jest.fn();
-const mockServiceListAll = jest.fn().mockResolvedValue([]);
+const mockServiceCreate = vi.fn();
+const mockServiceListAll = vi.fn().mockResolvedValue([]);
 
 const mockService = {
   create:  mockServiceCreate,
@@ -31,7 +31,7 @@ const mockService = {
 };
 
 // Mock mínimo del Toast (no necesitamos verificar notificaciones en estos tests)
-const mockToast = { show: jest.fn(), mount: jest.fn() };
+const mockToast = { show: vi.fn(), mount: vi.fn() };
 
 // =========================================================
 // HTML del formulario (único fragmento necesario para el componente)
@@ -58,8 +58,8 @@ beforeAll(() => {
     {
       service:   mockService,
       toast:     mockToast,
-      onSuccess: jest.fn(),
-      onCerrar:  jest.fn(),
+      onSuccess: vi.fn(),
+      onCerrar:  vi.fn(),
     },
   );
   formulario.mount();

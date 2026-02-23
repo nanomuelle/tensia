@@ -4,7 +4,7 @@
  * @jest-environment node
  */
 
-import { jest, describe, test, expect, beforeEach } from '@jest/globals';
+import { vi, describe, test, expect, beforeEach } from 'vitest';
 import { getMediciones, crearMedicion } from '../../src/infra/httpAdapter.js';
 
 // =========================================================
@@ -27,7 +27,7 @@ function mockResponse({ ok = true, status = 200, body = {} } = {}) {
 // =========================================================
 
 beforeEach(() => {
-  global.fetch = jest.fn();
+  global.fetch = vi.fn();
 });
 
 // =========================================================

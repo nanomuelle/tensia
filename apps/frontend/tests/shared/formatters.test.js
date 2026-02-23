@@ -1,9 +1,10 @@
+// @vitest-environment node
 /**
  * Tests unitarios: shared/formatters.js
  * Módulo puro — entorno node es suficiente.
  */
 
-import { describe, test, expect } from '@jest/globals';
+import { describe, test, expect } from 'vitest';
 import { fechaLocalActual, formatearFecha } from '../../src/shared/formatters.js';
 
 describe('fechaLocalActual()', () => {

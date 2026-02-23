@@ -5,7 +5,7 @@
  * @jest-environment jsdom
  */
 
-import { describe, test, expect, beforeEach, jest } from '@jest/globals';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { emit, on, Events } from '../../src/shared/eventBus.js';
 
 // =========================================================
@@ -49,7 +49,7 @@ describe('emit()', () => {
 
 describe('on()', () => {
   test('el handler se llama cuando se emite el evento', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     on(Events.MEASUREMENT_SAVED, handler);
 
     emit(Events.MEASUREMENT_SAVED, { id: '1' });
@@ -73,7 +73,7 @@ describe('on()', () => {
   });
 
   test('la función de cleanup elimina el listener', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     const cleanup = on(Events.MEASUREMENT_SAVED, handler);
 
     cleanup();
@@ -83,8 +83,8 @@ describe('on()', () => {
   });
 
   test('varios handlers independientes reciben el mismo evento', () => {
-    const h1 = jest.fn();
-    const h2 = jest.fn();
+    const h1 = vi.fn();
+    const h2 = vi.fn();
 
     const c1 = on(Events.MEASUREMENT_SAVED, h1);
     const c2 = on(Events.MEASUREMENT_SAVED, h2);

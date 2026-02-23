@@ -5,7 +5,7 @@
  * @jest-environment jsdom
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { getAll, save } from '../../src/infra/localStorageAdapter.js';
 
 const STORAGE_KEY = 'bp_measurements';

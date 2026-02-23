@@ -8,10 +8,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest",
-    "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
-    "test:unit": "vitest run --config vitest.config.js",
-    "test:unit:watch": "vitest --config vitest.config.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test"
   },
   "repository": {
@@ -40,53 +39,11 @@
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/svelte": "^5.3.1",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^30.2.0",
+    "@vitest/coverage-v8": "^4.0.18",
     "jsdom": "^28.1.0",
-    "nodemon": "^3.1.11",
     "supertest": "^7.2.2",
     "vite": "^7.3.1",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.0.18"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "testMatch": [
-      "**/tests/**/*.test.js"
-    ],
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "apps/frontend/tests/components/Toast.test.js",
-      "apps/frontend/tests/components/IosWarning.test.js",
-      "apps/frontend/tests/components/MeasurementList.test.js",
-      "apps/frontend/tests/components/MeasurementChart.test.js",
-      "apps/frontend/tests/components/HomeView.test.js",
-      "apps/frontend/tests/store/appStore.svelte.test.js",
-      "apps/frontend/tests/router.test.js"
-    ],
-    "transform": {},
-    "collectCoverageFrom": [
-      "apps/backend/src/**/*.js",
-      "!apps/backend/src/index.js",
-      "!apps/backend/src/api/app.js",
-      "apps/frontend/src/chart.js",
-      "apps/frontend/src/domain/measurement.js",
-      "apps/frontend/src/infra/httpAdapter.js",
-      "apps/frontend/src/infra/localStorageAdapter.js",
-      "apps/frontend/src/services/measurementService.js",
-      "apps/frontend/src/shared/eventBus.js",
-      "apps/frontend/src/shared/formatters.js",
-      "apps/frontend/src/shared/validators.js",
-      "apps/frontend/src/components/**/*.js",
-      "!apps/frontend/src/components/Toast/Toast.js",
-      "!apps/frontend/src/components/IosWarning/IosWarning.js",
-      "!apps/frontend/src/components/MeasurementList/MeasurementList.js",
-      "!apps/frontend/src/components/MeasurementChart/MeasurementChart.js"
-    ],
-    "coverageThreshold": {
-      "global": {
-        "lines": 70
-      }
-    }
   }
 }

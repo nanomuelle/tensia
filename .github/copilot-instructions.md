@@ -12,7 +12,7 @@ En el MVP el uso es **anónimo**: no hay login ni cuentas de usuario.
 
 | Capa | Tecnología |
 |---|---|
-| Backend | Node.js (ES Modules o CJS), `dotenv`, `nodemon` |
+| Backend | Node.js (ES Modules o CJS), `dotenv` |
 | Frontend | Vanilla JS + fetch (ES Modules), sin framework (ADR-003) |
 | Distribución | PWA (manifest.json + Service Worker) — instalable en Android e iOS sin tiendas (ADR-005) |
 | Persistencia MVP | `localStorage` del navegador, gestionado desde el **frontend** mediante `localStorageAdapter` (ADR-005) |
@@ -244,10 +244,10 @@ Errores de validación → `400 Bad Request` con mensaje descriptivo.
 
 | Tipo | Ubicación | Herramienta sugerida |
 |---|---|---|
-| Unitario backend | `apps/backend/tests/` | Jest |
-| Integración API | `apps/backend/tests/` | Jest + supertest |
-| Componente frontend | `apps/frontend/tests/` | Por decidir |
-| E2E (1 flujo crítico) | `apps/frontend/tests/e2e/` | Por decidir |
+| Unitario backend | `apps/backend/tests/` | Vitest |
+| Integración API | `apps/backend/tests/` | Vitest + supertest |
+| Componente frontend | `apps/frontend/tests/` | Vitest + `@testing-library/svelte` |
+| E2E (1 flujo crítico) | `apps/frontend/tests/e2e/` | Playwright (`@playwright/test`) |
 
 Cobertura mínima objetivo: **70%**.
 

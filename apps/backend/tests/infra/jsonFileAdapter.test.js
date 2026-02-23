@@ -1,9 +1,10 @@
+// @vitest-environment node
 /**
  * Tests unitarios: capa de infraestructura — JsonFileAdapter.
  * Usa un directorio temporal para no contaminar el sistema de archivos real.
  */
 
-import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';

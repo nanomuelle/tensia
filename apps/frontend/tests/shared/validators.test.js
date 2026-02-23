@@ -1,9 +1,10 @@
+// @vitest-environment node
 /**
  * Tests unitarios: módulo de validación del formulario — validators.js
  * Funciones puras; no necesitan DOM ni fetch.
  */
 
-import { describe, test, expect } from '@jest/globals';
+import { describe, test, expect } from 'vitest';
 import { validarCamposMedicion, prepararDatosMedicion, MEASUREMENT_LIMITS } from '../../src/shared/validators.js';
 
 // Valores base válidos reutilizables

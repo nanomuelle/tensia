@@ -1,4 +1,4 @@
-// vitest.config.js — BK-25 (tests de componentes Svelte con Vitest)
+// vitest.config.js — BK-28 (runner único)
 import { defineConfig } from 'vitest/config';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 
@@ -9,22 +9,26 @@ export default defineConfig({
     conditions: ['browser'],
   },
   test: {
-    // Entorno navegador simulado para acceder a DOM
+    // Entorno predeterminado: jsdom; los tests de lógica pura anulan con @vitest-environment node
     environment: 'jsdom',
     // Globals (describe, it, expect, vi…) disponibles sin importar
     globals: true,
     // Configuración inicial: @testing-library/jest-dom
     setupFiles: ['./vitest.setup.js'],
-    // Solo los tests de los componentes migrados a Svelte (BK-25)
-    include: [
-      'apps/frontend/tests/components/Toast.test.js',
-      'apps/frontend/tests/components/IosWarning.test.js',
-      'apps/frontend/tests/components/MeasurementList.test.js',
-      'apps/frontend/tests/components/MeasurementChart.test.js',
-      'apps/frontend/tests/components/HomeView.test.js',
-      // BK-27: store Svelte y router
-      'apps/frontend/tests/store/appStore.svelte.test.js',
-      'apps/frontend/tests/router.test.js',
-    ],
+    // Todos los tests del repositorio (backend + frontend)
+    include: ['apps/**/tests/**/*.test.{js,svelte.js}'],
+    coverage: {
+      provider: 'v8',
+      include: [
+        'apps/backend/src/**/*.js',
+        'apps/frontend/src/**/*.js',
+        'apps/frontend/src/**/*.svelte',
+      ],
+      exclude: [
+        'apps/backend/src/index.js',
+        'apps/backend/src/api/app.js',
+      ],
+      thresholds: { lines: 70 },
+    },
   },
 });

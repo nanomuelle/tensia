@@ -673,19 +673,195 @@ Puntos de cobertura mínimos por fichero:
 ---
 
 **BK-28 — Fase 4: Consolidar tests y limpiar dependencias**
-Descripción: Vitest como único runner de tests unitarios/integración. Eliminar Jest, `jest-environment-jsdom`, `babel-jest` y `scripts/build.js`. Migrar `vite-plugin-pwa` para reemplazar `sw.js` manual. Actualizar `README.md` y `copilot-instructions.md` con el nuevo stack.
+
+**Descripción:**
+Hacer de Vitest el único runner de tests unitarios e integración, eliminando la coexistencia con Jest que se mantiene desde BK-24. Migrar los 9 ficheros de test que aún usan Jest al formato Vitest, unificar la configuración de cobertura y eliminar las dependencias y archivos ya obsoletos.
+
 Prioridad: Alta
 Estimación: 2 jornadas
 Dependencias: BK-27
 Estado: Pendiente
 Tipo: Tarea técnica (limpieza)
 
-Criterios de aceptación:
-- [ ] `npm test` usa Vitest; cero referencias a Jest en el repositorio.
-- [ ] Cobertura total ≥ 70 % con Vitest.
-- [ ] `sw.js` manual reemplazado por `vite-plugin-pwa`; PWA sigue instalable en Android e iOS.
-- [ ] `copilot-instructions.md` y `README.md` actualizados con el nuevo stack.
-- [ ] `scripts/build.js` eliminado.
+---
+
+#### Estado del repositorio al inicio de BK-28
+
+Al completar BK-27, el proyecto mantiene **dos runners en paralelo**:
+
+| Runner | Script | Tests que ejecuta |
+|---|---|---|
+| Vitest | `npm run test:unit` | Componentes Svelte (BK-25/26) + store Svelte + router (BK-27) |
+| Jest | `npm test` | Backend + los módulos JS puros del frontend (dominio, servicios, infra, shared, chart) |
+
+**Tests bajo Jest que deben migrarse a Vitest (9 ficheros):**
+
+| Fichero | Entorno Jest actual | Entorno Vitest objetivo |
+|---|---|---|
+| `apps/backend/tests/infra/jsonFileAdapter.test.js` | `node` | `node` |
+| `apps/frontend/tests/chart.test.js` | `jsdom` | `jsdom` |
+| `apps/frontend/tests/domain/measurement.test.js` | `node` | `node` |
+| `apps/frontend/tests/infra/localStorageAdapter.test.js` | `jsdom` | `jsdom` |
+| `apps/frontend/tests/infra/httpAdapter.test.js` | `jsdom` | `jsdom` |
+| `apps/frontend/tests/services/measurementService.test.js` | `node` | `node` |
+| `apps/frontend/tests/shared/eventBus.test.js` | `jsdom` | `jsdom` |
+| `apps/frontend/tests/shared/formatters.test.js` | `node` | `node` |
+| `apps/frontend/tests/shared/validators.test.js` | `node` | `node` |
+
+---
+
+#### Subtareas técnicas
+
+**1. Migrar los 9 ficheros de test de Jest a Vitest**
+
+Todos los ficheros usan `import { describe, test, expect, … } from '@jest/globals'`. El cambio es mínimo:
+
+```diff
+-import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
++import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+```
+
+Donde se usa `jest.fn()` o `jest.spyOn()`, reemplazar por `vi.fn()` / `vi.spyOn()` (misma API).
+
+No hay que cambiar la lógica de los tests; son módulos ES puros.
+
+**2. Anotar el entorno por fichero donde difiere del valor por defecto**
+
+`vitest.config.js` usará `jsdom` como entorno por defecto (hereda de la config actual). Los ficheros que necesitan entorno `node` deben declararlo en la primera línea:
+
+```js
+// @vitest-environment node
+```
+
+Ficheros que requieren esta anotación (los de la tabla anterior con "node"):
+- `apps/backend/tests/infra/jsonFileAdapter.test.js`
+- `apps/frontend/tests/domain/measurement.test.js`
+- `apps/frontend/tests/services/measurementService.test.js`
+- `apps/frontend/tests/shared/formatters.test.js`
+- `apps/frontend/tests/shared/validators.test.js`
+
+**3. Actualizar `vitest.config.js`**
+
+Sustituir la lista explícita de `include` por un patrón que cubra todos los tests, y extender `collectCoverageFrom` para incluir los módulos del backend:
+
+```js
+// vitest.config.js — BK-28 (runner único)
+import { defineConfig } from 'vitest/config';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+
+export default defineConfig({
+  plugins: [svelte({ hot: false })],
+  resolve: {
+    conditions: ['browser'],
+  },
+  test: {
+    environment: 'jsdom',       // predeterminado; los test Node anulan con @vitest-environment
+    globals: true,
+    setupFiles: ['./vitest.setup.js'],
+    include: ['apps/**/tests/**/*.test.{js,svelte.js}'],
+    coverage: {
+      provider: 'v8',
+      include: [
+        'apps/backend/src/**/*.js',
+        'apps/frontend/src/**/*.js',
+        'apps/frontend/src/**/*.svelte',
+      ],
+      exclude: [
+        'apps/backend/src/index.js',
+        'apps/backend/src/api/app.js',
+      ],
+      thresholds: { lines: 70 },
+    },
+  },
+});
+```
+
+**4. Actualizar scripts en `package.json`**
+
+```diff
+  "scripts": {
+    "start":   "node apps/backend/src/index.js",
+    "dev":     "vite",
+    "build":   "vite build",
+    "preview": "vite preview",
+-   "test":          "node --experimental-vm-modules node_modules/.bin/jest",
+-   "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
+-   "test:unit":     "vitest run --config vitest.config.js",
+-   "test:unit:watch": "vitest --config vitest.config.js",
++   "test":          "vitest run",
++   "test:watch":    "vitest",
++   "test:coverage": "vitest run --coverage",
+    "test:e2e":      "playwright test"
+  }
+```
+
+**5. Eliminar la sección `"jest"` de `package.json`**
+
+Borrar el bloque completo `"jest": { … }` del `package.json`.
+
+**6. Desinstalar Jest y dependencias exclusivas**
+
+```bash
+npm uninstall jest jest-environment-jsdom
+```
+
+> `nodemon` también se puede quitar en este momento: `npm run dev` usa Vite y `npm start` arranca Express directamente sin recarga automática.
+> ```bash
+> npm uninstall nodemon
+> ```
+
+**7. Eliminar `scripts/build.js`**
+
+```bash
+rm scripts/build.js
+```
+
+Comprobar que ningún script activo ni ningún workflow de CI referencia el fichero antes de borrarlo.
+
+**8. Actualizar `copilot-instructions.md`**
+
+Sección _Stack tecnológico_ → fila de tests:
+
+```diff
+-| Tests | Jest (`--experimental-vm-modules`) para unitarios e integración; Playwright (`@playwright/test`) para E2E (ADR-004) |
++| Tests | Vitest (runner único para unitarios e integración); Playwright (`@playwright/test`) para E2E (ADR-004) |
+```
+
+**9. Actualizar `README.md`**
+
+Actualizar la sección de comandos de desarrollo para reflejar los nuevos scripts (`npm test`, `npm run test:watch`, `npm run test:coverage`). Eliminar cualquier mención a `--experimental-vm-modules` o Jest.
+
+---
+
+#### Verificación final
+
+```bash
+# Todos los tests en un único runner
+npm test
+
+# Con cobertura — debe superar el 70 % global
+npm run test:coverage
+
+# E2E sin regresioes
+npm run test:e2e
+
+# Confirmar que Jest ya no está instalado
+node -e "require('jest')" 2>&1 | grep "Cannot find"
+```
+
+---
+
+#### Criterios de aceptación
+
+- [ ] `npm test` ejecuta todos los tests (backend + frontend) con Vitest; cero menciones a Jest en scripts ni en comentarios de configuración.
+- [ ] Los 9 ficheros migrados importan desde `vitest` (o usan globals) en lugar de `@jest/globals`.
+- [ ] `npm run test:coverage` supera el umbral de cobertura global del 70 % incluyendo el backend.
+- [ ] `vitest.config.js` cubre todos los tests con un patrón glob; sin lista explícita de ficheros.
+- [ ] `package.json` no contiene el bloque `"jest": { … }` ni scripts que invoquen Jest.
+- [ ] `jest` y `jest-environment-jsdom` eliminados de `devDependencies`.
+- [ ] `scripts/build.js` eliminado del repositorio; no hay referencias activas a él.
+- [ ] `copilot-instructions.md` y `README.md` actualizados con el stack definitivo (Vitest).
+- [ ] `npm run test:e2e` (Playwright) sigue en verde sin regresiones.
 
 ---
 
