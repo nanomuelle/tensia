@@ -93,9 +93,9 @@ Análisis del repositorio antes de iniciar la épica. Permite saber qué está y
 **Criterios de aceptación:**
 - [x] `manifest.json` tiene `"start_url": "./"` y `"scope": "./"`. *(2026-02-24)*
 - [x] `vite.config.js` — `base: process.env.VITE_BASE_PATH ?? '/'` ya correctamente configurado; `manifest: false` delega `start_url`/`scope` al `manifest.json` manual. *(2026-02-24)*
-- [ ] El repositorio tiene Pages configurado con "Source: GitHub Actions". *(acción manual en GitHub Settings → Pages)*
-- [ ] El workflow `deploy-pages.yml` se ejecuta en push a `main` sin errores (ya está completo; no requiere modificaciones).
-- [ ] La app es accesible en `https://nanomuelle.github.io/tensia/`.
+- [x] El repositorio tiene Pages configurado con "Source: GitHub Actions". *(acción manual en GitHub Settings → Pages)*
+- [x] El workflow `deploy-pages.yml` se ejecuta en push a `main` sin errores (ya está completo; no requiere modificaciones).
+- [x] La app es accesible en `https://nanomuelle.github.io/tensia/`.
 - [ ] El Service Worker generado por `vite-plugin-pwa` se registra correctamente en la URL de GitHub Pages (sin errores de scope en DevTools).
 - [ ] La instalación como PWA en Android/Chrome funciona desde la URL de GitHub Pages (icono de instalación visible).
 
