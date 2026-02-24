@@ -27,9 +27,10 @@
 -->
 <script>
   import { onMount } from 'svelte';
-  import Toast      from './components/Toast/Toast.svelte';
-  import IosWarning from './components/IosWarning/IosWarning.svelte';
-  import HomeView   from './views/HomeView.svelte';
+  import Toast       from './components/Toast/Toast.svelte';
+  import IosWarning  from './components/IosWarning/IosWarning.svelte';
+  import HomeView    from './views/HomeView.svelte';
+  import UserSession from './components/UserSession/UserSession.svelte';
   import { createRouter } from './router.js';
 
   // --- Props ---
@@ -113,6 +114,13 @@
     createRouter(routes, document.querySelector('main')).start();
   });
 </script>
+
+<!-- Cabecera fija con zona de sesión (BK-37) -->
+<header class="header">
+  <span class="header__logo" aria-hidden="true">🩺</span>
+  <h1 class="header__title">Tensia</h1>
+  <UserSession {authService} />
+</header>
 
 <!-- Notificaciones efímeras (accesibles desde vistas vía prop toast) -->
 <Toast bind:this={toast} />

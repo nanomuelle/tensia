@@ -93,17 +93,17 @@
 **Prioridad:** Media  
 **Estimación:** 1 jornada  
 **Dependencias:** BK-29, BK-36  
-**Estado:** Pendiente  
+**Estado:** ✅ Completado (2026-02-24)  
 **Tipo:** Feature (frontend)  
 **Referencia:** US-15
 
 **Criterios de aceptación:**
-- [ ] En estado anónimo la cabecera muestra el botón "Iniciar sesión con Google".
-- [ ] En estado autenticado la cabecera muestra el nombre del usuario y su foto de perfil (o la inicial si no hay foto).
-- [ ] El botón/avatar es accesible: `aria-label` en el botón, `alt` descriptivo en la imagen.
-- [ ] Pulsar "Cerrar sesión" limpia la sesión via `authService.logout()` y la UI vuelve al estado anónimo sin recargar.
-- [ ] El componente usa `authStore.isAuthenticated` y `authStore.sesion` reactivamente; no contiene lógica PKCE.
-- [ ] Tests de componente para el estado anónimo y el estado autenticado en verde.
+- [x] En estado anónimo la cabecera muestra el botón "Iniciar sesión con Google".
+- [x] En estado autenticado la cabecera muestra el nombre del usuario y su foto de perfil (o la inicial si no hay foto).
+- [x] El botón/avatar es accesible: `aria-label` en el botón, `alt` descriptivo en la imagen.
+- [x] Pulsar "Cerrar sesión" limpia la sesión via `authService.logout()` y la UI vuelve al estado anónimo sin recargar.
+- [x] El componente usa `authStore.isAuthenticated` y `authStore.sesion` reactivamente; no contiene lógica PKCE.
+- [x] Tests de componente para el estado anónimo y el estado autenticado en verde.
 
 ---
 
