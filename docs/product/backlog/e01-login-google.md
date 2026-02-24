@@ -43,7 +43,7 @@
 
 ---
 
-## BK-36 — Integración del callback OAuth en la app Svelte
+## BK-36 — Integración del callback OAuth en la app Svelte ✅
 
 **Descripción:** `authService.js` ya está implementado en BK-40 (flujo PKCE completo: `requestCode()`, `handleCallback()`, `logout()`). El trabajo de BK-36 es integrarlo en la app Svelte:
 
@@ -58,23 +58,23 @@
 **Prioridad:** Alta  
 **Estimación:** 1-2 jornadas  
 **Dependencias:** BK-29, BK-40 ✅  
-**Estado:** Pendiente  
+**Estado:** ✅ Completado (2026-02-24)  
 **Tipo:** Feature (frontend)  
 **Referencia:** US-15
 
 **Criterios de aceptación:**
-- [ ] La estrategia de callback elegida está documentada con un comentario en el punto de entrada (`app.js` o componente callback).
-- [ ] `code_verifier` se genera con mínimo 32 bytes aleatorios (Web Crypto `getRandomValues`) codificados en base64url — cumple RFC 7636 (rango 43-128 chars).
-- [ ] `code_challenge` se calcula como `BASE64URL(SHA-256(ASCII(code_verifier)))` usando Web Crypto API.
-- [ ] `state` es un valor aleatorio de 16 bytes en hexadecimal, verificado al recibir el callback (previene CSRF).
-- [ ] `code_verifier` y `state` se almacenan en `sessionStorage`, no en `localStorage`.
-- [ ] El `redirect_uri` usado en la llamada coincide exactamente con el registrado en Google Cloud Console.
-- [ ] Tras intercambio exitoso, `authStore.isAuthenticated` es `true` y el perfil está disponible; la app navega a `#/`.
-- [ ] Si el usuario cancela el consentimiento (`error=access_denied`), la app muestra un toast informativo y queda en estado anónimo funcional.
-- [ ] Si `state` no coincide al volver del callback, el flujo se aborta, `sessionStorage` se limpia y se muestra error.
-- [ ] Si el endpoint de tokens devuelve error (p. ej. código expirado), se muestra un toast y el estado queda limpio.
-- [ ] La ruta `#/` sigue siendo accesible sin autenticación durante y después del flujo.
-- [ ] Tests unitarios de `handleCallback` en verde (Web Crypto y `fetch` mockeados).
+- [x] La estrategia de callback elegida está documentada con un comentario en `App.svelte` (URL base como `redirect_uri`, detección de `?code=` en `onMount` antes de arrancar el router).
+- [x] `code_verifier` se genera con mínimo 32 bytes aleatorios (Web Crypto `getRandomValues`) codificados en base64url — cumple RFC 7636 (rango 43-128 chars).
+- [x] `code_challenge` se calcula como `BASE64URL(SHA-256(ASCII(code_verifier)))` usando Web Crypto API.
+- [x] `state` es un valor aleatorio de 16 bytes en hexadecimal, verificado al recibir el callback (previene CSRF).
+- [x] `code_verifier` y `state` se almacenan en `sessionStorage`, no en `localStorage`.
+- [x] El `redirect_uri` usado en la llamada coincide exactamente con el registrado en Google Cloud Console (configurado mediante `VITE_REDIRECT_URI`).
+- [x] Tras intercambio exitoso, `authStore.isAuthenticated` es `true` y el perfil está disponible; la app navega a `#/`.
+- [x] Si el usuario cancela el consentimiento (`error=access_denied`), la app muestra un toast informativo y queda en estado anónimo funcional.
+- [x] Si `state` no coincide al volver del callback, el flujo se aborta, `sessionStorage` se limpia y se muestra error.
+- [x] Si el endpoint de tokens devuelve error (p. ej. código expirado), se muestra un toast y el estado queda limpio.
+- [x] La ruta `#/` sigue siendo accesible sin autenticación durante y después del flujo.
+- [x] Tests unitarios de `handleCallback` en verde (Web Crypto y `fetch` mockeados) + tests de integración en `App.svelte.test.js` (13 tests).
 
 ---
 
@@ -148,7 +148,7 @@ Cliente (PWA)                                             Google
 |---|---|---|
 | BK-29 — Migrar `authStore.svelte.js` a Runes + sessionStorage | 1 j. | ✅ Completado |
 | ~~BK-30 — Proxy backend~~ | ~~1-2 j.~~ → _obsoleto desde E-04_ | Obsoleto |
-| BK-36 — Integración del callback OAuth en la app Svelte | 1-2 j. | Pendiente |
+| BK-36 — Integración del callback OAuth en la app Svelte | 1-2 j. | ✅ Completado |
 | BK-37 — Cabecera Login / perfil | 1 j. | Pendiente |
 | **Total E-01** | **3-4 jornadas** | |
 
