@@ -23,19 +23,27 @@ La única pieza del `apps/backend/` con valor permanente es `JsonFileAdapter`, q
 
 ---
 
-## Estado del arte (2026-02-24)
+## Estado del arte (2026-02-24 — post-implementación)
 
-Análisis del repositorio antes de iniciar la épica. Permite saber qué está ya alineado y qué queda por hacer:
+Análisis del repositorio al cierre de la épica:
 
-| Artefacto | Estado actual | Acción requerida |
+| Artefacto | Estado | BK |
 |---|---|---|
-| `deploy-pages.yml` | ✅ Completo. No invoca el backend, gestiona `VITE_BASE_PATH` y despliega `dist/`. Solo falta activar Pages en Settings. | BK-39: activar en Settings → Pages |
-| `playwright.config.js` — `webServer` | ✅ Ya usa `vite preview --port 3000` desde la migración a Svelte 5. | — |
-| `playwright.config.js` — comentario de cabecera | ✅ Actualizado. Describe el arranque con `vite preview --port 3000`. | BK-42: ✅ completado |
-| `manifest.json` `start_url` | ❌ Valor `"/"`. Debe ser `"./"` para funcionar desde subdirectorio de GitHub Pages. | BK-39: cambiar a `"./"` |
-| `package.json` script `start` | ❌ `node apps/backend/src/index.js`. Apunta al servidor Express en producción. | BK-41: renombrar a `start:dev` |
-| `package.json` dependencias `express`/`dotenv` | ❌ En `dependencies` (producción). Deben estar en `devDependencies`. | BK-41: mover a `devDependencies` |
-| `apps/backend/` | ✅ Solo se usa en tests de integración. `JsonFileAdapter` sigue siendo útil y sus tests están en verde. | Conservar, no eliminar |
+| `deploy-pages.yml` | ✅ Sin invocación al backend. Gestiona `VITE_BASE_PATH` y despliega `dist/`. | BK-39 |
+| `playwright.config.js` — `webServer` | ✅ Usa `vite preview --port 3000`. Sin referencias a Express. | BK-39 / BK-42 |
+| `playwright.config.js` — comentario de cabecera | ✅ Describe `vite preview --port 3000` y aislamiento vía `localStorage`. | BK-42 |
+| `manifest.json` `start_url` | ✅ Valor `"./"`. Correcto para subdirectorio de GitHub Pages. | BK-39 |
+| `manifest.json` `scope` | ✅ Valor `"./"`. Correcto. | BK-39 |
+| `package.json` script `start` | ✅ Renombrado a `start:dev`. No hay script `start` que arranque Express. | BK-41 |
+| `package.json` dependencias `express`/`dotenv` | ✅ En `devDependencies`. | BK-41 |
+| `apps/backend/` | ✅ Conservado exclusivamente para dev/tests. `JsonFileAdapter` y sus tests en verde. | BK-41 |
+| `apps/frontend/src/services/authService.js` | ✅ Flujo PKCE completo sin proxy backend. | BK-40 |
+| `apps/frontend/index.html` | ✅ Script GIS cargado desde CDN. | BK-40 |
+| `.env.example` | ✅ `VITE_GOOGLE_CLIENT_ID` documentado. `SERVE_STATIC`/`DATA_FILE` marcadas como solo-dev. | BK-40 / BK-41 |
+| `docs/architecture/decisions.md` | ✅ ADR-008 creado con contexto, decisión y consecuencias. | BK-38 |
+| `docs/architecture/system-overview.md` | ✅ Refleja arquitectura sin Express en producción. | BK-38 |
+| `docs/architecture/api-contract.md` | ✅ `POST /auth/token` obsoleto. Sección "Flujo GIS client-side" añadida. | BK-38 |
+| `docs/testing/test-strategy.md` | ✅ Arranque E2E describe `vite preview`, sin mención a Express. | BK-42 |
 
 ---
 
