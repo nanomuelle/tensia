@@ -10,8 +10,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// Raíz del frontend (apps/frontend/) desde apps/backend/src/api/
-const FRONTEND_ROOT = path.resolve(__dirname, '..', '..', '..', '..', 'apps', 'frontend');
+// Directorio de build del frontend (dist/) desde apps/backend/src/api/
+// El backend sirve la build compilada de Vite, que incluye el SW correcto y las
+// variables de entorno (VITE_REDIRECT_URI) incrustadas en tiempo de compilación.
+// Para desarrollo integrado: npm run build && npm run start:dev
+const DIST_ROOT = path.resolve(__dirname, '..', '..', '..', '..', 'dist');
 
 /**
  * Crea y configura la aplicación Express.
@@ -23,12 +26,18 @@ export function createApp() {
   const app = express();
 
   // --- Servicio de ficheros estáticos del frontend (ADR-005) ---
-  // Se necesitan dos montajes:
-  //   1. apps/frontend/public/ → sirve index.html, styles.css en http://localhost:3000/
-  //   2. apps/frontend/        → sirve src/app.js, src/infra/*, src/domain/*, src/services/*
-  //      (el HTML los referencia como /src/app.js → el navegador resuelve /src/app.js)
-  app.use(express.static(path.join(FRONTEND_ROOT, 'public')));
-  app.use(express.static(FRONTEND_ROOT));
+  // Sirve la build compilada de Vite desde dist/.
+  // Los assets tienen hashes en el nombre, el SW precachea todo automáticamente.
+  app.use(express.static(DIST_ROOT));
+
+  // --- SPA fallback: devolver index.html para cualquier GET que no sea un asset ---
+  // Necesario para que el callback de Google OAuth (?code=...&state=...) llegue
+  // siempre a la SPA, independientemente de si el Service Worker está activo.
+  app.get('*', (req, res, next) => {
+    // Solo para peticiones de navegación (no assets con extensión)
+    if (req.path.includes('.')) return next();
+    res.sendFile(path.join(DIST_ROOT, 'index.html'));
+  });
 
   // --- Manejo de rutas no encontradas (404) ---
   app.use((req, res) => {

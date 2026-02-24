@@ -26,9 +26,17 @@ const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo';
 
-/** Clave para el state CSRF en sessionStorage */
+/**
+ * Clave para el state CSRF en localStorage.
+ * Se usa localStorage (no sessionStorage) para que el valor sobreviva cuando
+ * el flujo OAuth abre un contexto de navegación distinto al volver de Google
+ * (p.ej. PWA instalada que abre Chrome Custom Tab).
+ */
 const SK_STATE = 'auth_state';
-/** Clave para el code_verifier PKCE en sessionStorage */
+/**
+ * Clave para el code_verifier PKCE en localStorage.
+ * Mismo motivo que SK_STATE: debe sobrevivir al cambio de contexto.
+ */
 const SK_VERIFIER = 'auth_code_verifier';
 
 // -------------------------------------------------------
@@ -91,13 +99,19 @@ export function generarState() {
  * @param {object} opciones
  * @param {object} opciones.authStore    - Store de sesión (BK-29); debe exponer login(tokenData, userProfile) y logout().
  * @param {string} opciones.clientId     - Client ID de Google (VITE_GOOGLE_CLIENT_ID).
+ * @param {string} opciones.clientSecret - Client Secret del cliente de escritorio (VITE_GOOGLE_CLIENT_SECRET).
+ *                                         En clientes de escritorio (Desktop app) Google sigue requiriendo el secret
+ *                                         en el intercambio de tokens; al ser un cliente público, incluirlo en
+ *                                         el código de la SPA es aceptable (no es confidencial).
  * @param {string} opciones.redirectUri  - URI de retorno OAuth registrada en Google Console.
  * @returns {{ requestCode: Function, handleCallback: Function, logout: Function }}
  */
-export function createAuthService({ authStore, clientId, redirectUri }) {
+export function createAuthService({ authStore, clientId, clientSecret = '', redirectUri }) {
   /**
    * Inicia el flujo de autorización de Google con PKCE.
-   * Genera state y code_verifier, los guarda en sessionStorage, y redirige a Google.
+   * Genera state y code_verifier, los guarda en localStorage, y redirige a Google.
+   * Se usa localStorage (no sessionStorage) para que los valores persistan si el
+   * redirect de Google se abre en un contexto de navegación diferente (PWA, Custom Tab).
    *
    * @returns {Promise<void>}
    */
@@ -106,8 +120,8 @@ export function createAuthService({ authStore, clientId, redirectUri }) {
     const codeVerifier = generarCodeVerifier();
     const codeChallenge = await generarCodeChallenge(codeVerifier);
 
-    sessionStorage.setItem(SK_STATE, state);
-    sessionStorage.setItem(SK_VERIFIER, codeVerifier);
+    localStorage.setItem(SK_STATE, state);
+    localStorage.setItem(SK_VERIFIER, codeVerifier);
 
     const params = new URLSearchParams({
       client_id: clientId,
@@ -145,28 +159,33 @@ export function createAuthService({ authStore, clientId, redirectUri }) {
     }
 
     // Verificación CSRF
-    const storedState = sessionStorage.getItem(SK_STATE);
+    const storedState = localStorage.getItem(SK_STATE);
     if (!storedState || state !== storedState) {
-      sessionStorage.removeItem(SK_STATE);
-      sessionStorage.removeItem(SK_VERIFIER);
+      localStorage.removeItem(SK_STATE);
+      localStorage.removeItem(SK_VERIFIER);
       throw new Error('state_invalido');
     }
 
-    const codeVerifier = sessionStorage.getItem(SK_VERIFIER);
-    sessionStorage.removeItem(SK_STATE);
-    sessionStorage.removeItem(SK_VERIFIER);
+    const codeVerifier = localStorage.getItem(SK_VERIFIER);
+    localStorage.removeItem(SK_STATE);
+    localStorage.removeItem(SK_VERIFIER);
 
-    // Intercambio de código por tokens directamente con Google
+    // Intercambio de código por tokens directamente con Google.
+    // Google requiere client_secret incluso en clientes de escritorio (Desktop app);
+    // en ese tipo de cliente no es confidencial y es seguro incluirlo en la SPA.
+    const tokenParams = {
+      client_id: clientId,
+      code,
+      code_verifier: codeVerifier,
+      grant_type: 'authorization_code',
+      redirect_uri: redirectUri,
+    };
+    if (clientSecret) tokenParams.client_secret = clientSecret;
+
     const tokenResponse = await fetch(GOOGLE_TOKEN_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: clientId,
-        code,
-        code_verifier: codeVerifier,
-        grant_type: 'authorization_code',
-        redirect_uri: redirectUri,
-      }).toString(),
+      body: new URLSearchParams(tokenParams).toString(),
     });
 
     if (!tokenResponse.ok) {

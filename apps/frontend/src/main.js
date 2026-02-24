@@ -17,15 +17,22 @@ const service = createMeasurementService(adapter);
 
 /**
  * Servicio de autenticación con Google PKCE (BK-36).
+ * Requiere un cliente OAuth de tipo "Aplicación de escritorio" en Google Cloud Console,
+ * que permite PKCE sin client_secret (cliente público, RFC 7636).
+ * Los clientes tipo "Aplicación web" exigen client_secret y no son compatibles con SPAs.
+ *
  * El redirect_uri debe coincidir exactamente con el registrado en Google Cloud Console.
- * En local (Vite dev): http://localhost:5173/
- * En GitHub Pages:     https://nanomuelle.github.io/tensia/
+ * En local : http://localhost:5173/
+ * En GitHub Pages : https://nanomuelle.github.io/tensia/
  * Se configura mediante la variable de entorno VITE_REDIRECT_URI.
  * Fallback: origen + pathname actuales (útil en entornos no configurados).
  */
 const authService = createAuthService({
   authStore,
   clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
+  // El client_secret de un cliente Desktop es público (no confidencial).
+  // Google lo exige en el intercambio de tokens incluso para clientes de escritorio.
+  clientSecret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET ?? '',
   redirectUri:
     import.meta.env.VITE_REDIRECT_URI ??
     (window.location.origin + window.location.pathname),

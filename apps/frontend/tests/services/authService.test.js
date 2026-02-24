@@ -2,10 +2,13 @@
  * Tests unitarios: servicio de autenticación Google PKCE — authService.js
  *
  * Cubre el flujo Authorization Code + PKCE completo:
- *   - requestCode(): generación de PKCE, almacenamiento en sessionStorage y redirección.
+ *   - requestCode(): generación de PKCE, almacenamiento en localStorage y redirección.
  *   - handleCallback(): verificación CSRF, intercambio de tokens, obtención de perfil.
  *   - logout(): delegación en authStore.
  *   - Casos de error: state inválido, error de Google, intercambio fallido, userinfo fallido.
+ *
+ * Nota: los parámetros PKCE temporales se guardan en localStorage (no sessionStorage) para
+ * que sobrevivan cuando el redirect de Google abre un contexto de navegación distinto (PWA).
  *
  * Todas las dependencias externas (fetch, crypto, window.location, authStore) se mockean.
  *
@@ -80,12 +83,12 @@ beforeEach(() => {
     configurable: true,
   });
 
-  // Limpiar sessionStorage entre tests
-  sessionStorage.clear();
+  // Limpiar localStorage entre tests (los parámetros PKCE se guardan en localStorage)
+  localStorage.clear();
 });
 
 afterEach(() => {
-  sessionStorage.clear();
+  localStorage.clear();
   spyGetRandomValues?.mockRestore();
   spyDigest?.mockRestore();
   vi.restoreAllMocks();
@@ -131,14 +134,14 @@ describe('helpers PKCE', () => {
 // =========================================================
 
 describe('authService.requestCode()', () => {
-  test('guarda state y code_verifier en sessionStorage', async () => {
+  test('guarda state y code_verifier en localStorage', async () => {
     const authStore = crearAuthStoreMock();
     const svc = createAuthService({ authStore, clientId: CLIENT_ID, redirectUri: REDIRECT_URI });
 
     await svc.requestCode();
 
-    expect(sessionStorage.getItem('auth_state')).toBeTruthy();
-    expect(sessionStorage.getItem('auth_code_verifier')).toBeTruthy();
+    expect(localStorage.getItem('auth_state')).toBeTruthy();
+    expect(localStorage.getItem('auth_code_verifier')).toBeTruthy();
   });
 
   test('redirige a la URL de autorización de Google con los parámetros correctos', async () => {
@@ -156,13 +159,13 @@ describe('authService.requestCode()', () => {
     expect(href).toContain('scope=openid+profile+email');
   });
 
-  test('el state en la URL coincide con el guardado en sessionStorage', async () => {
+  test('el state en la URL coincide con el guardado en localStorage', async () => {
     const authStore = crearAuthStoreMock();
     const svc = createAuthService({ authStore, clientId: CLIENT_ID, redirectUri: REDIRECT_URI });
 
     await svc.requestCode();
 
-    const storedState = sessionStorage.getItem('auth_state');
+    const storedState = localStorage.getItem('auth_state');
     expect(window.location.href).toContain(`state=${storedState}`);
   });
 });
@@ -173,12 +176,12 @@ describe('authService.requestCode()', () => {
 
 describe('authService.handleCallback()', () => {
   /**
-   * Prepara el sessionStorage como si requestCode() ya hubiese sido llamado
+   * Prepara el localStorage como si requestCode() ya hubiese sido llamado
    * y devuelve el state almacenado.
    */
   function prepararSesion(state = 'test-state-1234567890') {
-    sessionStorage.setItem('auth_state', state);
-    sessionStorage.setItem('auth_code_verifier', 'test-verifier-abc');
+    localStorage.setItem('auth_state', state);
+    localStorage.setItem('auth_code_verifier', 'test-verifier-abc');
     return state;
   }
 
@@ -240,6 +243,35 @@ describe('authService.handleCallback()', () => {
     expect(body.get('grant_type')).toBe('authorization_code');
   });
 
+  test('incluye client_secret en el body cuando se proporciona (cliente de escritorio)', async () => {
+    const authStore = crearAuthStoreMock();
+    const CLIENT_SECRET = 'test-client-secret';
+    const svc = createAuthService({ authStore, clientId: CLIENT_ID, clientSecret: CLIENT_SECRET, redirectUri: REDIRECT_URI });
+    globalThis.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => TOKEN_DATA, text: async () => '' })
+      .mockResolvedValueOnce({ ok: true, json: async () => USER_PROFILE });
+
+    await svc.handleCallback(construirParams());
+
+    const [, tokenOpts] = globalThis.fetch.mock.calls[0];
+    const body = new URLSearchParams(tokenOpts.body);
+    expect(body.get('client_secret')).toBe(CLIENT_SECRET);
+  });
+
+  test('no incluye client_secret en el body cuando no se proporciona', async () => {
+    const authStore = crearAuthStoreMock();
+    const svc = createAuthService({ authStore, clientId: CLIENT_ID, redirectUri: REDIRECT_URI });
+    globalThis.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => TOKEN_DATA, text: async () => '' })
+      .mockResolvedValueOnce({ ok: true, json: async () => USER_PROFILE });
+
+    await svc.handleCallback(construirParams());
+
+    const [, tokenOpts] = globalThis.fetch.mock.calls[0];
+    const body = new URLSearchParams(tokenOpts.body);
+    expect(body.get('client_secret')).toBeNull();
+  });
+
   test('llama a /userinfo con el access_token del intercambio', async () => {
     const authStore = crearAuthStoreMock();
     const svc = createAuthService({ authStore, clientId: CLIENT_ID, redirectUri: REDIRECT_URI });
@@ -254,15 +286,15 @@ describe('authService.handleCallback()', () => {
     expect(userinfoOpts.headers.Authorization).toBe(`Bearer ${TOKEN_DATA.access_token}`);
   });
 
-  test('limpia state y code_verifier de sessionStorage tras el intercambio', async () => {
+  test('limpia state y code_verifier de localStorage tras el intercambio', async () => {
     const authStore = crearAuthStoreMock();
     const svc = createAuthService({ authStore, clientId: CLIENT_ID, redirectUri: REDIRECT_URI });
     mockFetchExitoso();
 
     await svc.handleCallback(construirParams());
 
-    expect(sessionStorage.getItem('auth_state')).toBeNull();
-    expect(sessionStorage.getItem('auth_code_verifier')).toBeNull();
+    expect(localStorage.getItem('auth_state')).toBeNull();
+    expect(localStorage.getItem('auth_code_verifier')).toBeNull();
   });
 
   // -------------------------------------------------------
@@ -291,10 +323,10 @@ describe('authService.handleCallback()', () => {
     expect(authStore.login).not.toHaveBeenCalled();
   });
 
-  test('lanza error si state no existe en sessionStorage', async () => {
+  test('lanza error si state no existe en localStorage', async () => {
     const authStore = crearAuthStoreMock();
     const svc = createAuthService({ authStore, clientId: CLIENT_ID, redirectUri: REDIRECT_URI });
-    // No se llama a prepararSesion() → sessionStorage vacío
+    // No se llama a prepararSesion() → localStorage vacío
 
     const params = new URLSearchParams({ code: 'auth-code-123', state: 'cualquier-state' });
 
