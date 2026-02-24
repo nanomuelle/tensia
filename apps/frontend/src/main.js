@@ -34,7 +34,7 @@ const authService = createAuthService({
   // Google lo exige en el intercambio de tokens incluso para clientes de escritorio.
   clientSecret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET ?? '',
   redirectUri:
-    import.meta.env.VITE_REDIRECT_URI ??
+    import.meta.env.VITE_REDIRECT_URI ||
     (window.location.origin + window.location.pathname),
 });
 
