@@ -1,0 +1,139 @@
+/* =========================================================
+   UserSession.css — Zona de sesión en la cabecera (BK-37)
+   Cubre: botón login, avatar, menú desplegable.
+   ========================================================= */
+
+/* ── Contenedor del estado autenticado ─────────────────── */
+.user-session {
+  /* Empujar la zona de sesión al borde derecho del header flex */
+  margin-left: auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Botón avatar (foto o inicial) ─────────────────────── */
+.user-session__avatar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 2px solid var(--color-borde);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.user-session__avatar-btn:hover,
+.user-session__avatar-btn:focus-visible {
+  border-color: var(--color-primario);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+}
+
+/* Imagen de perfil */
+.user-session__avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+/* Avatar de texto (inicial del nombre) */
+.user-session__inicial {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-primario);
+  user-select: none;
+  line-height: 1;
+}
+
+/* ── Menú desplegable ───────────────────────────────────── */
+.user-session__menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 180px;
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 0.5rem 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Nombre del usuario dentro del menú */
+.user-session__nombre {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-texto-principal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Separador visual */
+.user-session__separador {
+  border: none;
+  border-top: 1px solid var(--color-borde);
+  margin: 0;
+}
+
+/* Botón "Cerrar sesión" */
+.user-session__logout-btn {
+  background: none;
+  border: none;
+  padding: 0.625rem 1rem;
+  font-family: var(--fuente);
+  font-size: 0.9rem;
+  color: var(--color-texto-principal);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.12s ease;
+}
+
+.user-session__logout-btn:hover,
+.user-session__logout-btn:focus-visible {
+  background-color: rgba(0, 0, 0, 0.04);
+  outline: none;
+}
+
+/* ── Botón "Iniciar sesión con Google" (estado anónimo) ─── */
+.user-session__login-btn {
+  /* Empujar al borde derecho cuando el estado autenticado no está visible */
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background-color: var(--color-superficie);
+  color: var(--color-texto-principal);
+  border: 1.5px solid var(--color-borde);
+  border-radius: var(--radio-boton);
+  padding: 0.375rem 0.875rem;
+  font-family: var(--fuente);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.user-session__login-btn:hover,
+.user-session__login-btn:focus-visible {
+  background-color: rgba(26, 115, 232, 0.04);
+  border-color: var(--color-primario);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+}
+
+.user-session__google-icon {
+  flex-shrink: 0;
+}

@@ -13,6 +13,7 @@
 @import './components/IosWarning.css';
 @import './components/Modal.css';
 @import './components/HomeLayout.css';
+@import './components/UserSession.css';
 
 /* --- Variables del sistema de diseño --- */
 :root {

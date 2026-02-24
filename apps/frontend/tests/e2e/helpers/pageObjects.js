@@ -36,4 +36,12 @@ export const SELECTORS = {
   chartSvg: '#chart-mediciones svg',
   chartSkeleton: '.chart-skeleton',
   chartSkeletonMensaje: '.chart-skeleton__mensaje',
+  // Zona de sesión — cabecera (BK-37)
+  btnLogin: '.user-session__login-btn',
+  avatarBtn: '.user-session__avatar-btn',
+  avatarImg: '.user-session__avatar-img',
+  avatarInicial: '.user-session__inicial',
+  menuSesion: '.user-session__menu',
+  menuNombre: '.user-session__nombre',
+  btnLogout: '.user-session__logout-btn',
 };
