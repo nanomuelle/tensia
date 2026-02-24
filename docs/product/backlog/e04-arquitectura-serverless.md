@@ -1,6 +1,6 @@
 # Épica E-04 — Arquitectura serverless: eliminación del backend
 
-**Estado:** Pendiente  
+**Estado:** ✅ Completado (2026-02-24)  
 **Fecha de refinamiento:** 2026-02-24  
 **Sprint:** Previo a E-01 (bloqueante)
 
@@ -31,7 +31,7 @@ Análisis del repositorio antes de iniciar la épica. Permite saber qué está y
 |---|---|---|
 | `deploy-pages.yml` | ✅ Completo. No invoca el backend, gestiona `VITE_BASE_PATH` y despliega `dist/`. Solo falta activar Pages en Settings. | BK-39: activar en Settings → Pages |
 | `playwright.config.js` — `webServer` | ✅ Ya usa `vite preview --port 3000` desde la migración a Svelte 5. | — |
-| `playwright.config.js` — comentario de cabecera | ❌ Describe el arranque con Express + `SERVE_STATIC=true`. Desactualizado. | BK-42: reescribir comentario |
+| `playwright.config.js` — comentario de cabecera | ✅ Actualizado. Describe el arranque con `vite preview --port 3000`. | BK-42: ✅ completado |
 | `manifest.json` `start_url` | ❌ Valor `"/"`. Debe ser `"./"` para funcionar desde subdirectorio de GitHub Pages. | BK-39: cambiar a `"./"` |
 | `package.json` script `start` | ❌ `node apps/backend/src/index.js`. Apunta al servidor Express en producción. | BK-41: renombrar a `start:dev` |
 | `package.json` dependencias `express`/`dotenv` | ❌ En `dependencies` (producción). Deben estar en `devDependencies`. | BK-41: mover a `devDependencies` |
@@ -55,7 +55,7 @@ Análisis del repositorio antes de iniciar la épica. Permite saber qué está y
 | BK-39 | Activar GitHub Pages como hosting provisional | 0,5 j. | ✅ Completado |
 | BK-40 | Reemplazar proxy OAuth por Google Identity Services (GIS) client-side | 1-2 j. | ✅ Completado (2026-02-24) |
 | BK-41 | Eliminar servidor Express de producción / aislar `apps/backend/` a dev | 1 j. | ✅ Completado (2026-02-24) |
-| BK-42 | Actualizar scripts npm, CI/CD y documentación sin dependencia del servidor | 0,5 j. | Pendiente |
+| BK-42 | Actualizar scripts npm, CI/CD y documentación sin dependencia del servidor | 0,5 j. | ✅ Completado (2026-02-24) |
 
 ---
 
@@ -174,15 +174,15 @@ Otros cambios:
 **Prioridad:** Baja  
 **Estimación:** 0,5 jornadas  
 **Dependencias:** BK-41  
-**Estado:** Pendiente  
+**Estado:** ✅ Completado (2026-02-24)  
 **Tipo:** Mantenimiento / documentación
 
 **Criterios de aceptación:**
-- [ ] `playwright.config.js` — el comentario de cabecera (bloque JSDoc inicial) describe correctamente el arranque con `vite preview`, sin mención a Express ni a `SERVE_STATIC`.
-- [ ] `playwright.config.js` — el bloque `webServer` ya es correcto (`vite preview --port 3000`); verificar que no haya regresión.
-- [ ] `docs/testing/test-strategy.md` describe el arranque E2E con `vite preview`.
-- [ ] `README.md` describe únicamente los comandos de desarrollo necesarios: `npm run dev`, `npm run build`, `npm test`, `npm run test:e2e`.
-- [ ] No hay referencias a `SERVE_STATIC` ni `DATA_FILE` fuera del contexto de dev/tests locales.
+- [x] `playwright.config.js` — el comentario de cabecera (bloque JSDoc inicial) describe correctamente el arranque con `vite preview`, sin mención a Express ni a `SERVE_STATIC`.
+- [x] `playwright.config.js` — el bloque `webServer` ya es correcto (`vite preview --port 3000`); verificar que no haya regresión.
+- [x] `docs/testing/test-strategy.md` describe el arranque E2E con `vite preview`.
+- [x] `README.md` describe únicamente los comandos de desarrollo necesarios: `npm run dev`, `npm run build`, `npm test`, `npm run test:e2e`.
+- [x] No hay referencias a `SERVE_STATIC` ni `DATA_FILE` fuera del contexto de dev/tests locales.
 
 ---
 

@@ -1,6 +1,6 @@
 # Backlog — Tensia · Pendiente
 
-_Última revisión: 2026-02-24. Stack definitivo: Svelte 5 + Vite + Vitest. Próximos sprints: **E-04 Arquitectura serverless** → E-01 Login Google → E-02 OCR/AI → E-03 Persistencia Google._
+_Última revisión: 2026-02-24. Stack definitivo: Svelte 5 + Vite + Vitest. **E-04 completada.** Próximos sprints: E-01 Login Google → E-02 OCR/AI → E-03 Persistencia Google._
 
 > Los ítems ya implementados están en [backlog-done.md](backlog-done.md).
 > El detalle de cada épica está en la carpeta [`backlog/`](backlog/).
@@ -11,7 +11,7 @@ _Última revisión: 2026-02-24. Stack definitivo: Svelte 5 + Vite + Vitest. Pró
 
 | ID | Épica | Ítems | Estado |
 |---|---|---|---|
-| **E-04** | [**Arquitectura serverless: eliminar backend**](backlog/e04-arquitectura-serverless.md) | BK-38…BK-42 | **Pendiente — bloqueante para E-01** |
+| **E-04** | [**Arquitectura serverless: eliminar backend**](backlog/e04-arquitectura-serverless.md) | BK-38…BK-42 | **✅ Completado** |
 | E-01 | [Login con Google](backlog/e01-login-google.md) | BK-29, BK-36, BK-40, BK-37 | Pendiente — _BK-30 obsoleto_ |
 | E-02 | [Registro por foto (OCR / AI)](backlog/e02-ocr-ai.md) | BK-32, BK-33, BK-34 | Post-MVP confirmado |
 | E-03 | [Persistencia con cuenta Google](backlog/e03-persistencia-google.md) | BK-35, BK-31 | Bloqueado por E-01 |
@@ -31,7 +31,7 @@ _Última revisión: 2026-02-24. Stack definitivo: Svelte 5 + Vite + Vitest. Pró
 | BK-39 | Activar GitHub Pages (fix `manifest.json` + configurar repo) | 0,5 j. | ✅ Completado |
 | BK-40 | Google Identity Services client-side (reemplaza BK-30) | 1-2 j. | ✅ Completado |
 | BK-41 | Eliminar Express de producción / aislar `apps/backend/` a dev | 1 j. | ✅ Completado |
-| BK-42 | Actualizar scripts npm, CI/CD y documentación | 0,5 j. | Pendiente |
+| BK-42 | Actualizar scripts npm, CI/CD y documentación | 0,5 j. | ✅ Completado |
 
 → Detalle completo: [backlog/e04-arquitectura-serverless.md](backlog/e04-arquitectura-serverless.md)
 

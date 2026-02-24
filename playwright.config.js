@@ -1,11 +1,12 @@
 /**
  * Configuración de Playwright para los tests E2E de Tensia.
- * Referencia arquitectónica: ADR-004
+ * Referencia arquitectónica: ADR-004, ADR-008
  *
  * Estrategia de arranque:
- *   - El backend Express arranca con SERVE_STATIC=true para servir también el frontend.
- *   - DATA_FILE apunta a un archivo de datos aislado para los tests E2E.
+ *   - Playwright levanta automáticamente `vite preview --port 3000` antes de ejecutar los specs.
+ *   - El build de producción (`dist/`) debe existir; se genera con `npm run build`.
  *   - Playwright espera a que http://localhost:3000 responda antes de lanzar los specs.
+ *   - El aislamiento de datos se hace mediante `localStorage` del contexto Playwright (sin servidor de datos).
  */
 import { defineConfig, devices } from '@playwright/test';
 

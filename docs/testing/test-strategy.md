@@ -36,7 +36,7 @@ _Última revisión: 2026-02-23 — Stack de testing consolidado: Vitest como run
 ## Estrategia E2E
 
 - **Herramienta:** Playwright (`@playwright/test`) — configurado en `playwright.config.js` (raíz)
-- **Arranque:** Express sirve los ficheros estáticos del frontend; los tests levantan el servidor automáticamente
+- **Arranque:** Playwright levanta `vite preview --port 3000` automáticamente antes de los specs (bloque `webServer` en `playwright.config.js`). No se usa Express; el build de `dist/` se sirve directamente por Vite (ADR-008)
 - **Aislamiento de datos:** cada test usa `localStorage` del contexto de Playwright, aislado por sesión; no hay base de datos compartida
 - **Browser:** Chromium headless
 - **Comando:** `npm run test:e2e`
