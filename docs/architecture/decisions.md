@@ -151,3 +151,66 @@ Migrar a **Svelte 5 + Vite**.
 - El flujo `merge a main → publicar` no cambia (`npm run build` → `dist/`).
 - ADR-003 (Vanilla JS) queda **supersedido**.
 
+---
+
+## ADR-008: Arquitectura serverless — eliminación de Express en producción
+
+**Fecha:** 2026-02-24 · **Estado:** Aceptado
+
+### Contexto
+
+ADR-007 (migración a Svelte 5 + Vite) eliminó la última razón para mantener Express como servidor de desarrollo: Vite ya provee su propio servidor de desarrollo y `vite build` genera `dist/` listo para cualquier hosting estático. El análisis de 2026-02-24 confirma que ninguna responsabilidad del backend Express es insustituible en el lado del servidor:
+
+| Responsabilidad actual | ¿Necesita backend propio? | Alternativa client-side / hosting |
+|---|---|---|
+| Servir ficheros estáticos | ❌ | GitHub Pages / Cloudflare Pages / Vercel |
+| Proxy OAuth (`POST /auth/token`) | ❌ | Google Identity Services (GIS) + flujo PKCE como cliente público (RFC 7636) — no requiere `client_secret` |
+| Persistencia de mediciones | ❌ (ya en cliente desde ADR-005) | `localStorageAdapter` / `googleDriveAdapter` |
+| OCR/AI (post-MVP) | ⚠️ API key protegida | Serverless function (Vercel/Netlify/Cloudflare Workers) — **no Express** |
+
+El único artefacto de `apps/backend/` con valor permanente es `JsonFileAdapter`, que se conserva como utilidad exclusiva de tests de integración locales (ADR-001 supersedido).
+
+Adicionalmente, Google Identity Services (GIS) implementa el flujo PKCE (RFC 7636) directamente en el cliente público: el `code_challenge` se envía en la autorización y el `code_verifier` en el intercambio de código, eliminando la necesidad de `client_secret` en el servidor. BK-30 (proxy OAuth backend) queda por tanto **obsoleto**.
+
+### Decisión
+
+1. **Eliminar Express de producción.** `apps/backend/` pasa a ser exclusivamente una utilidad de dev/tests. No se incluirá en ningún despliegue de producción.
+2. **Hosting estático en GitHub Pages** (provisional). El workflow `deploy-pages.yml` ya existente construye con `vite build` y despliega `dist/`.
+3. **Autenticación client-side con GIS.** El flujo PKCE completo reside en el cliente (`authService.js`); no hay proxy OAuth en el servidor. Implementado en BK-40 (épica E-04).
+4. **Datos en el cliente.** `localStorageAdapter` para usuarios anónimos; `googleDriveAdapter` (post-MVP) para usuarios autenticados. Sin base de datos ni API REST de datos en el servidor.
+5. **OCR/AI en post-MVP como serverless function.** Cuando se implemente E-02, el endpoint OCR será una función serverless (Vercel/Netlify/Cloudflare Workers), nunca un servidor Express propio.
+
+Arquitectura resultante:
+
+```
+GitHub Pages (hosting estático)
+  └─ dist/  ←  vite build
+       │
+       PWA (Svelte 5 + Service Worker)
+         ├─ anónimo      → localStorageAdapter  (localStorage)
+         └─ Google login → googleDriveAdapter   [post-MVP]
+              │
+              │ HTTPS directo (sin proxy)
+              ├─ Google Identity Services  (auth PKCE)
+              └─ Google Drive API          [post-MVP]
+
+Post-MVP OCR:
+  Serverless function (Vercel / Netlify)
+    └─ Endpoint OCR/AI  (custodia API key del proveedor AI)
+```
+
+### Consecuencias
+
+**Positivas:**
+- Sin servidor que mantener, actualizar ni monitorizar en producción.
+- Coste de infraestructura cero (GitHub Pages es gratuito para repositorios públicos).
+- `apps/backend/` sigue siendo útil para `JsonFileAdapter` y tests de integración locales.
+- BK-30 (proxy OAuth) queda obsoleto, simplificando E-01 en ≈1-2 jornadas.
+- El flujo PKCE client-side es más seguro que un proxy: no hay `client_secret` que custodiar en el servidor.
+
+**A tener en cuenta:**
+- La variable de entorno `GOOGLE_CLIENT_ID` pasa a ser pública (configurada en `VITE_GOOGLE_CLIENT_ID`); esto es correcto para un cliente público PKCE.
+- El OCR en post-MVP requerirá una función serverless separada para proteger la API key del proveedor AI.
+- GitHub Pages sirve desde subdirectorio (`/tensia/`): `manifest.json` debe usar `"start_url": "./"` y Vite debe configurar `base` con `VITE_BASE_PATH` (ya implementado en `deploy-pages.yml`).
+- **Riesgo ITP Safari/iOS** (heredado de ADR-005): sin cambios; la UI ya muestra el aviso informativo.
+
