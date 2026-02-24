@@ -107,4 +107,33 @@ describe('Events', () => {
   test('Events.MEASUREMENT_SAVED tiene el valor correcto', () => {
     expect(Events.MEASUREMENT_SAVED).toBe('measurement:saved');
   });
+
+  test('Events.AUTH_LOGIN tiene el valor correcto (BK-40)', () => {
+    expect(Events.AUTH_LOGIN).toBe('auth:login');
+  });
+
+  test('Events.AUTH_LOGOUT tiene el valor correcto (BK-40)', () => {
+    expect(Events.AUTH_LOGOUT).toBe('auth:logout');
+  });
+
+  test('emit() y on() funcionan correctamente con AUTH_LOGIN', () => {
+    const handler = vi.fn();
+    const cleanup = on(Events.AUTH_LOGIN, handler);
+
+    emit(Events.AUTH_LOGIN, { sub: '123', name: 'Test' });
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler.mock.calls[0][0].detail).toEqual({ sub: '123', name: 'Test' });
+    cleanup();
+  });
+
+  test('emit() no lanza cuando window no está disponible (entorno no-browser)', () => {
+    // Simula ejecución fuera del navegador eliminando temporalmente window
+    const originalWindow = globalThis.window;
+    delete globalThis.window;
+
+    expect(() => emit(Events.MEASUREMENT_SAVED, {})).not.toThrow();
+
+    globalThis.window = originalWindow;
+  });
 });

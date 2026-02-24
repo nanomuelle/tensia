@@ -5,6 +5,10 @@
  */
 export const Events = {
   MEASUREMENT_SAVED: 'measurement:saved',
+  /** Emitido por authService tras un login exitoso (BK-40). */
+  AUTH_LOGIN:  'auth:login',
+  /** Emitido por authService.logout() (BK-40). */
+  AUTH_LOGOUT: 'auth:logout',
 };
 
 /**

@@ -53,7 +53,7 @@ Análisis del repositorio antes de iniciar la épica. Permite saber qué está y
 |---|---|---|---|
 | BK-38 | ADR-008: documentar decisión de arquitectura serverless | 0,5 j. | ✅ Completado |
 | BK-39 | Activar GitHub Pages como hosting provisional | 0,5 j. | ✅ Completado |
-| BK-40 | Reemplazar proxy OAuth por Google Identity Services (GIS) client-side | 1-2 j. | Pendiente |
+| BK-40 | Reemplazar proxy OAuth por Google Identity Services (GIS) client-side | 1-2 j. | ✅ Completado (2026-02-24) |
 | BK-41 | Eliminar servidor Express de producción / aislar `apps/backend/` a dev | 1 j. | Pendiente |
 | BK-42 | Actualizar scripts npm, CI/CD y documentación sin dependencia del servidor | 0,5 j. | Pendiente |
 
@@ -110,20 +110,25 @@ Análisis del repositorio antes de iniciar la épica. Permite saber qué está y
 **Prioridad:** Alta  
 **Estimación:** 1-2 jornadas  
 **Dependencias:** BK-38 (ADR documentado)  
-**Estado:** Pendiente  
-**Tipo:** Feature (frontend) — reemplaza BK-30
+**Estado:** ✅ Completado (2026-02-24)  
 
-**Criterios de aceptación:**
-- [ ] `authService.js` no importa ni depende de ningún módulo del backend.
-- [ ] `GOOGLE_CLIENT_ID` se expone como variable de entorno Vite (`VITE_GOOGLE_CLIENT_ID`). No existe `GOOGLE_CLIENT_SECRET` en el cliente.
-- [ ] La biblioteca GIS se carga desde CDN (`<script>` en `index.html`) o como import dinámico.
-- [ ] `requestCode()` inicia el flujo de consentimiento de Google y redirige al callback.
-- [ ] `handleCallback(searchParams)` lee `code` y `state`, verifica `state` (CSRF), e intercambia el código directamente con `https://oauth2.googleapis.com/token` usando `code_verifier`.
-- [ ] `handleCallback` llama a `https://www.googleapis.com/oauth2/v3/userinfo` con el `access_token` obtenido.
-- [ ] Tras el intercambio exitoso, delega en `authStore.login(tokenData, userProfile)` (BK-29).
-- [ ] Gestión de errores: cancelación, `state` inválido, código expirado → toast informativo + estado anónimo funcional.
-- [ ] `VITE_GOOGLE_CLIENT_ID` añadido a `.env.example` con comentario explicativo.
-- [ ] Tests unitarios del servicio en verde (`fetch` y biblioteca GIS mockeados).
+**Artefactos entregados:**
+- `apps/frontend/src/services/authService.js` — flujo PKCE completo (`requestCode`, `handleCallback`, `logout`).
+- `apps/frontend/src/store/authStore.svelte.js` — store mínimo de sesión (BK-29 completará el estado reactivo).
+- `apps/frontend/tests/services/authService.test.js` — 18 tests unitarios en verde.
+- `apps/frontend/index.html` — `<script>` GIS desde CDN añadido.
+- `apps/frontend/src/shared/eventBus.js` — eventos `AUTH_LOGIN` / `AUTH_LOGOUT` añadidos.
+- `.env.example` — `VITE_GOOGLE_CLIENT_ID` documentado.
+- [x] `authService.js` no importa ni depende de ningún módulo del backend.
+- [x] `GOOGLE_CLIENT_ID` se expone como variable de entorno Vite (`VITE_GOOGLE_CLIENT_ID`). No existe `GOOGLE_CLIENT_SECRET` en el cliente.
+- [x] La biblioteca GIS se carga desde CDN (`<script>` en `index.html`) o como import dinámico.
+- [x] `requestCode()` inicia el flujo de consentimiento de Google y redirige al callback.
+- [x] `handleCallback(searchParams)` lee `code` y `state`, verifica `state` (CSRF), e intercambia el código directamente con `https://oauth2.googleapis.com/token` usando `code_verifier`.
+- [x] `handleCallback` llama a `https://www.googleapis.com/oauth2/v3/userinfo` con el `access_token` obtenido.
+- [x] Tras el intercambio exitoso, delega en `authStore.login(tokenData, userProfile)` (BK-29).
+- [x] Gestión de errores: cancelación, `state` inválido, código expirado → toast informativo + estado anónimo funcional.
+- [x] `VITE_GOOGLE_CLIENT_ID` añadido a `.env.example` con comentario explicativo.
+- [x] Tests unitarios del servicio en verde (`fetch` y biblioteca GIS mockeados).
 
 **Nota de seguridad:** el `client_id` de Google para clientes públicos (SPA) es intencionalmente público; la protección CSRF recae en el parámetro `state` aleatorio y la verificación del `code_verifier`.
 
