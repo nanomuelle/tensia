@@ -3,26 +3,28 @@
 Aplicación personal de registro y consulta de mediciones de tensión arterial.
 Permite registrar mediciones de forma manual, consultarlas en orden cronológico y visualizarlas en una gráfica de evolución temporal.
 
-**Tecnologías principales:** Svelte 5 + Vite · PWA instalable · D3.js · Node.js/Express · Vitest · Playwright
+**Tecnologías principales:** Svelte 5 + Vite · PWA instalable · D3.js · Vitest · Playwright
 
 ---
 
 ## Arquitectura
 
 ```
-PWA (Svelte 5 + Vite + Service Worker)
-  └─ Usuario anónimo → localStorageAdapter (clave: bp_measurements)
-       │
-       │ (sin peticiones HTTP para datos en el MVP)
-       ▼
-  Backend (Node.js/Express)
-    └─ Servir ficheros estáticos del frontend
+GitHub Pages (estáticos)
+┌─────────────────────────────────────────────────────────┐
+│   PWA (Svelte 5 + Service Worker)                       │
+│                                                         │
+│  authService (GIS)  ──▶  accounts.google.com            │
+│                     ──▶  oauth2.googleapis.com/token    │
+│                                                         │
+│  usuario anónimo    ──▶  localStorageAdapter            │
+│  usuario Google     ──▶  googleDriveAdapter [post-MVP]  │
+└─────────────────────────────────────────────────────────┘
 ```
 
-Los datos de mediciones viven exclusivamente en el `localStorage` del navegador (ADR-005).
-El backend no almacena ni gestiona datos de usuarios en el MVP.
+Los datos de mediciones viven en el `localStorage` del navegador (ADR-005). No hay servidor Express en producción (ADR-008). El directorio `apps/backend/` se conserva exclusivamente para tests de integración locales con `JsonFileAdapter`.
 
-**Post-MVP (planificado):** login con Google OAuth 2.0 + PKCE, sincronización con Google Drive, registro por foto (OCR/AI).
+**Post-MVP (planificado):** sincronización con Google Drive, registro por foto (OCR/AI como serverless function).
 
 ---
 
@@ -73,12 +75,12 @@ Previsualiza localmente el bundle de producción generado en `dist/`.
 npm run preview
 ```
 
-### `npm start`
+### `npm run start:dev`
 
-Arranca el servidor Express que sirve los ficheros estáticos en `http://localhost:3000`. Requiere haber ejecutado `npm run build` previamente.
+Arranca el servidor Express de desarrollo en `http://localhost:3000`. **Solo para entorno local con `JsonFileAdapter`.** Requiere haber ejecutado `npm run build` previamente. No se usa en producción (ADR-008).
 
 ```bash
-npm run build && npm start
+npm run build && npm run start:dev
 ```
 
 ### `npm test`
@@ -119,14 +121,15 @@ npm run test:e2e
 
 ## Variables de entorno
 
-Estas variables son usadas por el servidor Express (`npm start`) y los tests E2E. En desarrollo con `npm run dev` (Vite) no son necesarias.
+Copiar `.env.example` a `.env`. Solo son necesarias para desarrollo local con `npm run start:dev` y tests de integración. El flujo normal (`npm run dev`, `npm run build`, `npm run preview`, `npm test`, `npm run test:e2e`) **no requiere ninguna de estas variables**.
 
 | Variable | Valor por defecto | Descripción |
 |---|---|---|
-| `PORT` | `3000` | Puerto en el que escucha el servidor Express |
-| `DATA_FILE` | `data/measurements.json` | Fichero JSON para tests de integración (`JsonFileAdapter`) |
-| `SERVE_STATIC` | `true` | Sirve el frontend estático desde el servidor Express |
-| `OPEN_BROWSER` | `true` | Abre el navegador automáticamente al arrancar el servidor |
+| `VITE_GOOGLE_CLIENT_ID` | — | Client ID de Google para el flujo OAuth 2.0 + PKCE (requerido en E-01) |
+| `PORT` | `3000` | *(solo dev)* Puerto del servidor Express local |
+| `DATA_FILE` | `data/measurements.json` | *(solo dev/tests)* Fichero JSON para `JsonFileAdapter` |
+| `SERVE_STATIC` | `true` | *(solo dev)* Sirve el frontend desde el servidor Express local |
+| `OPEN_BROWSER` | `true` | *(solo dev)* Abre el navegador al arrancar `start:dev` |
 
 ---
 
@@ -138,7 +141,7 @@ Estas variables son usadas por el servidor Express (`npm start`) y los tests E2E
 | PWA | `vite-plugin-pwa` (Service Worker con precaching automático) |
 | Gráfica | D3.js (módulos selectivos: `d3-scale`, `d3-axis`, `d3-shape`, `d3-selection`) |
 | Persistencia MVP | `localStorage` del navegador, gestionado por `localStorageAdapter` en el cliente |
-| Backend | Node.js + Express (solo sirve estáticos en el MVP) |
+| Backend (dev) | Node.js + Express (solo tests de integración locales — ADR-008) |
 | Tests unitarios / integración | Vitest + `@testing-library/svelte` |
 | Tests E2E | Playwright (`@playwright/test`) |
 

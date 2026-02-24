@@ -54,7 +54,7 @@ Análisis del repositorio antes de iniciar la épica. Permite saber qué está y
 | BK-38 | ADR-008: documentar decisión de arquitectura serverless | 0,5 j. | ✅ Completado |
 | BK-39 | Activar GitHub Pages como hosting provisional | 0,5 j. | ✅ Completado |
 | BK-40 | Reemplazar proxy OAuth por Google Identity Services (GIS) client-side | 1-2 j. | ✅ Completado (2026-02-24) |
-| BK-41 | Eliminar servidor Express de producción / aislar `apps/backend/` a dev | 1 j. | Pendiente |
+| BK-41 | Eliminar servidor Express de producción / aislar `apps/backend/` a dev | 1 j. | ✅ Completado (2026-02-24) |
 | BK-42 | Actualizar scripts npm, CI/CD y documentación sin dependencia del servidor | 0,5 j. | Pendiente |
 
 ---
@@ -147,16 +147,16 @@ Análisis del repositorio antes de iniciar la épica. Permite saber qué está y
 **Prioridad:** Media  
 **Estimación:** 1 jornada  
 **Dependencias:** BK-39 (GitHub Pages funcional), BK-40 (auth sin proxy)  
-**Estado:** Pendiente  
+**Estado:** ✅ Completado (2026-02-24)  
 **Tipo:** Refactor / deuda técnica
 
 **Criterios de aceptación:**
-- [ ] `package.json` no tiene un script `start` que arranque Express; el script equivalente se llama `start:dev` y solo se usa en desarrollo.
-- [ ] `express` y `dotenv` figuran en `devDependencies`, no en `dependencies`.
-- [ ] `apps/backend/` sigue presente en el repositorio y sus tests de integración (`JsonFileAdapter`) pasan en verde.
-- [ ] El workflow `deploy-pages.yml` no ejecuta ningún paso relacionado con el backend (ya cumplido; verificar que no haya regresión).
-- [ ] `README.md` actualizado: los comandos documentados son `npm run dev`, `npm run build`, `npm run preview`, `npm test`, `npm run test:e2e`. Sin mención a `node apps/backend/src/index.js` en el flujo normal.
-- [ ] `SERVE_STATIC` y `DATA_FILE` eliminados de las variables de entorno de producción (pueden quedar en `.env.example` marcadas como solo-dev).
+- [x] `package.json` no tiene un script `start` que arranque Express; el script equivalente se llama `start:dev` y solo se usa en desarrollo.
+- [x] `express` y `dotenv` figuran en `devDependencies`, no en `dependencies`.
+- [x] `apps/backend/` sigue presente en el repositorio y sus tests de integración (`JsonFileAdapter`) pasan en verde.
+- [x] El workflow `deploy-pages.yml` no ejecuta ningún paso relacionado con el backend (verificado: sin regresión).
+- [x] `README.md` actualizado: arquitectura serverless, comandos `npm run dev`, `npm run build`, `npm run preview`, `npm test`, `npm run test:e2e`. Sin mención a `node apps/backend/src/index.js` en el flujo normal.
+- [x] `SERVE_STATIC` y `DATA_FILE` marcadas como solo-dev en `.env.example`.
 
 ---
 
