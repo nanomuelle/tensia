@@ -45,7 +45,7 @@ _Última revisión: 2026-02-24. Stack definitivo: Svelte 5 + Vite + Vitest. **E-
 
 | BK | Descripción | Estimación | Estado |
 |---|---|---|---|
-| BK-29 | `authStore.svelte.js`: estado reactivo de sesión | 1 j. | Pendiente |
+| BK-29 | `authStore.svelte.js`: estado reactivo de sesión | 1 j. | ✅ Completado |
 | ~~BK-30~~ | ~~Backend: proxy OAuth `POST /auth/token`~~ | — | **Obsoleto — reemplazado por BK-40 (E-04)** |
 | BK-36 | Flujo PKCE en el cliente (usa GIS de BK-40) | 2-3 j. | Pendiente |
 | BK-37 | Cabecera: botón Login / avatar de perfil | 1 j. | Pendiente |
