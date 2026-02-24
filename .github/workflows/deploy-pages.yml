@@ -48,10 +48,15 @@ jobs:
 
       # Genera dist/ con las rutas parcheadas para el subdirectorio de GitHub Pages
       # actions/configure-pages expone base_path (ej. /tensia) como output
+      #
+      # VITE_GOOGLE_CLIENT_SECRET no se incluye aquí intencionalmente:
+      # los secretos OAuth nunca deben incrustarse en el bundle del frontend.
       - name: Build del sitio estático
         run: npm run build
         env:
           VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_REDIRECT_URI: ${{ secrets.VITE_REDIRECT_URI }}
 
       - name: Subir artefacto de Pages
         uses: actions/upload-pages-artifact@v3
